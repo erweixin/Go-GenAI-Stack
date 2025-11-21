@@ -1,0 +1,169 @@
+# Cursor AI Rules for Go-GenAI-Stack
+# 这些规则帮助 Cursor AI 更好地理解和协助开发本项目
+
+## 项目架构
+
+本项目采用 **Vibe Coding Friendly DDD** 架构：
+- 领域优先（Domain-First）：按业务领域垂直切分（domains/chat/, domains/llm/）
+- 自包含（Self-contained）：每个领域包含 model + handlers + http + tests
+- 显式知识（Explicit Knowledge）：每个领域有 6 个必需文件（README.md, glossary.md, rules.md, events.md, usecases.yaml, ai-metadata.json）
+
+## 代码生成规则
+
+### 1. 添加新用例（Use Case）
+
+当用户要求添加新的业务用例时：
+
+1. 首先检查 `domains/{domain}/usecases.yaml` 是否已定义该用例
+2. 如果已定义，读取 usecases.yaml 中的步骤、输入、输出
+3. 同时读取以下显式知识文件：
+   - domains/{domain}/README.md
+   - domains/{domain}/glossary.md
+   - domains/{domain}/rules.md
+   - domains/{domain}/events.md
+4. 生成 handler：`domains/{domain}/handlers/{usecase}.handler.go`
+   - 按照 usecases.yaml 的 steps 顺序实现
+   - 根据 on_fail 策略实现错误处理
+   - 包含完整的注释和示例
+5. 生成测试：`domains/{domain}/tests/{usecase}.test.go`
+   - 覆盖所有 steps
+   - 覆盖所有 errors 列表中的错误场景
+6. 更新 README.md 添加用例说明
+
+### 2. 前后端类型同步
+
+当用户要求 "同步类型" 或 "sync types {domain}" 时：
+
+1. 读取 `backend/domains/{domain}/http/dto/*.go` 下的所有 Go struct
+2. 提取 json tag 作为 TypeScript 字段名
+3. 类型映射规则：
+   - `string` → `string`
+   - `int`, `int64`, `float64` → `number`
+   - `bool` → `boolean`
+   - `time.Time` → `string` (ISO 8601 格式)
+   - `[]T` → `T[]`
+   - `map[string]T` → `Record<string, T>`
+   - `struct` → `interface`
+   - `*T` (指针) → `T | undefined` 或 `T?` (optional)
+4. 生成/更新 `frontend/src/types/domain/{domain}.ts`
+5. 添加文件头注释：
+   ```typescript
+   // Code generated from Go structs. DO NOT EDIT manually.
+   // Source: backend/domains/{domain}/http/dto
+   // Generated: {timestamp}
+   ```
+
+**快捷用法**：
+- 用户: "sync types chat" → 同步聊天领域类型
+- 用户: "sync types all" → 同步所有领域类型
+
+### 3. HTTP 接口设计
+
+本项目**不使用 IDL（Thrift/Protobuf）**，采用 **Code-First** 模式：
+
+- 所有 HTTP DTO 定义在 `domains/{domain}/http/dto/*.go`
+- 使用 Hertz 的原生 tag：`json`, `binding`, `query`, `form`
+- 示例：
+  ```go
+  type SendMessageRequest struct {
+      UserID  string `json:"user_id" binding:"required"`
+      Message string `json:"message" binding:"required,max=10000"`
+      Model   string `json:"model" binding:"oneof=gpt-4o claude-3"`
+  }
+  ```
+
+**不要**生成或建议使用：
+- ❌ `.thrift` 文件
+- ❌ `.proto` 文件
+- ❌ `hz new` 或 `hz update` 命令
+- ❌ `kitex_gen/` 目录
+
+### 4. 命名规范
+
+- **文件名**：小写 + 下划线（`send_message.go`, `model_router_service.go`）
+- **Handler 文件**：`{usecase}.handler.go`（如 `send_message.handler.go`）
+- **测试文件**：`{usecase}.test.go`（如 `send_message.test.go`）
+- **接口命名**：PascalCase（`SendMessageRequest`, `ChatService`）
+- **字段命名**：PascalCase（Go struct），snake_case（json tag）
+- **函数命名**：PascalCase（公共），camelCase（私有）
+
+### 5. 错误处理
+
+- 使用 `domains/shared/errors` 包定义错误
+- 错误码命名：大写 + 下划线（`MESSAGE_EMPTY`, `UNAUTHORIZED_ACCESS`）
+- 错误包装：使用 `fmt.Errorf("...: %w", err)` 保留堆栈
+
+### 6. 测试编写
+
+- 每个 handler 必须有对应的测试文件
+- 使用 Table-Driven Tests 模式
+- 覆盖成功路径和所有错误场景
+- Mock 外部依赖（repository, adapter）
+
+## 常见任务快捷指令
+
+### "添加导出对话功能"
+1. 检查 domains/chat/usecases.yaml 是否定义了 ExportConversation
+2. 生成 domains/chat/handlers/export_conversation.handler.go
+3. 生成测试
+4. 更新 README.md
+
+### "sync types chat"
+1. 读取 backend/domains/chat/http/dto/*.go
+2. 生成 frontend/src/types/domain/chat.ts
+
+### "添加新领域 billing"
+1. 创建目录结构：
+   ```
+   domains/billing/
+   ├── README.md
+   ├── glossary.md
+   ├── rules.md
+   ├── events.md
+   ├── usecases.yaml
+   ├── ai-metadata.json
+   ├── model/
+   ├── handlers/
+   ├── http/dto/
+   └── tests/
+   ```
+2. 填充 6 个必需文件的模板内容
+
+## 代码风格
+
+- 使用 `gofmt` 格式化
+- 每个公共函数/类型都有注释
+- 注释格式：`// FunctionName does something`
+- 每个文件顶部说明文件职责
+- 示例代码放在注释中（Example:）
+
+## 禁止事项
+
+- ❌ 不要在 handler 中直接写业务逻辑（应该调用 domain service）
+- ❌ 不要跨领域直接调用（应该通过事件或应用服务编排）
+- ❌ 不要在 DTO 中包含业务逻辑（只做数据传输）
+- ❌ 不要使用全局变量（使用依赖注入）
+- ❌ 不要提交生成的类型文件到 Git（frontend/src/types/ 应该被忽略或标记为生成）
+
+## AI 辅助开发最佳实践
+
+1. **理解需求前先读显式知识**：
+   - 读取领域的 README.md 理解边界
+   - 读取 glossary.md 理解术语
+   - 读取 rules.md 理解约束
+   - 读取 usecases.yaml 理解现有用例
+
+2. **生成代码时保持一致性**：
+   - 参考同领域内的现有代码风格
+   - 使用相同的错误处理模式
+   - 保持相同的注释风格
+
+3. **测试驱动**：
+   - 生成代码的同时生成测试
+   - 确保测试覆盖所有分支
+
+4. **文档同步**：
+   - 修改代码后更新相关的 README.md
+   - 添加新事件后更新 events.md
+   - 添加新规则后更新 rules.md
+

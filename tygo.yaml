@@ -1,0 +1,29 @@
+# tygo 配置文件
+# 用于将 Go Structs 自动转换为 TypeScript 接口
+
+packages:
+  # 聊天领域
+  - path: "backend/domains/chat/http/dto"
+    output_path: "frontend/src/types/domain/chat.ts"
+    type_mappings:
+      "time.Time": "string"
+      "github.com/shopspring/decimal.Decimal": "string"
+
+  # LLM 领域
+  - path: "backend/domains/llm/http/dto"
+    output_path: "frontend/src/types/domain/llm.ts"
+    type_mappings:
+      "time.Time": "string"
+
+  # 监控领域
+  - path: "backend/domains/monitoring/http/dto"
+    output_path: "frontend/src/types/domain/monitoring.ts"
+    type_mappings:
+      "time.Time": "string"
+
+  # 共享类型
+  - path: "backend/domains/shared/types"
+    output_path: "frontend/src/types/shared.ts"
+    type_mappings:
+      "time.Time": "string"
+
