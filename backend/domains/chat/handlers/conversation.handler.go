@@ -1,0 +1,117 @@
+package handlers
+
+import (
+	"context"
+	"time"
+
+	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/cloudwego/hertz/pkg/protocol/consts"
+	"github.com/erweixin/go-genai-stack/domains/chat/http/dto"
+	"github.com/erweixin/go-genai-stack/domains/chat/model"
+)
+
+// CreateConversationHandler 创建新对话
+func CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
+	var req dto.CreateConversationRequest
+
+	if err := c.BindAndValidate(&req); err != nil {
+		c.JSON(consts.StatusBadRequest, map[string]interface{}{
+			"error":   "INVALID_REQUEST",
+			"message": err.Error(),
+		})
+		return
+	}
+
+	// TODO: 实际应该保存到数据库
+	conversation := model.NewConversation(req.UserID, req.Title)
+	if conversation.Title == "" {
+		conversation.Title = "新对话"
+	}
+
+	resp := &dto.CreateConversationResponse{
+		ConversationID: conversation.ConversationID,
+		Title:          conversation.Title,
+		CreatedAt:      conversation.CreatedAt.Format(time.RFC3339),
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// GetHistoryHandler 获取对话历史
+func GetHistoryHandler(ctx context.Context, c *app.RequestContext) {
+	conversationID := c.Param("id")
+
+	// TODO: 从数据库查询
+	// 返回 mock 数据
+	resp := &dto.GetHistoryResponse{
+		ConversationID: conversationID,
+		Title:          "示例对话",
+		Messages: []dto.Message{
+			{
+				MessageID: "msg-001",
+				Role:      "user",
+				Content:   "你好",
+				Tokens:    2,
+				Timestamp: time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
+			},
+			{
+				MessageID: "msg-002",
+				Role:      "assistant",
+				Content:   "你好！有什么我可以帮助您的吗？",
+				Tokens:    10,
+				Timestamp: time.Now().Add(-4 * time.Minute).Format(time.RFC3339),
+			},
+		},
+		TotalCount: 2,
+		HasMore:    false,
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// ListConversationsHandler 列出对话
+func ListConversationsHandler(ctx context.Context, c *app.RequestContext) {
+	// TODO: 从请求中获取 user_id
+	// TODO: 从数据库查询
+
+	// 返回 mock 数据
+	resp := &dto.ListConversationsResponse{
+		Conversations: []dto.ConversationSummary{
+			{
+				ConversationID: "conv-001",
+				Title:          "关于 AI 的讨论",
+				LastMessage:    "谢谢你的解答",
+				LastMessageAt:  time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
+				MessageCount:   10,
+				TotalTokens:    1500,
+			},
+			{
+				ConversationID: "conv-002",
+				Title:          "编程问题",
+				LastMessage:    "这样就可以了",
+				LastMessageAt:  time.Now().Add(-2 * time.Hour).Format(time.RFC3339),
+				MessageCount:   5,
+				TotalTokens:    800,
+			},
+		},
+		TotalCount: 2,
+		HasMore:    false,
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
+
+// DeleteConversationHandler 删除对话
+func DeleteConversationHandler(ctx context.Context, c *app.RequestContext) {
+	conversationID := c.Param("id")
+
+	// TODO: 验证所有权
+	// TODO: 删除对话和消息
+
+	resp := &dto.DeleteConversationResponse{
+		Success:   true,
+		DeletedAt: time.Now().Format(time.RFC3339),
+	}
+
+	c.JSON(consts.StatusOK, resp)
+}
