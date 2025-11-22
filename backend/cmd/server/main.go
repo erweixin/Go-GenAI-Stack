@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
-	"github.com/erweixin/go-genai-stack/shared/middleware"
+	"github.com/erweixin/go-genai-stack/infrastructure/middleware"
 )
 
 func main() {

@@ -1,0 +1,138 @@
+# Go-GenAI-Stack Debug 环境
+# 包含后端服务的完整开发调试环境
+# 用于在 Docker 中运行和调试整个应用栈
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: go-genai-postgres-debug
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-genai}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-genai_password}
+      POSTGRES_DB: ${DB_NAME:-go_genai_stack}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      - postgres_debug_data:/var/lib/postgresql/data
+      - ../backend/migrations/seed:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-genai} -d ${DB_NAME:-go_genai_stack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - genai-debug-network
+
+  # Redis 缓存和限流
+  redis:
+    image: redis:7-alpine
+    container_name: go-genai-redis-debug
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_debug_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - genai-debug-network
+
+  # 后端服务（用于调试）
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.debug
+    container_name: go-genai-backend-debug
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${APP_PORT:-8080}:8080"
+      - "2345:2345"  # Delve 调试端口
+    environment:
+      # 应用配置
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: ${APP_PORT:-8080}
+      APP_DEBUG: "true"
+      
+      # 数据库配置（使用容器内网络）
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-genai}
+      DB_PASSWORD: ${DB_PASSWORD:-genai_password}
+      DB_NAME: ${DB_NAME:-go_genai_stack}
+      DB_SSLMODE: disable
+      
+      # Redis 配置（使用容器内网络）
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password}
+      
+      # 日志配置
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    volumes:
+      # 挂载源代码（支持热重载）
+      - ../backend:/app
+      # 挂载 Go 模块缓存
+      - go_mod_cache:/go/pkg/mod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - genai-debug-network
+    # 使用 profile，默认不启动（仅调试时使用）
+    profiles:
+      - debug
+
+  # pgAdmin (可选，用于数据库管理)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: go-genai-pgadmin-debug
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@genai.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin_password}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_debug_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - genai-debug-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_debug_data:
+    driver: local
+  redis_debug_data:
+    driver: local
+  pgadmin_debug_data:
+    driver: local
+  go_mod_cache:
+    driver: local
+
+networks:
+  genai-debug-network:
+    driver: bridge
+

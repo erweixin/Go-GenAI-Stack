@@ -5,25 +5,33 @@ import (
 )
 
 // Conversation 对话聚合根
+//
+// 字段映射到数据库：
+//
+//	ID        -> conversations.id
+//	UserID    -> conversations.user_id
+//	Title     -> conversations.title
+//	CreatedAt -> conversations.created_at
+//	UpdatedAt -> conversations.updated_at
 type Conversation struct {
-	ConversationID string
-	UserID         string
-	Title          string
-	Messages       []*Message
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID        string     // 对话ID（UUID）
+	UserID    string     // 用户ID
+	Title     string     // 对话标题
+	Messages  []*Message // 消息列表（聚合）
+	CreatedAt time.Time  // 创建时间
+	UpdatedAt time.Time  // 更新时间
 }
 
 // NewConversation 创建新对话
 func NewConversation(userID, title string) *Conversation {
 	now := time.Now()
 	return &Conversation{
-		ConversationID: GenerateID("conv"),
-		UserID:         userID,
-		Title:          title,
-		Messages:       make([]*Message, 0),
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		ID:        GenerateID("conv"),
+		UserID:    userID,
+		Title:     title,
+		Messages:  make([]*Message, 0),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 }
 
@@ -77,4 +85,3 @@ func (c *Conversation) TruncateHistory(maxTokens int) []*Message {
 
 	return result
 }
-

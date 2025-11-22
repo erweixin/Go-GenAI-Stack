@@ -21,17 +21,17 @@ func NewMessageRepository(db *sql.DB) MessageRepository {
 // Save 保存消息
 func (r *messageRepository) Save(ctx context.Context, message *model.Message) error {
 	query := `
-		INSERT INTO messages (message_id, conversation_id, role, content, tokens, model, timestamp)
+		INSERT INTO messages (id, conversation_id, role, content, tokens, model, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		message.MessageID,
+		message.ID,
 		message.ConversationID,
 		message.Role,
 		message.Content,
 		message.Tokens,
 		message.Model,
-		message.Timestamp,
+		message.CreatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save message: %w", err)
@@ -42,20 +42,20 @@ func (r *messageRepository) Save(ctx context.Context, message *model.Message) er
 // FindByID 根据 ID 查询消息
 func (r *messageRepository) FindByID(ctx context.Context, messageID string) (*model.Message, error) {
 	query := `
-		SELECT message_id, conversation_id, role, content, tokens, model, timestamp
+		SELECT id, conversation_id, role, content, tokens, model, created_at
 		FROM messages
-		WHERE message_id = $1
+		WHERE id = $1
 	`
 	
 	var msg model.Message
 	err := r.db.QueryRowContext(ctx, query, messageID).Scan(
-		&msg.MessageID,
+		&msg.ID,
 		&msg.ConversationID,
 		&msg.Role,
 		&msg.Content,
 		&msg.Tokens,
 		&msg.Model,
-		&msg.Timestamp,
+		&msg.CreatedAt,
 	)
 	
 	if err == sql.ErrNoRows {
@@ -71,10 +71,10 @@ func (r *messageRepository) FindByID(ctx context.Context, messageID string) (*mo
 // FindByConversation 查询对话的所有消息
 func (r *messageRepository) FindByConversation(ctx context.Context, conversationID string, limit, offset int) ([]*model.Message, error) {
 	query := `
-		SELECT message_id, conversation_id, role, content, tokens, model, timestamp
+		SELECT id, conversation_id, role, content, tokens, model, created_at
 		FROM messages
 		WHERE conversation_id = $1
-		ORDER BY timestamp ASC
+		ORDER BY created_at ASC
 	`
 	
 	if limit > 0 {
@@ -91,13 +91,13 @@ func (r *messageRepository) FindByConversation(ctx context.Context, conversation
 	for rows.Next() {
 		var msg model.Message
 		err := rows.Scan(
-			&msg.MessageID,
+			&msg.ID,
 			&msg.ConversationID,
 			&msg.Role,
 			&msg.Content,
 			&msg.Tokens,
 			&msg.Model,
-			&msg.Timestamp,
+			&msg.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
@@ -115,10 +115,10 @@ func (r *messageRepository) FindByConversation(ctx context.Context, conversation
 // FindRecent 查询对话的最近 N 条消息
 func (r *messageRepository) FindRecent(ctx context.Context, conversationID string, n int) ([]*model.Message, error) {
 	query := `
-		SELECT message_id, conversation_id, role, content, tokens, model, timestamp
+		SELECT id, conversation_id, role, content, tokens, model, created_at
 		FROM messages
 		WHERE conversation_id = $1
-		ORDER BY timestamp DESC
+		ORDER BY created_at DESC
 		LIMIT $2
 	`
 	
@@ -132,13 +132,13 @@ func (r *messageRepository) FindRecent(ctx context.Context, conversationID strin
 	for rows.Next() {
 		var msg model.Message
 		err := rows.Scan(
-			&msg.MessageID,
+			&msg.ID,
 			&msg.ConversationID,
 			&msg.Role,
 			&msg.Content,
 			&msg.Tokens,
 			&msg.Model,
-			&msg.Timestamp,
+			&msg.CreatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
@@ -171,7 +171,7 @@ func (r *messageRepository) Count(ctx context.Context, conversationID string) (i
 
 // Delete 删除消息
 func (r *messageRepository) Delete(ctx context.Context, messageID string) error {
-	query := `DELETE FROM messages WHERE message_id = $1`
+	query := `DELETE FROM messages WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, messageID)
 	if err != nil {
 		return fmt.Errorf("failed to delete message: %w", err)

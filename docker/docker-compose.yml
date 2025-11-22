@@ -1,0 +1,88 @@
+# Go-GenAI-Stack 开发环境
+# 用于本地开发和测试的 PostgreSQL 和 Redis 服务
+
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: go-genai-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-genai}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-genai_password}
+      POSTGRES_DB: ${DB_NAME:-go_genai_stack}
+      # 性能优化配置
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      # 数据持久化
+      - postgres_data:/var/lib/postgresql/data
+      # 初始化脚本
+      - ../backend/migrations/seed:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-genai} -d ${DB_NAME:-go_genai_stack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - genai-network
+
+  # Redis 缓存和限流
+  redis:
+    image: redis:7-alpine
+    container_name: go-genai-redis
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_password} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - genai-network
+
+  # pgAdmin (可选，用于数据库管理)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: go-genai-pgadmin
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@genai.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin_password}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - genai-network
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  genai-network:
+    driver: bridge
+

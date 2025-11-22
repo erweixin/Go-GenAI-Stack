@@ -12,6 +12,7 @@ build/
 # Go
 backend/bin/
 backend/tmp/
+backend/build-errors.log
 
 # Frontend
 web/dist/
@@ -32,6 +33,12 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Docker environment
+docker/.env
+
+# VS Code
+.vscode/launch.json
 
 # Editor
 .vscode/

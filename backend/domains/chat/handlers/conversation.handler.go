@@ -33,7 +33,7 @@ func CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
 	}
 
 	resp := &dto.CreateConversationResponse{
-		ConversationID: conversation.ConversationID,
+		ConversationID: conversation.ID,
 		Title:          conversation.Title,
 		CreatedAt:      conversation.CreatedAt.Format(time.RFC3339),
 	}
@@ -83,7 +83,7 @@ func GetHistoryHandler(ctx context.Context, c *app.RequestContext) {
 func ListConversationsHandler(ctx context.Context, c *app.RequestContext) {
 	// Extension point: 从请求中获取 user_id（通过认证中间件）
 	// userID := c.GetString("user_id")
-	
+
 	// Extension point: 从数据库查询用户的对话列表
 	// conversations, err := conversationRepo.FindByUser(ctx, userID, limit, offset)
 	// if err != nil {
@@ -120,7 +120,7 @@ func ListConversationsHandler(ctx context.Context, c *app.RequestContext) {
 
 // DeleteConversationHandler 删除对话
 func DeleteConversationHandler(ctx context.Context, c *app.RequestContext) {
-	conversationID := c.Param("id")
+	// conversationID := c.Param("id")
 
 	// Extension point: 验证所有权和删除
 	// userID := c.GetString("user_id")
