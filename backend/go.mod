@@ -6,6 +6,8 @@ require (
 	github.com/cloudwego/hertz v0.8.1
 	github.com/cloudwego/eino v0.1.0
 	github.com/go-playground/validator/v10 v10.16.0
+	gorm.io/gorm v1.25.5
+	gorm.io/driver/postgres v1.5.4
 )
 
 require (

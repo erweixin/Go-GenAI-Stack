@@ -37,7 +37,13 @@ backend/
 │   └── server/
 │       └── main.go          # 应用入口
 │
-├── domains/                 # DDD 领域（Vibe-friendly）
+├── application/             # 【应用层】★ 跨领域编排
+│   ├── services/            # 应用服务
+│   │   └── chat_orchestrator.go
+│   ├── dto/                 # 应用层 DTO
+│   └── README.md
+│
+├── domains/                 # 【领域层】DDD 领域
 │   ├── chat/               # 聊天领域
 │   │   ├── README.md       # 领域说明
 │   │   ├── glossary.md     # 术语表
@@ -45,7 +51,21 @@ backend/
 │   │   ├── events.md       # 领域事件
 │   │   ├── usecases.yaml   # 用例声明（AI 可读）★
 │   │   ├── ai-metadata.json # AI 元数据
+│   │   │
 │   │   ├── model/          # 领域模型
+│   │   │   ├── conversation.go
+│   │   │   └── message.go
+│   │   │
+│   │   ├── repository/     # 仓储（接口 + 实现）★
+│   │   │   ├── interface.go
+│   │   │   ├── message_repo.go
+│   │   │   └── conversation_repo.go
+│   │   │
+│   │   ├── internal/       # 内部实现
+│   │   │   └── po/         # 持久化对象 ★
+│   │   │       ├── message_po.go
+│   │   │       └── conversation_po.go
+│   │   │
 │   │   ├── handlers/       # 用例实现
 │   │   ├── http/           # HTTP 层
 │   │   │   ├── dto/        # DTO（tygo 来源）★
@@ -55,10 +75,14 @@ backend/
 │   └── llm/                # LLM 领域
 │       └── ...
 │
-├── shared/                  # 共享代码
+├── shared/                  # 【基础设施层】共享代码
 │   ├── errors/             # 错误定义
 │   ├── middleware/         # 中间件
 │   └── utils/              # 工具函数
+│
+├── infra/                   # 【数据层】★
+│   └── database/           # 数据库初始化
+│       └── database.go
 │
 ├── go.mod
 └── README.md
@@ -72,6 +96,8 @@ backend/
 2. **自包含**：每个领域包含完整的实现
 3. **显式知识**：README, glossary, rules, events, usecases.yaml
 4. **AI 友好**：结构清晰，易于 AI 理解和生成代码
+5. **应用层编排**：跨领域逻辑在 application/ 层处理
+6. **手写仓储**：使用 Repository 模式，不使用代码生成
 
 ### 6 个必需文件
 
@@ -229,10 +255,59 @@ chat.POST("/send", handlers.SendMessageHandler)
 - [类型同步指南](../docs/type-sync.md)
 - [AI 协作工作流](../docs/ai_workflow.md)
 
+## 🏗️ 分层架构
+
+### Application Layer（应用层）★
+
+**职责**：编排多个领域服务，实现跨领域业务流程
+
+```go
+// application/services/chat_orchestrator.go
+func (o *ChatOrchestrator) SendMessage(ctx context.Context, req *SendMessageRequest) (*SendMessageResponse, error) {
+    // 1. Chat Domain: 创建对话
+    conv, err := o.conversationRepo.Create(...)
+    
+    // 2. Chat Domain: 保存用户消息
+    userMsg, err := o.messageRepo.Save(...)
+    
+    // 3. LLM Domain: 生成回复
+    llmResp, err := o.llmService.Generate(...)
+    
+    // 4. Chat Domain: 保存 AI 回复
+    assistantMsg, err := o.messageRepo.Save(...)
+    
+    return response, nil
+}
+```
+
+### Repository Pattern（仓储模式）★
+
+**手写 Repository，Vibe Coding Friendly**
+
+```
+domains/chat/
+├── model/              # 领域模型（纯业务）
+├── repository/         # 仓储接口 + 实现
+│   ├── interface.go   # 仓储接口（领域语言）
+│   ├── message_repo.go # 实现（~100 行，清晰）
+│   └── conversation_repo.go
+└── internal/po/        # 持久化对象（数据库映射）
+    ├── message_po.go
+    └── conversation_po.go
+```
+
+**为什么不用 gorm.io/gen？**
+- ❌ 生成大量代码（~800 行/表）
+- ❌ 打断 Vibe Coding 流程（改配置→生成）
+- ✅ 手写更清晰（~100 行/表）
+- ✅ AI 容易理解和修改
+
 ## 🚧 待办事项
 
+- [x] 创建应用层（Application Layer）
+- [x] 创建仓储层（Repository Pattern）
+- [x] 数据库初始化
 - [ ] 集成 Eino LLM 框架
-- [ ] 实现数据库持久化
 - [ ] 实现 Redis 缓存和限流
 - [ ] 实现事件总线（Kafka）
 - [ ] 添加认证和授权
