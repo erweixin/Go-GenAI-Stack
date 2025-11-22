@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
+
+	// "path/filepath"
 	"syscall"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/erweixin/go-genai-stack/infrastructure/bootstrap"
 	"github.com/erweixin/go-genai-stack/infrastructure/config"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -20,13 +23,28 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// 1. 加载 .env 文件
+	fmt.Println("\n📝 步骤 1: 加载 .env 文件")
+	if err := godotenv.Load("../docker/.env"); err != nil {
+		fmt.Printf("⚠️  无法加载 docker/.env: %v\n", err)
+		fmt.Println("   尝试使用现有环境变量...")
+	} else {
+		fmt.Println("✅ 成功加载 docker/.env")
+	}
+
 	// 1. 加载配置
 	log.Println("📋 Loading configuration...")
 	cfg, err := loadConfig()
 	if err != nil {
 		log.Fatalf("❌ Failed to load config: %v", err)
 	}
-	log.Printf("✅ Configuration loaded (env: %s, port: %d)", getEnv(), cfg.Server.Port)
+
+	// 显示关键配置（验证环境变量是否生效）
+	log.Printf("✅ Configuration loaded:")
+	log.Printf("   Environment: %s", getEnv())
+	log.Printf("   Server: %s:%d", cfg.Server.Host, cfg.Server.Port)
+	log.Printf("   Database: %s@%s:%d/%s", cfg.Database.User, cfg.Database.Host, cfg.Database.Port, cfg.Database.Database)
+	log.Printf("   Redis: %s:%d (DB: %d)", cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.DB)
 
 	// 2. 初始化数据库连接
 	log.Println("🗄️  Connecting to database...")

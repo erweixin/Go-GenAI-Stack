@@ -49,7 +49,7 @@ func (r *conversationRepository) FindByID(ctx context.Context, conversationID st
 		FROM conversations
 		WHERE id = $1 AND deleted_at IS NULL
 	`
-
+	
 	conv := &model.Conversation{}
 	err := r.db.QueryRowContext(ctx, query, conversationID).Scan(
 		&conv.ID,
@@ -58,7 +58,7 @@ func (r *conversationRepository) FindByID(ctx context.Context, conversationID st
 		&conv.CreatedAt,
 		&conv.UpdatedAt,
 	)
-
+	
 	if err == sql.ErrNoRows {
 		return nil, errors.New("CONVERSATION_NOT_FOUND", "对话不存在", 404)
 	}
@@ -66,7 +66,7 @@ func (r *conversationRepository) FindByID(ctx context.Context, conversationID st
 	if err != nil {
 		return nil, errors.Wrap(err, "DB_ERROR", "查询对话失败", 500)
 	}
-
+	
 	// 初始化消息列表
 	conv.Messages = make([]*model.Message, 0)
 
@@ -82,13 +82,13 @@ func (r *conversationRepository) FindByUser(ctx context.Context, userID string, 
 		ORDER BY updated_at DESC
 		LIMIT $2 OFFSET $3
 	`
-
+	
 	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, errors.Wrap(err, "DB_ERROR", "查询对话列表失败", 500)
 	}
 	defer rows.Close()
-
+	
 	conversations := make([]*model.Conversation, 0)
 	for rows.Next() {
 		conv := &model.Conversation{}
@@ -109,11 +109,11 @@ func (r *conversationRepository) FindByUser(ctx context.Context, userID string, 
 
 		conversations = append(conversations, conv)
 	}
-
+	
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "DB_ERROR", "遍历对话数据失败", 500)
 	}
-
+	
 	return conversations, nil
 }
 

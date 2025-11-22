@@ -36,10 +36,13 @@ func NewLoader() *Loader {
 //   - APP_SERVER_PORT -> server.port
 //   - APP_DATABASE_HOST -> database.host
 func (l *Loader) Load(configPath string) (*Config, error) {
-	// 1. 设置默认配置
-	config := DefaultConfig()
+	// 1. 设置环境变量绑定（必须在任何读取之前）
+	l.setupEnvBindings()
 
-	// 2. 加载配置文件（如果指定）
+	// 2. 设置默认值（让 viper 知道配置结构）
+	l.setDefaults()
+
+	// 3. 加载配置文件（如果指定）
 	if configPath != "" {
 		l.viper.SetConfigFile(configPath)
 		if err := l.viper.ReadInConfig(); err != nil {
@@ -50,10 +53,10 @@ func (l *Loader) Load(configPath string) (*Config, error) {
 		}
 	}
 
-	// 3. 从环境变量读取（覆盖配置文件）
-	l.setupEnvBindings()
+	// 4. 创建配置结构体
+	config := &Config{}
 
-	// 4. 解析配置到结构体
+	// 5. 解析配置到结构体（环境变量会自动覆盖）
 	if err := l.viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
@@ -82,25 +85,104 @@ func (l *Loader) setupEnvBindings() {
 	// 替换分隔符（. -> _）
 	l.viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	// 手动绑定关键配置（确保环境变量生效）
-	envBindings := []string{
-		"server.host",
-		"server.port",
-		"database.host",
-		"database.port",
-		"database.user",
-		"database.password",
-		"database.database",
-		"redis.host",
-		"redis.port",
-		"redis.password",
-		"llm.default_model",
-		"llm.default_provider",
+	// 显式绑定所有配置键（关键！）
+	l.bindAllEnvKeys()
+}
+
+// bindAllEnvKeys 显式绑定所有配置键到环境变量
+//
+// 虽然设置了 AutomaticEnv()，但 viper 仍然需要知道
+// 哪些配置键应该从环境变量读取
+func (l *Loader) bindAllEnvKeys() {
+	// 定义所有需要绑定的配置键
+	keys := []string{
+		// Server
+		"server.host", "server.port", "server.read_timeout",
+		"server.write_timeout", "server.idle_timeout", "server.max_body_size",
+
+		// Database
+		"database.host", "database.port", "database.user", "database.password",
+		"database.database", "database.ssl_mode", "database.max_open_conns",
+		"database.max_idle_conns", "database.conn_max_lifetime", "database.conn_max_idle_time",
+
+		// Redis
+		"redis.host", "redis.port", "redis.password", "redis.db",
+		"redis.pool_size", "redis.min_idle_conns", "redis.max_retries",
+		"redis.dial_timeout", "redis.read_timeout", "redis.write_timeout",
+
+		// LLM
+		"llm.default_model", "llm.default_provider", "llm.timeout", "llm.max_retries",
+
+		// Logging
+		"logging.level", "logging.format", "logging.output", "logging.output_path",
+
+		// Monitoring
+		"monitoring.enabled", "monitoring.sample_rate",
+		"monitoring.trace_retention", "monitoring.metric_interval",
 	}
 
-	for _, binding := range envBindings {
-		_ = l.viper.BindEnv(binding)
+	// 批量绑定
+	for _, key := range keys {
+		_ = l.viper.BindEnv(key)
 	}
+}
+
+// setDefaults 设置默认值
+//
+// 这一步很重要：让 viper 知道配置的结构，
+// 这样环境变量才能正确映射到嵌套的配置对象
+func (l *Loader) setDefaults() {
+	defaults := DefaultConfig()
+
+	// Server 配置
+	l.viper.SetDefault("server.host", defaults.Server.Host)
+	l.viper.SetDefault("server.port", defaults.Server.Port)
+	l.viper.SetDefault("server.read_timeout", defaults.Server.ReadTimeout)
+	l.viper.SetDefault("server.write_timeout", defaults.Server.WriteTimeout)
+	l.viper.SetDefault("server.idle_timeout", defaults.Server.IdleTimeout)
+	l.viper.SetDefault("server.max_body_size", defaults.Server.MaxBodySize)
+
+	// Database 配置
+	l.viper.SetDefault("database.host", defaults.Database.Host)
+	l.viper.SetDefault("database.port", defaults.Database.Port)
+	l.viper.SetDefault("database.user", defaults.Database.User)
+	l.viper.SetDefault("database.password", defaults.Database.Password)
+	l.viper.SetDefault("database.database", defaults.Database.Database)
+	l.viper.SetDefault("database.ssl_mode", defaults.Database.SSLMode)
+	l.viper.SetDefault("database.max_open_conns", defaults.Database.MaxOpenConns)
+	l.viper.SetDefault("database.max_idle_conns", defaults.Database.MaxIdleConns)
+	l.viper.SetDefault("database.conn_max_lifetime", defaults.Database.ConnMaxLifetime)
+	l.viper.SetDefault("database.conn_max_idle_time", defaults.Database.ConnMaxIdleTime)
+
+	// Redis 配置
+	l.viper.SetDefault("redis.host", defaults.Redis.Host)
+	l.viper.SetDefault("redis.port", defaults.Redis.Port)
+	l.viper.SetDefault("redis.password", defaults.Redis.Password)
+	l.viper.SetDefault("redis.db", defaults.Redis.DB)
+	l.viper.SetDefault("redis.pool_size", defaults.Redis.PoolSize)
+	l.viper.SetDefault("redis.min_idle_conns", defaults.Redis.MinIdleConns)
+	l.viper.SetDefault("redis.max_retries", defaults.Redis.MaxRetries)
+	l.viper.SetDefault("redis.dial_timeout", defaults.Redis.DialTimeout)
+	l.viper.SetDefault("redis.read_timeout", defaults.Redis.ReadTimeout)
+	l.viper.SetDefault("redis.write_timeout", defaults.Redis.WriteTimeout)
+
+	// LLM 配置
+	l.viper.SetDefault("llm.default_model", defaults.LLM.DefaultModel)
+	l.viper.SetDefault("llm.default_provider", defaults.LLM.DefaultProvider)
+	l.viper.SetDefault("llm.timeout", defaults.LLM.Timeout)
+	l.viper.SetDefault("llm.max_retries", defaults.LLM.MaxRetries)
+
+	// Logging 配置
+	l.viper.SetDefault("logging.level", defaults.Logging.Level)
+	l.viper.SetDefault("logging.format", defaults.Logging.Format)
+	l.viper.SetDefault("logging.output", defaults.Logging.Output)
+	l.viper.SetDefault("logging.output_path", defaults.Logging.OutputPath)
+
+	// Monitoring 配置
+	l.viper.SetDefault("monitoring.enabled", defaults.Monitoring.Enabled)
+	l.viper.SetDefault("monitoring.sample_rate", defaults.Monitoring.SampleRate)
+	l.viper.SetDefault("monitoring.trace_retention", defaults.Monitoring.TraceRetention)
+	l.viper.SetDefault("monitoring.metric_interval", defaults.Monitoring.MetricInterval)
 }
 
 // LoadFromFile 从指定文件加载配置
@@ -128,4 +210,3 @@ func LoadFromEnvOrFile(configPath string) (*Config, error) {
 
 	return loader.Load(configPath)
 }
-

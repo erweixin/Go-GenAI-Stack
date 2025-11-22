@@ -55,7 +55,7 @@ func (r *messageRepository) FindByID(ctx context.Context, messageID string) (*mo
 		FROM messages
 		WHERE id = $1
 	`
-
+	
 	message := &model.Message{}
 	var modelStr sql.NullString
 
@@ -68,7 +68,7 @@ func (r *messageRepository) FindByID(ctx context.Context, messageID string) (*mo
 		&modelStr,
 		&message.CreatedAt,
 	)
-
+	
 	if err == sql.ErrNoRows {
 		return nil, errors.New("MESSAGE_NOT_FOUND", "消息不存在", 404)
 	}
@@ -80,7 +80,7 @@ func (r *messageRepository) FindByID(ctx context.Context, messageID string) (*mo
 	if modelStr.Valid {
 		message.Model = modelStr.String
 	}
-
+	
 	return message, nil
 }
 
@@ -93,13 +93,13 @@ func (r *messageRepository) FindByConversation(ctx context.Context, conversation
 		ORDER BY created_at ASC
 		LIMIT $2 OFFSET $3
 	`
-
+	
 	rows, err := r.db.QueryContext(ctx, query, conversationID, limit, offset)
 	if err != nil {
 		return nil, errors.Wrap(err, "DB_ERROR", "查询消息列表失败", 500)
 	}
 	defer rows.Close()
-
+	
 	messages := make([]*model.Message, 0)
 	for rows.Next() {
 		message := &model.Message{}
@@ -125,11 +125,11 @@ func (r *messageRepository) FindByConversation(ctx context.Context, conversation
 
 		messages = append(messages, message)
 	}
-
+	
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "DB_ERROR", "遍历消息数据失败", 500)
 	}
-
+	
 	return messages, nil
 }
 
@@ -142,13 +142,13 @@ func (r *messageRepository) FindRecent(ctx context.Context, conversationID strin
 		ORDER BY created_at DESC
 		LIMIT $2
 	`
-
+	
 	rows, err := r.db.QueryContext(ctx, query, conversationID, n)
 	if err != nil {
 		return nil, errors.Wrap(err, "DB_ERROR", "查询最近消息失败", 500)
 	}
 	defer rows.Close()
-
+	
 	messages := make([]*model.Message, 0)
 	for rows.Next() {
 		message := &model.Message{}
@@ -174,16 +174,16 @@ func (r *messageRepository) FindRecent(ctx context.Context, conversationID strin
 
 		messages = append(messages, message)
 	}
-
+	
 	if err := rows.Err(); err != nil {
 		return nil, errors.Wrap(err, "DB_ERROR", "遍历消息数据失败", 500)
 	}
-
+	
 	// 反转顺序（从旧到新）
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
-
+	
 	return messages, nil
 }
 

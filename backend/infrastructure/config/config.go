@@ -72,9 +72,9 @@ type LoggingConfig struct {
 // MonitoringConfig 监控配置
 type MonitoringConfig struct {
 	Enabled        bool          `mapstructure:"enabled"`
-	SampleRate     float64       `mapstructure:"sample_rate"`      // 采样率 (0.0-1.0)
-	TraceRetention time.Duration `mapstructure:"trace_retention"`  // Trace 保留时间
-	MetricInterval time.Duration `mapstructure:"metric_interval"`  // 指标聚合间隔
+	SampleRate     float64       `mapstructure:"sample_rate"`     // 采样率 (0.0-1.0)
+	TraceRetention time.Duration `mapstructure:"trace_retention"` // Trace 保留时间
+	MetricInterval time.Duration `mapstructure:"metric_interval"` // 指标聚合间隔
 }
 
 // DefaultConfig 返回默认配置
@@ -132,4 +132,3 @@ func DefaultConfig() *Config {
 		},
 	}
 }
-
