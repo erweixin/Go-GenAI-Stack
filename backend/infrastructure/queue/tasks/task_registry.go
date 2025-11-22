@@ -102,13 +102,16 @@ type SendEmailPayload struct {
 // =============================================================================
 
 // HandleMetricsAggregation 处理指标聚合任务
+//
+// Extension point: 实现指标聚合逻辑
+// 示例：聚合 Prometheus 指标、生成报表等
 func HandleMetricsAggregation(ctx context.Context, payload []byte) error {
 	var p MetricsAggregationPayload
 	if err := json.Unmarshal(payload, &p); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	// TODO: 实现指标聚合逻辑
+	// 示例实现：打印日志
 	fmt.Printf("Aggregating metrics from %d to %d with interval %s\n",
 		p.StartTime, p.EndTime, p.Interval)
 
@@ -116,26 +119,32 @@ func HandleMetricsAggregation(ctx context.Context, payload []byte) error {
 }
 
 // HandleLogArchiving 处理日志归档任务
+//
+// Extension point: 实现日志归档逻辑
+// 示例：归档到 S3、压缩旧日志等
 func HandleLogArchiving(ctx context.Context, payload []byte) error {
 	var p LogArchivingPayload
 	if err := json.Unmarshal(payload, &p); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	// TODO: 实现日志归档逻辑
+	// 示例实现：打印日志
 	fmt.Printf("Archiving logs from %s to %s\n", p.StartDate, p.EndDate)
 
 	return nil
 }
 
 // HandleDataCleanup 处理数据清理任务
+//
+// Extension point: 实现数据清理逻辑
+// 示例：删除过期数据、清理临时文件等
 func HandleDataCleanup(ctx context.Context, payload []byte) error {
 	var p DataCleanupPayload
 	if err := json.Unmarshal(payload, &p); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	// TODO: 实现数据清理逻辑
+	// 示例实现：打印日志
 	fmt.Printf("Cleaning up table %s with retention %d days\n",
 		p.TableName, p.RetentionDays)
 
@@ -149,7 +158,7 @@ func HandleSendEmail(ctx context.Context, payload []byte) error {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	// TODO: 实现邮件发送逻辑
+	// Extension point: 集成邮件服务（SendGrid, AWS SES等）
 	fmt.Printf("Sending email to %s: %s\n", p.To, p.Subject)
 
 	return nil

@@ -22,7 +22,11 @@ func CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// TODO: 实际应该保存到数据库
+	// Extension point: 持久化对话
+	// if err := conversationRepo.Create(ctx, conversation); err != nil {
+	//     handleError(c, err)
+	//     return
+	// }
 	conversation := model.NewConversation(req.UserID, req.Title)
 	if conversation.Title == "" {
 		conversation.Title = "新对话"
@@ -41,8 +45,14 @@ func CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
 func GetHistoryHandler(ctx context.Context, c *app.RequestContext) {
 	conversationID := c.Param("id")
 
-	// TODO: 从数据库查询
-	// 返回 mock 数据
+	// Extension point: 从数据库查询历史消息
+	// messages, err := messageRepo.FindByConversation(ctx, conversationID, limit, offset)
+	// if err != nil {
+	//     handleError(c, err)
+	//     return
+	// }
+	//
+	// 当前返回 mock 数据用于演示
 	resp := &dto.GetHistoryResponse{
 		ConversationID: conversationID,
 		Title:          "示例对话",
@@ -71,10 +81,17 @@ func GetHistoryHandler(ctx context.Context, c *app.RequestContext) {
 
 // ListConversationsHandler 列出对话
 func ListConversationsHandler(ctx context.Context, c *app.RequestContext) {
-	// TODO: 从请求中获取 user_id
-	// TODO: 从数据库查询
-
-	// 返回 mock 数据
+	// Extension point: 从请求中获取 user_id（通过认证中间件）
+	// userID := c.GetString("user_id")
+	
+	// Extension point: 从数据库查询用户的对话列表
+	// conversations, err := conversationRepo.FindByUser(ctx, userID, limit, offset)
+	// if err != nil {
+	//     handleError(c, err)
+	//     return
+	// }
+	//
+	// 当前返回 mock 数据用于演示
 	resp := &dto.ListConversationsResponse{
 		Conversations: []dto.ConversationSummary{
 			{
@@ -105,8 +122,12 @@ func ListConversationsHandler(ctx context.Context, c *app.RequestContext) {
 func DeleteConversationHandler(ctx context.Context, c *app.RequestContext) {
 	conversationID := c.Param("id")
 
-	// TODO: 验证所有权
-	// TODO: 删除对话和消息
+	// Extension point: 验证所有权和删除
+	// userID := c.GetString("user_id")
+	// if err := chatOrchestrator.DeleteConversation(ctx, conversationID, userID); err != nil {
+	//     handleError(c, err)
+	//     return
+	// }
 
 	resp := &dto.DeleteConversationResponse{
 		Success:   true,

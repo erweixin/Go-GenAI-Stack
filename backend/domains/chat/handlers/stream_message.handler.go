@@ -31,8 +31,17 @@ func StreamMessageHandler(ctx context.Context, c *app.RequestContext) {
 	c.Response.Header.Set("Cache-Control", "no-cache")
 	c.Response.Header.Set("Connection", "keep-alive")
 
-	// TODO: 实际应该调用 LLM Domain 的流式 API
-	// 这里模拟流式输出
+	// Extension point: 集成真实 LLM 流式 API
+	// stream, err := llmService.GenerateStream(ctx, &GenerateRequest{
+	//     Model:   req.Model,
+	//     Message: req.Message,
+	// })
+	// for chunk := range stream {
+	//     c.Write([]byte(fmt.Sprintf("data: %s\n\n", chunk)))
+	//     c.Flush()
+	// }
+	//
+	// 当前使用 mock 数据演示流式输出
 	words := []string{"这", "是", "一个", "流式", "响应", "的", "示例"}
 
 	for i, word := range words {

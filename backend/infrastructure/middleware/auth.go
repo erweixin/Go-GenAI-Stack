@@ -10,10 +10,16 @@ import (
 
 // AuthMiddleware 认证中间件
 //
-// 验证请求中的 JWT Token
+// 验证请求中的 Bearer Token
+//
+// Extension point: 集成 JWT 验证
+// 示例：使用 github.com/golang-jwt/jwt 库
+//   type AuthMiddleware struct {
+//       jwtSecret string
+//       issuer    string
+//   }
 type AuthMiddleware struct {
-	// TODO: 添加 JWT 验证逻辑
-	// jwtSecret string
+	// jwtSecret string // JWT 密钥（可选）
 }
 
 // NewAuthMiddleware 创建认证中间件
@@ -50,16 +56,19 @@ func (m *AuthMiddleware) Handle() app.HandlerFunc {
 			return
 		}
 
-		// TODO: 验证 JWT Token
-		// claims, err := validateJWT(token, m.jwtSecret)
-		// if err != nil {
-		//     c.JSON(401, utils.H{"error": "invalid token"})
-		//     c.Abort()
-		//     return
-		// }
-
-		// 临时实现：直接将 token 作为 user_id
-		// 生产环境应该验证 JWT 并提取 claims
+		// Extension point: JWT Token 验证
+		// 示例实现：
+		//   claims, err := jwt.ParseWithClaims(token, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		//       return []byte(m.jwtSecret), nil
+		//   })
+		//   if err != nil || !claims.Valid {
+		//       c.JSON(401, utils.H{"error": "invalid token"})
+		//       c.Abort()
+		//       return
+		//   }
+		//   c.Set("user_id", claims.UserID)
+		//
+		// 当前简化实现：直接将 token 作为 user_id（仅用于演示）
 		c.Set("user_id", token)
 
 		c.Next(ctx)
@@ -76,7 +85,7 @@ func (m *AuthMiddleware) OptionalAuth() app.HandlerFunc {
 		if authHeader != "" {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 			if token != authHeader {
-				// TODO: 验证 JWT Token
+				// Extension point: JWT Token 验证（同上）
 				c.Set("user_id", token)
 			}
 		}

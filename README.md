@@ -45,11 +45,12 @@ Go-GenAI-Stack/
 
 ### 🎯 Vibe-Coding-Friendly DDD
 
-- **领域优先**：按业务领域垂直切分（chat, llm, monitoring）
-- **自包含**：每个领域包含 model + handlers + http + tests
+- **领域优先**：按业务领域垂直切分（当前聚焦 Chat 领域）
+- **自包含**：每个领域包含 model + handlers + http + repository
 - **显式知识**：6 个必需文件（README, glossary, rules, events, usecases.yaml, ai-metadata.json）
 - **声明式用例**：在 `usecases.yaml` 中定义业务流程
 - **AI 友好**：结构化知识 + 语义化命名 + 完整注释
+- **扩展友好**：明确标注扩展点，易于集成真实 LLM、数据库等
 
 ### 🤖 AI 辅助开发
 
@@ -191,16 +192,21 @@ git push
 
 ## 📖 文档
 
+### 🔥 项目整改（重要）
+- **[Starter 整改计划](docs/STARTER-REFACTORING-PLAN.md)** ⭐ 详细的整改方案
+- **[整改检查清单](docs/REFACTORING-CHECKLIST.md)** - 跟踪整改进度
+
+### 架构和开发
 - [架构设计](docs/optimal-architecture.md)
 - [Vibe-Coding-Friendly 理念](docs/Vibe-Coding-Friendly.md)
 - [目录结构说明](docs/vibe-coding-ddd-structure.md)
-- [优化计划](docs/optimization-plan.md)
-- [优化检查清单](docs/optimization-checklist.md)
 - [快速参考](docs/quick-reference.md)
 - [Monorepo 设置](docs/monorepo-setup.md)
 - [类型同步指南](docs/type-sync.md)
-- [第 3 周完成报告](docs/week3-completion-report.md)
-- [第 5 周完成报告](docs/week5-completion-report.md)
+
+### 数据库
+- [Atlas 快速开始](docs/atlas-quickstart.md)
+- [数据库详细指南](backend/infrastructure/database/README.md)
 
 ---
 
@@ -229,26 +235,36 @@ git push
 
 ## 📋 项目状态
 
-### ✅ 已完成
-- ✅ 基础架构搭建
-- ✅ Chat 领域完整实现
-- ✅ LLM 领域基础实现
-- ✅ 基础设施层重构
-- ✅ 可复用工具包（pkg/）
-- ✅ 数据库迁移管理
-- ✅ AI 代码生成工具
-- ✅ 开发工具链
-- ✅ CI/CD 配置
-- ✅ 前端 Monorepo 设置
+### ✅ 已完成（v0.1 - Starter）
+- ✅ 基础架构搭建（Hertz + DDD）
+- ✅ **Chat 领域完整实现**（6 个必需文件 + 完整代码）
+  - 对话管理（创建、列表、删除）
+  - 消息发送（普通、流式）
+  - 应用层编排（ChatOrchestrator）
+  - Repository 模式（使用 database/sql）
+- ✅ 基础设施层
+  - 中间件（认证、日志、限流、追踪、恢复）
+  - 数据库（Postgres + Redis）
+  - 异步队列（Asynq）
+  - 配置管理（Viper）
+- ✅ 可复用工具包（Logger, RateLimiter, CircuitBreaker, Validator）
+- ✅ 数据库 Schema 管理（Atlas）
+- ✅ 前端 Monorepo 设置（Web + Mobile + Shared）
+- ✅ 类型同步（Go → TypeScript）
+- ✅ 开发脚本和工具
 
-### 🚧 进行中
-- 🚧 LLM 领域完善（Week 1）
-- 🚧 测试体系建设（Week 2）
+### 🎯 当前范围
+本 Starter 专注于 **Chat 领域**，展示 Vibe-Coding-Friendly DDD 架构的最佳实践。
 
-### 📅 计划中
-- 📅 Monitoring 领域（Week 4）
-- 📅 性能优化
-- 📅 监控和追踪
+所有扩展点（LLM 集成、真实数据库、事件总线等）都已明确标注，方便根据实际需求集成。
+
+### 🔌 扩展点（标注为 "Extension point"）
+- LLM 集成（OpenAI, Claude, etc.）
+- 数据库持久化（当前为演示 mock）
+- 事件总线（内存/Redis/Kafka）
+- JWT 认证
+- OpenTelemetry 追踪
+- 监控和告警
 
 ---
 

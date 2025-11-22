@@ -77,7 +77,8 @@ func NewAsynqClient(config *Config) (*AsynqClient, error) {
 			Concurrency: config.Concurrency,
 			Queues:      config.Queues,
 			ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
-				// TODO: 记录错误日志
+				// Extension point: 记录错误日志到监控系统
+				// logger.Error("task failed", "error", err, "type", task.Type())
 				fmt.Printf("Task %s failed: %v\n", task.Type(), err)
 			}),
 			RetryDelayFunc: func(n int, err error, task *asynq.Task) time.Duration {

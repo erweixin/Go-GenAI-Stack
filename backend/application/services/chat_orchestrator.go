@@ -10,11 +10,14 @@ import (
 )
 
 // ChatOrchestrator 聊天编排服务
-// 负责编排 Chat Domain 和 LLM Domain 之间的交互
+// 负责编排 Chat Domain 业务逻辑
+//
+// Extension point: 可以注入 LLM Service 来实现真实的 AI 对话
+// 参考: docs/extensions/llm-integration.md
 type ChatOrchestrator struct {
 	messageRepo      repository.MessageRepository
 	conversationRepo repository.ConversationRepository
-	// llmService      *llm.Service  // TODO: 添加 LLM Domain 依赖
+	// llmService      LLMService  // 可选：LLM 服务（OpenAI, Claude等）
 }
 
 // NewChatOrchestrator 创建聊天编排服务
@@ -45,14 +48,16 @@ type SendMessageResponse struct {
 	Model          string
 }
 
-// SendMessage 发送消息（跨领域编排）
+// SendMessage 发送消息
 //
-// 编排流程：
-// 1. Chat Domain: 获取或创建对话
-// 2. Chat Domain: 保存用户消息
-// 3. LLM Domain: 调用 LLM 生成回复（TODO）
-// 4. Chat Domain: 保存 AI 回复
-// 5. Monitoring Domain: 记录 token 使用（TODO）
+// 流程：
+// 1. 获取或创建对话
+// 2. 保存用户消息
+// 3. 生成 AI 回复（当前为 mock，可集成真实 LLM）
+// 4. 保存 AI 回复
+// 5. 更新对话时间
+//
+// Extension point: 在 Step 3 集成真实 LLM（OpenAI, Claude, etc.）
 func (o *ChatOrchestrator) SendMessage(ctx context.Context, req *SendMessageRequest) (*SendMessageResponse, error) {
 	// Step 1: 获取或创建对话
 	var conv *model.Conversation
@@ -79,14 +84,17 @@ func (o *ChatOrchestrator) SendMessage(ctx context.Context, req *SendMessageRequ
 		return nil, fmt.Errorf("save user message failed: %w", err)
 	}
 
-	// Step 3: 调用 LLM 生成回复
-	// TODO: 调用 LLM Domain
-	// llmResponse, err := o.llmService.Generate(ctx, &llm.Request{
-	//     Model: req.Model,
-	//     Messages: conv.GetHistory(),
-	// })
-
-	// 临时 mock 数据
+	// Step 3: 生成 AI 回复
+	// Extension point: 集成真实 LLM
+	// 示例集成代码:
+	//   response, err := o.llmService.Generate(ctx, &LLMRequest{
+	//       Model:    req.Model,
+	//       Messages: conv.GetHistory(),
+	//   })
+	//   assistantContent = response.Content
+	//   tokens = response.Tokens
+	//
+	// 当前使用 mock 数据用于演示
 	assistantContent := fmt.Sprintf("这是对您消息的回复：%s", req.Message)
 	tokens := model.EstimateTokens(req.Message) + model.EstimateTokens(assistantContent)
 
@@ -110,11 +118,14 @@ func (o *ChatOrchestrator) SendMessage(ctx context.Context, req *SendMessageRequ
 		fmt.Printf("update conversation failed: %v\n", err)
 	}
 
-	// TODO: Step 6: 发布领域事件
-	// eventBus.Publish("MessageReceived", assistantMessage)
+	// Extension point: 发布领域事件
+	// eventBus.Publish(ctx, &MessageReceivedEvent{
+	//     MessageID: assistantMessage.MessageID,
+	//     Content:   assistantMessage.Content,
+	// })
 
-	// TODO: Step 7: 记录监控指标
-	// monitoringService.RecordTokenUsage(req.Model, tokens)
+	// Extension point: 记录监控指标
+	// monitoringService.RecordTokenUsage(ctx, req.Model, tokens)
 
 	return &SendMessageResponse{
 		MessageID:      assistantMessage.MessageID,
@@ -173,7 +184,11 @@ func (o *ChatOrchestrator) DeleteConversation(ctx context.Context, conversationI
 		return fmt.Errorf("delete conversation failed: %w", err)
 	}
 
-	// TODO: 发布 ConversationDeleted 事件
+	// Extension point: 发布领域事件
+	// eventBus.Publish(ctx, &ConversationDeletedEvent{
+	//     ConversationID: conversationID,
+	//     UserID:         userID,
+	// })
 
 	return nil
 }

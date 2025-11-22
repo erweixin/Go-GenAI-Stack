@@ -11,8 +11,11 @@ import (
 // TracingMiddleware 分布式追踪中间件
 //
 // 为每个请求生成唯一的 Trace ID 和 Request ID
+//
+// Extension point: 集成 OpenTelemetry 实现分布式追踪
+// 参考：go.opentelemetry.io/otel
 type TracingMiddleware struct {
-	// TODO: 集成 OpenTelemetry
+	// tracer trace.Tracer // OpenTelemetry tracer（可选）
 }
 
 // NewTracingMiddleware 创建追踪中间件
@@ -52,13 +55,16 @@ func (m *TracingMiddleware) Handle() app.HandlerFunc {
 		duration := time.Since(startTime)
 		c.Header("X-Response-Time", duration.String())
 
-		// TODO: 发送追踪数据到 OpenTelemetry Collector
-		// span := trace.SpanFromContext(ctx)
-		// span.SetAttributes(
-		//     attribute.String("http.method", string(c.Method())),
-		//     attribute.String("http.url", string(c.Request.URI().RequestURI())),
-		//     attribute.Int("http.status_code", c.Response.StatusCode()),
-		// )
+		// Extension point: 发送追踪数据到 OpenTelemetry Collector
+		// 示例集成：
+		//   span := trace.SpanFromContext(ctx)
+		//   span.SetAttributes(
+		//       attribute.String("http.method", string(c.Method())),
+		//       attribute.String("http.url", string(c.Request.URI().RequestURI())),
+		//       attribute.Int("http.status_code", c.Response.StatusCode()),
+		//       attribute.Duration("http.duration", duration),
+		//   )
+		//   span.End()
 	}
 }
 

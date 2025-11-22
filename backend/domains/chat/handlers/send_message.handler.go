@@ -17,14 +17,16 @@ import (
 // 用例：SendMessage
 // 参考：domains/chat/usecases.yaml
 //
-// 步骤：
+// 流程：
 // 1. 验证输入
-// 2. 检查限流
+// 2. 检查限流（可选）
 // 3. 获取或创建对话
 // 4. 保存用户消息
-// 5. 调用 LLM 生成回复
+// 5. 生成 AI 回复（当前为 mock，可集成真实 LLM）
 // 6. 保存 AI 回复
 // 7. 返回响应
+//
+// Extension point: 在应用层使用 ChatOrchestrator 来处理跨领域逻辑
 func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 	var req dto.SendMessageRequest
 
@@ -37,8 +39,9 @@ func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Step 2: 检查限流（TODO: 实现 rate limiter）
-	// if err := checkRateLimit(req.UserID); err != nil {
+	// Step 2: 检查限流（可选）
+	// Extension point: 添加限流检查
+	// if err := rateLimiter.Check(ctx, req.UserID); err != nil {
 	//     c.JSON(consts.StatusTooManyRequests, map[string]interface{}{
 	//         "error": "RATE_LIMIT_EXCEEDED",
 	//         "message": "请求过于频繁，请稍后再试",
@@ -50,9 +53,9 @@ func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 	conversationID := req.ConversationID
 	if conversationID == "" {
 		conversationID = model.GenerateID("conv")
-		// TODO: 创建对话记录
-		// conversation := &model.Conversation{...}
-		// if err := repo.CreateConversation(conversation); err != nil {
+		// Extension point: 持久化对话记录
+		// conversation := model.NewConversation(req.UserID, "新对话")
+		// if err := conversationRepo.Create(ctx, conversation); err != nil {
 		//     handleError(c, err)
 		//     return
 		// }
@@ -66,14 +69,22 @@ func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 		Content:        req.Message,
 		Timestamp:      time.Now(),
 	}
-	// TODO: 保存到数据库
-	// if err := repo.SaveMessage(userMessage); err != nil {
+	// Extension point: 持久化用户消息
+	// if err := messageRepo.Save(ctx, userMessage); err != nil {
 	//     handleError(c, err)
 	//     return
 	// }
 
-	// Step 5: 调用 LLM 生成回复（TODO: 调用 LLM Domain）
-	// 目前返回 mock 数据
+	// Step 5: 生成 AI 回复
+	// Extension point: 集成真实 LLM
+	// response, err := llmService.Generate(ctx, &GenerateRequest{
+	//     Model:   req.Model,
+	//     Message: req.Message,
+	// })
+	// assistantContent = response.Content
+	// tokens = response.Tokens
+	//
+	// 当前使用 mock 数据用于演示功能
 	assistantContent := fmt.Sprintf("这是对您消息的回复：%s", req.Message)
 	tokens := len(req.Message) + len(assistantContent) // 简化的 token 计算
 
@@ -86,14 +97,17 @@ func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 		Tokens:         tokens,
 		Timestamp:      time.Now(),
 	}
-	// TODO: 保存到数据库
-	// if err := repo.SaveMessage(assistantMessage); err != nil {
+	// Extension point: 持久化 AI 回复
+	// if err := messageRepo.Save(ctx, assistantMessage); err != nil {
 	//     handleError(c, err)
 	//     return
 	// }
 
-	// Step 7: 发布事件（TODO: 实现事件总线）
-	// eventBus.Publish("MessageReceived", assistantMessage)
+	// Extension point: 发布领域事件
+	// eventBus.Publish(ctx, &MessageReceivedEvent{
+	//     MessageID: assistantMessage.MessageID,
+	//     Content:   assistantMessage.Content,
+	// })
 
 	// 返回响应
 	resp := &dto.SendMessageResponse{
