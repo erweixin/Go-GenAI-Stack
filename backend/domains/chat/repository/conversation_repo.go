@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/erweixin/go-genai-stack/domains/chat/model"
+	"github.com/erweixin/go-genai-stack/shared/errors"
 )
 
 // conversationRepository 对话仓储实现
@@ -13,9 +13,11 @@ type conversationRepository struct {
 	db *sql.DB
 }
 
-// NewConversationRepository 创建对话仓储
+// NewConversationRepository 创建对话仓储实例
 func NewConversationRepository(db *sql.DB) ConversationRepository {
-	return &conversationRepository{db: db}
+	return &conversationRepository{
+		db: db,
+	}
 }
 
 // Create 创建对话
@@ -24,6 +26,7 @@ func (r *conversationRepository) Create(ctx context.Context, conv *model.Convers
 		INSERT INTO conversations (id, user_id, title, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
 	`
+
 	_, err := r.db.ExecContext(ctx, query,
 		conv.ID,
 		conv.UserID,
@@ -31,9 +34,11 @@ func (r *conversationRepository) Create(ctx context.Context, conv *model.Convers
 		conv.CreatedAt,
 		conv.UpdatedAt,
 	)
+
 	if err != nil {
-		return fmt.Errorf("failed to create conversation: %w", err)
+		return errors.Wrap(err, "DB_ERROR", "创建对话失败", 500)
 	}
+
 	return nil
 }
 
@@ -42,10 +47,10 @@ func (r *conversationRepository) FindByID(ctx context.Context, conversationID st
 	query := `
 		SELECT id, user_id, title, created_at, updated_at
 		FROM conversations
-		WHERE id = $1
+		WHERE id = $1 AND deleted_at IS NULL
 	`
-	
-	var conv model.Conversation
+
+	conv := &model.Conversation{}
 	err := r.db.QueryRowContext(ctx, query, conversationID).Scan(
 		&conv.ID,
 		&conv.UserID,
@@ -53,40 +58,40 @@ func (r *conversationRepository) FindByID(ctx context.Context, conversationID st
 		&conv.CreatedAt,
 		&conv.UpdatedAt,
 	)
-	
+
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("conversation not found: %s", conversationID)
+		return nil, errors.New("CONVERSATION_NOT_FOUND", "对话不存在", 404)
 	}
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to find conversation: %w", err)
+		return nil, errors.Wrap(err, "DB_ERROR", "查询对话失败", 500)
 	}
-	
-	conv.Messages = make([]*model.Message, 0) // 消息需要单独加载
-	return &conv, nil
+
+	// 初始化消息列表
+	conv.Messages = make([]*model.Message, 0)
+
+	return conv, nil
 }
 
-// FindByUser 查询用户的对话列表
+// FindByUser 查询用户的对话列表（分页）
 func (r *conversationRepository) FindByUser(ctx context.Context, userID string, limit, offset int) ([]*model.Conversation, error) {
 	query := `
 		SELECT id, user_id, title, created_at, updated_at
 		FROM conversations
-		WHERE user_id = $1
+		WHERE user_id = $1 AND deleted_at IS NULL
 		ORDER BY updated_at DESC
+		LIMIT $2 OFFSET $3
 	`
-	
-	if limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
-	}
-	
-	rows, err := r.db.QueryContext(ctx, query, userID)
+
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query conversations: %w", err)
+		return nil, errors.Wrap(err, "DB_ERROR", "查询对话列表失败", 500)
 	}
 	defer rows.Close()
-	
-	var convs []*model.Conversation
+
+	conversations := make([]*model.Conversation, 0)
 	for rows.Next() {
-		var conv model.Conversation
+		conv := &model.Conversation{}
 		err := rows.Scan(
 			&conv.ID,
 			&conv.UserID,
@@ -94,55 +99,88 @@ func (r *conversationRepository) FindByUser(ctx context.Context, userID string, 
 			&conv.CreatedAt,
 			&conv.UpdatedAt,
 		)
+
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan conversation: %w", err)
+			return nil, errors.Wrap(err, "DB_ERROR", "扫描对话数据失败", 500)
 		}
+
+		// 初始化消息列表
 		conv.Messages = make([]*model.Message, 0)
-		convs = append(convs, &conv)
+
+		conversations = append(conversations, conv)
 	}
-	
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
+
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "DB_ERROR", "遍历对话数据失败", 500)
 	}
-	
-	return convs, nil
+
+	return conversations, nil
 }
 
-// Update 更新对话
+// Update 更新对话（如标题）
 func (r *conversationRepository) Update(ctx context.Context, conv *model.Conversation) error {
 	query := `
 		UPDATE conversations
 		SET title = $1, updated_at = $2
-		WHERE id = $3
+		WHERE id = $3 AND deleted_at IS NULL
 	`
-	_, err := r.db.ExecContext(ctx, query,
+
+	result, err := r.db.ExecContext(ctx, query,
 		conv.Title,
 		conv.UpdatedAt,
 		conv.ID,
 	)
+
 	if err != nil {
-		return fmt.Errorf("failed to update conversation: %w", err)
+		return errors.Wrap(err, "DB_ERROR", "更新对话失败", 500)
 	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "DB_ERROR", "获取更新结果失败", 500)
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("CONVERSATION_NOT_FOUND", "对话不存在", 404)
+	}
+
 	return nil
 }
 
-// Delete 删除对话
+// Delete 删除对话（软删除）
 func (r *conversationRepository) Delete(ctx context.Context, conversationID string) error {
-	query := `DELETE FROM conversations WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, conversationID)
+	query := `
+		UPDATE conversations
+		SET deleted_at = CURRENT_TIMESTAMP
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+
+	result, err := r.db.ExecContext(ctx, query, conversationID)
 	if err != nil {
-		return fmt.Errorf("failed to delete conversation: %w", err)
+		return errors.Wrap(err, "DB_ERROR", "删除对话失败", 500)
 	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "DB_ERROR", "获取删除结果失败", 500)
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("CONVERSATION_NOT_FOUND", "对话不存在", 404)
+	}
+
 	return nil
 }
 
 // CountByUser 统计用户的对话数量
 func (r *conversationRepository) CountByUser(ctx context.Context, userID string) (int64, error) {
-	query := `SELECT COUNT(*) FROM conversations WHERE user_id = $1`
+	query := `SELECT COUNT(*) FROM conversations WHERE user_id = $1 AND deleted_at IS NULL`
+
 	var count int64
 	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)
 	if err != nil {
-		return 0, fmt.Errorf("failed to count conversations: %w", err)
+		return 0, errors.Wrap(err, "DB_ERROR", "统计对话数量失败", 500)
 	}
+
 	return count, nil
 }

@@ -14,7 +14,7 @@ import (
 //
 // 用例：StreamMessage
 // 参考：domains/chat/usecases.yaml
-func StreamMessageHandler(ctx context.Context, c *app.RequestContext) {
+func (s *HandlerService) StreamMessageHandler(ctx context.Context, c *app.RequestContext) {
 	var req dto.StreamMessageRequest
 
 	if err := c.BindAndValidate(&req); err != nil {

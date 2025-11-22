@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/erweixin/go-genai-stack/domains/chat/model"
+	"github.com/erweixin/go-genai-stack/shared/errors"
 )
 
 // messageRepository 消息仓储实现
@@ -13,9 +13,11 @@ type messageRepository struct {
 	db *sql.DB
 }
 
-// NewMessageRepository 创建消息仓储
+// NewMessageRepository 创建消息仓储实例
 func NewMessageRepository(db *sql.DB) MessageRepository {
-	return &messageRepository{db: db}
+	return &messageRepository{
+		db: db,
+	}
 }
 
 // Save 保存消息
@@ -23,7 +25,12 @@ func (r *messageRepository) Save(ctx context.Context, message *model.Message) er
 	query := `
 		INSERT INTO messages (id, conversation_id, role, content, tokens, model, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (id) DO UPDATE SET
+			content = EXCLUDED.content,
+			tokens = EXCLUDED.tokens,
+			model = EXCLUDED.model
 	`
+
 	_, err := r.db.ExecContext(ctx, query,
 		message.ID,
 		message.ConversationID,
@@ -33,9 +40,11 @@ func (r *messageRepository) Save(ctx context.Context, message *model.Message) er
 		message.Model,
 		message.CreatedAt,
 	)
+
 	if err != nil {
-		return fmt.Errorf("failed to save message: %w", err)
+		return errors.Wrap(err, "DB_ERROR", "保存消息失败", 500)
 	}
+
 	return nil
 }
 
@@ -46,69 +55,81 @@ func (r *messageRepository) FindByID(ctx context.Context, messageID string) (*mo
 		FROM messages
 		WHERE id = $1
 	`
-	
-	var msg model.Message
+
+	message := &model.Message{}
+	var modelStr sql.NullString
+
 	err := r.db.QueryRowContext(ctx, query, messageID).Scan(
-		&msg.ID,
-		&msg.ConversationID,
-		&msg.Role,
-		&msg.Content,
-		&msg.Tokens,
-		&msg.Model,
-		&msg.CreatedAt,
+		&message.ID,
+		&message.ConversationID,
+		&message.Role,
+		&message.Content,
+		&message.Tokens,
+		&modelStr,
+		&message.CreatedAt,
 	)
-	
+
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("message not found: %s", messageID)
+		return nil, errors.New("MESSAGE_NOT_FOUND", "消息不存在", 404)
 	}
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to find message: %w", err)
+		return nil, errors.Wrap(err, "DB_ERROR", "查询消息失败", 500)
 	}
-	
-	return &msg, nil
+
+	if modelStr.Valid {
+		message.Model = modelStr.String
+	}
+
+	return message, nil
 }
 
-// FindByConversation 查询对话的所有消息
+// FindByConversation 查询对话的所有消息（分页）
 func (r *messageRepository) FindByConversation(ctx context.Context, conversationID string, limit, offset int) ([]*model.Message, error) {
 	query := `
 		SELECT id, conversation_id, role, content, tokens, model, created_at
 		FROM messages
 		WHERE conversation_id = $1
 		ORDER BY created_at ASC
+		LIMIT $2 OFFSET $3
 	`
-	
-	if limit > 0 {
-		query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
-	}
-	
-	rows, err := r.db.QueryContext(ctx, query, conversationID)
+
+	rows, err := r.db.QueryContext(ctx, query, conversationID, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query messages: %w", err)
+		return nil, errors.Wrap(err, "DB_ERROR", "查询消息列表失败", 500)
 	}
 	defer rows.Close()
-	
-	var messages []*model.Message
+
+	messages := make([]*model.Message, 0)
 	for rows.Next() {
-		var msg model.Message
+		message := &model.Message{}
+		var modelStr sql.NullString
+
 		err := rows.Scan(
-			&msg.ID,
-			&msg.ConversationID,
-			&msg.Role,
-			&msg.Content,
-			&msg.Tokens,
-			&msg.Model,
-			&msg.CreatedAt,
+			&message.ID,
+			&message.ConversationID,
+			&message.Role,
+			&message.Content,
+			&message.Tokens,
+			&modelStr,
+			&message.CreatedAt,
 		)
+
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan message: %w", err)
+			return nil, errors.Wrap(err, "DB_ERROR", "扫描消息数据失败", 500)
 		}
-		messages = append(messages, &msg)
+
+		if modelStr.Valid {
+			message.Model = modelStr.String
+		}
+
+		messages = append(messages, message)
 	}
-	
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
+
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "DB_ERROR", "遍历消息数据失败", 500)
 	}
-	
+
 	return messages, nil
 }
 
@@ -121,60 +142,81 @@ func (r *messageRepository) FindRecent(ctx context.Context, conversationID strin
 		ORDER BY created_at DESC
 		LIMIT $2
 	`
-	
+
 	rows, err := r.db.QueryContext(ctx, query, conversationID, n)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query recent messages: %w", err)
+		return nil, errors.Wrap(err, "DB_ERROR", "查询最近消息失败", 500)
 	}
 	defer rows.Close()
-	
-	var messages []*model.Message
+
+	messages := make([]*model.Message, 0)
 	for rows.Next() {
-		var msg model.Message
+		message := &model.Message{}
+		var modelStr sql.NullString
+
 		err := rows.Scan(
-			&msg.ID,
-			&msg.ConversationID,
-			&msg.Role,
-			&msg.Content,
-			&msg.Tokens,
-			&msg.Model,
-			&msg.CreatedAt,
+			&message.ID,
+			&message.ConversationID,
+			&message.Role,
+			&message.Content,
+			&message.Tokens,
+			&modelStr,
+			&message.CreatedAt,
 		)
+
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan message: %w", err)
+			return nil, errors.Wrap(err, "DB_ERROR", "扫描消息数据失败", 500)
 		}
-		messages = append(messages, &msg)
+
+		if modelStr.Valid {
+			message.Model = modelStr.String
+		}
+
+		messages = append(messages, message)
 	}
-	
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
+
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "DB_ERROR", "遍历消息数据失败", 500)
 	}
-	
+
 	// 反转顺序（从旧到新）
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
-	
+
 	return messages, nil
 }
 
 // Count 统计对话的消息数量
 func (r *messageRepository) Count(ctx context.Context, conversationID string) (int64, error) {
 	query := `SELECT COUNT(*) FROM messages WHERE conversation_id = $1`
+
 	var count int64
 	err := r.db.QueryRowContext(ctx, query, conversationID).Scan(&count)
 	if err != nil {
-		return 0, fmt.Errorf("failed to count messages: %w", err)
+		return 0, errors.Wrap(err, "DB_ERROR", "统计消息数量失败", 500)
 	}
+
 	return count, nil
 }
 
 // Delete 删除消息
 func (r *messageRepository) Delete(ctx context.Context, messageID string) error {
 	query := `DELETE FROM messages WHERE id = $1`
-	_, err := r.db.ExecContext(ctx, query, messageID)
+
+	result, err := r.db.ExecContext(ctx, query, messageID)
 	if err != nil {
-		return fmt.Errorf("failed to delete message: %w", err)
+		return errors.Wrap(err, "DB_ERROR", "删除消息失败", 500)
 	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "DB_ERROR", "获取删除结果失败", 500)
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("MESSAGE_NOT_FOUND", "消息不存在", 404)
+	}
+
 	return nil
 }

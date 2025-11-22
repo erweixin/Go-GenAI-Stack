@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
@@ -27,7 +26,7 @@ import (
 // 7. 返回响应
 //
 // Extension point: 在应用层使用 ChatOrchestrator 来处理跨领域逻辑
-func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
+func (s *HandlerService) SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 	var req dto.SendMessageRequest
 
 	// Step 1: 验证输入
@@ -52,28 +51,20 @@ func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 	// Step 3: 获取或创建对话
 	conversationID := req.ConversationID
 	if conversationID == "" {
-		conversationID = model.GenerateID("conv")
-		// Extension point: 持久化对话记录
-		// conversation := model.NewConversation(req.UserID, "新对话")
-		// if err := conversationRepo.Create(ctx, conversation); err != nil {
-		//     handleError(c, err)
-		//     return
-		// }
+		conversation := model.NewConversation(req.UserID, "新对话")
+		conversationID = conversation.ID
+		if err := s.conversationRepo.Create(ctx, conversation); err != nil {
+			handleError(c, err)
+			return
+		}
 	}
 
 	// Step 4: 保存用户消息
-	userMessage := &model.Message{
-		MessageID:      model.GenerateID("msg"),
-		ConversationID: conversationID,
-		Role:           "user",
-		Content:        req.Message,
-		Timestamp:      time.Now(),
+	userMessage := model.NewUserMessage(conversationID, req.Message)
+	if err := s.messageRepo.Save(ctx, userMessage); err != nil {
+		handleError(c, err)
+		return
 	}
-	// Extension point: 持久化用户消息
-	// if err := messageRepo.Save(ctx, userMessage); err != nil {
-	//     handleError(c, err)
-	//     return
-	// }
 
 	// Step 5: 生成 AI 回复
 	// Extension point: 集成真实 LLM
@@ -86,22 +77,15 @@ func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 	//
 	// 当前使用 mock 数据用于演示功能
 	assistantContent := fmt.Sprintf("这是对您消息的回复：%s", req.Message)
-	tokens := len(req.Message) + len(assistantContent) // 简化的 token 计算
+	tokens := model.EstimateTokens(req.Message) + model.EstimateTokens(assistantContent)
 
 	// Step 6: 保存 AI 回复
-	assistantMessage := &model.Message{
-		MessageID:      model.GenerateID("msg"),
-		ConversationID: conversationID,
-		Role:           "assistant",
-		Content:        assistantContent,
-		Tokens:         tokens,
-		Timestamp:      time.Now(),
+	modelName := getModel(req.Model)
+	assistantMessage := model.NewAssistantMessage(conversationID, assistantContent, modelName, tokens)
+	if err := s.messageRepo.Save(ctx, assistantMessage); err != nil {
+		handleError(c, err)
+		return
 	}
-	// Extension point: 持久化 AI 回复
-	// if err := messageRepo.Save(ctx, assistantMessage); err != nil {
-	//     handleError(c, err)
-	//     return
-	// }
 
 	// Extension point: 发布领域事件
 	// eventBus.Publish(ctx, &MessageReceivedEvent{
@@ -111,11 +95,11 @@ func SendMessageHandler(ctx context.Context, c *app.RequestContext) {
 
 	// 返回响应
 	resp := &dto.SendMessageResponse{
-		MessageID:      assistantMessage.MessageID,
+		MessageID:      assistantMessage.ID,
 		Content:        assistantMessage.Content,
 		Tokens:         tokens,
 		ConversationID: conversationID,
-		Model:          getModel(req.Model),
+		Model:          modelName,
 	}
 
 	c.JSON(consts.StatusOK, resp)
@@ -131,13 +115,12 @@ func getModel(requestedModel string) string {
 
 // handleError 统一错误处理
 func handleError(c *app.RequestContext, err error) {
-	switch e := err.(type) {
-	case *errors.DomainError:
-		c.JSON(e.HTTPStatus, map[string]interface{}{
-			"error":   e.Code,
-			"message": e.Message,
+	if domainErr, ok := err.(*errors.DomainError); ok {
+		c.JSON(domainErr.HTTPStatus, map[string]interface{}{
+			"error":   domainErr.Code,
+			"message": domainErr.Message,
 		})
-	default:
+	} else {
 		c.JSON(consts.StatusInternalServerError, map[string]interface{}{
 			"error":   "INTERNAL_ERROR",
 			"message": "内部服务器错误",

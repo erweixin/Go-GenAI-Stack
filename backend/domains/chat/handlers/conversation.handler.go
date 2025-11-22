@@ -11,7 +11,7 @@ import (
 )
 
 // CreateConversationHandler 创建新对话
-func CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
+func (s *HandlerService) CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
 	var req dto.CreateConversationRequest
 
 	if err := c.BindAndValidate(&req); err != nil {
@@ -22,14 +22,14 @@ func CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
 		return
 	}
 
-	// Extension point: 持久化对话
-	// if err := conversationRepo.Create(ctx, conversation); err != nil {
-	//     handleError(c, err)
-	//     return
-	// }
 	conversation := model.NewConversation(req.UserID, req.Title)
 	if conversation.Title == "" {
 		conversation.Title = "新对话"
+	}
+
+	if err := s.conversationRepo.Create(ctx, conversation); err != nil {
+		handleError(c, err)
+		return
 	}
 
 	resp := &dto.CreateConversationResponse{
@@ -42,92 +42,125 @@ func CreateConversationHandler(ctx context.Context, c *app.RequestContext) {
 }
 
 // GetHistoryHandler 获取对话历史
-func GetHistoryHandler(ctx context.Context, c *app.RequestContext) {
+func (s *HandlerService) GetHistoryHandler(ctx context.Context, c *app.RequestContext) {
 	conversationID := c.Param("id")
 
-	// Extension point: 从数据库查询历史消息
-	// messages, err := messageRepo.FindByConversation(ctx, conversationID, limit, offset)
-	// if err != nil {
-	//     handleError(c, err)
-	//     return
-	// }
-	//
-	// 当前返回 mock 数据用于演示
+	// 查询对话信息
+	conversation, err := s.conversationRepo.FindByID(ctx, conversationID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// 查询消息列表（默认获取最近 50 条）
+	limit := 50
+	offset := 0
+	messages, err := s.messageRepo.FindByConversation(ctx, conversationID, limit, offset)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// 统计总消息数
+	totalCount, err := s.messageRepo.Count(ctx, conversationID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// 转换为 DTO
+	dtoMessages := make([]dto.Message, len(messages))
+	for i, msg := range messages {
+		dtoMessages[i] = dto.Message{
+			MessageID: msg.ID,
+			Role:      msg.Role,
+			Content:   msg.Content,
+			Tokens:    msg.Tokens,
+			Timestamp: msg.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
 	resp := &dto.GetHistoryResponse{
 		ConversationID: conversationID,
-		Title:          "示例对话",
-		Messages: []dto.Message{
-			{
-				MessageID: "msg-001",
-				Role:      "user",
-				Content:   "你好",
-				Tokens:    2,
-				Timestamp: time.Now().Add(-5 * time.Minute).Format(time.RFC3339),
-			},
-			{
-				MessageID: "msg-002",
-				Role:      "assistant",
-				Content:   "你好！有什么我可以帮助您的吗？",
-				Tokens:    10,
-				Timestamp: time.Now().Add(-4 * time.Minute).Format(time.RFC3339),
-			},
-		},
-		TotalCount: 2,
-		HasMore:    false,
+		Title:          conversation.Title,
+		Messages:       dtoMessages,
+		TotalCount:     int(totalCount),
+		HasMore:        int64(offset+limit) < totalCount,
 	}
 
 	c.JSON(consts.StatusOK, resp)
 }
 
 // ListConversationsHandler 列出对话
-func ListConversationsHandler(ctx context.Context, c *app.RequestContext) {
+func (s *HandlerService) ListConversationsHandler(ctx context.Context, c *app.RequestContext) {
 	// Extension point: 从请求中获取 user_id（通过认证中间件）
-	// userID := c.GetString("user_id")
+	// 暂时从查询参数获取
+	userID := c.Query("user_id")
+	if userID == "" {
+		c.JSON(consts.StatusBadRequest, map[string]interface{}{
+			"error":   "INVALID_REQUEST",
+			"message": "缺少 user_id 参数",
+		})
+		return
+	}
 
-	// Extension point: 从数据库查询用户的对话列表
-	// conversations, err := conversationRepo.FindByUser(ctx, userID, limit, offset)
-	// if err != nil {
-	//     handleError(c, err)
-	//     return
-	// }
-	//
-	// 当前返回 mock 数据用于演示
+	// 查询用户的对话列表（默认获取最近 20 条）
+	limit := 20
+	offset := 0
+	conversations, err := s.conversationRepo.FindByUser(ctx, userID, limit, offset)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// 统计总对话数
+	totalCount, err := s.conversationRepo.CountByUser(ctx, userID)
+	if err != nil {
+		handleError(c, err)
+		return
+	}
+
+	// 转换为 DTO（这里简化处理，实际应该查询每个对话的最后一条消息）
+	dtoConversations := make([]dto.ConversationSummary, len(conversations))
+	for i, conv := range conversations {
+		dtoConversations[i] = dto.ConversationSummary{
+			ConversationID: conv.ID,
+			Title:          conv.Title,
+			LastMessage:    "", // Extension point: 查询最后一条消息
+			LastMessageAt:  conv.UpdatedAt.Format(time.RFC3339),
+			MessageCount:   0, // Extension point: 查询消息数量
+			TotalTokens:    0, // Extension point: 查询总 token 数
+		}
+	}
+
 	resp := &dto.ListConversationsResponse{
-		Conversations: []dto.ConversationSummary{
-			{
-				ConversationID: "conv-001",
-				Title:          "关于 AI 的讨论",
-				LastMessage:    "谢谢你的解答",
-				LastMessageAt:  time.Now().Add(-1 * time.Hour).Format(time.RFC3339),
-				MessageCount:   10,
-				TotalTokens:    1500,
-			},
-			{
-				ConversationID: "conv-002",
-				Title:          "编程问题",
-				LastMessage:    "这样就可以了",
-				LastMessageAt:  time.Now().Add(-2 * time.Hour).Format(time.RFC3339),
-				MessageCount:   5,
-				TotalTokens:    800,
-			},
-		},
-		TotalCount: 2,
-		HasMore:    false,
+		Conversations: dtoConversations,
+		TotalCount:    int(totalCount),
+		HasMore:       int64(offset+limit) < totalCount,
 	}
 
 	c.JSON(consts.StatusOK, resp)
 }
 
 // DeleteConversationHandler 删除对话
-func DeleteConversationHandler(ctx context.Context, c *app.RequestContext) {
-	// conversationID := c.Param("id")
+func (s *HandlerService) DeleteConversationHandler(ctx context.Context, c *app.RequestContext) {
+	conversationID := c.Param("id")
 
-	// Extension point: 验证所有权和删除
+	// Extension point: 验证所有权（通过认证中间件）
 	// userID := c.GetString("user_id")
-	// if err := chatOrchestrator.DeleteConversation(ctx, conversationID, userID); err != nil {
-	//     handleError(c, err)
+	// conversation, err := s.conversationRepo.FindByID(ctx, conversationID)
+	// if conversation.UserID != userID {
+	//     c.JSON(consts.StatusForbidden, map[string]interface{}{
+	//         "error": "FORBIDDEN",
+	//         "message": "无权访问此对话",
+	//     })
 	//     return
 	// }
+
+	if err := s.conversationRepo.Delete(ctx, conversationID); err != nil {
+		handleError(c, err)
+		return
+	}
 
 	resp := &dto.DeleteConversationResponse{
 		Success:   true,

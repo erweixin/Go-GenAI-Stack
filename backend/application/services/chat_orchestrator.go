@@ -78,7 +78,7 @@ func (o *ChatOrchestrator) SendMessage(ctx context.Context, req *SendMessageRequ
 	}
 
 	// Step 2: 保存用户消息
-	userMessage := model.NewUserMessage(conv.ConversationID, req.Message)
+	userMessage := model.NewUserMessage(conv.ID, req.Message)
 	err = o.messageRepo.Save(ctx, userMessage)
 	if err != nil {
 		return nil, fmt.Errorf("save user message failed: %w", err)
@@ -100,7 +100,7 @@ func (o *ChatOrchestrator) SendMessage(ctx context.Context, req *SendMessageRequ
 
 	// Step 4: 保存 AI 回复
 	assistantMessage := model.NewAssistantMessage(
-		conv.ConversationID,
+		conv.ID,
 		assistantContent,
 		getModelOrDefault(req.Model),
 		tokens,
@@ -128,10 +128,10 @@ func (o *ChatOrchestrator) SendMessage(ctx context.Context, req *SendMessageRequ
 	// monitoringService.RecordTokenUsage(ctx, req.Model, tokens)
 
 	return &SendMessageResponse{
-		MessageID:      assistantMessage.MessageID,
+		MessageID:      assistantMessage.ID,
 		Content:        assistantMessage.Content,
 		Tokens:         tokens,
-		ConversationID: conv.ConversationID,
+		ConversationID: conv.ID,
 		Model:          assistantMessage.Model,
 	}, nil
 }
@@ -172,7 +172,7 @@ func (o *ChatOrchestrator) DeleteConversation(ctx context.Context, conversationI
 	// 删除所有消息
 	messages, _ := o.messageRepo.FindByConversation(ctx, conversationID, -1, 0)
 	for _, msg := range messages {
-		err = o.messageRepo.Delete(ctx, msg.MessageID)
+		err = o.messageRepo.Delete(ctx, msg.ID)
 		if err != nil {
 			fmt.Printf("delete message failed: %v\n", err)
 		}
