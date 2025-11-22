@@ -84,47 +84,6 @@ func (l *Loader) setupEnvBindings() {
 
 	// 替换分隔符（. -> _）
 	l.viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	// 显式绑定所有配置键（关键！）
-	l.bindAllEnvKeys()
-}
-
-// bindAllEnvKeys 显式绑定所有配置键到环境变量
-//
-// 虽然设置了 AutomaticEnv()，但 viper 仍然需要知道
-// 哪些配置键应该从环境变量读取
-func (l *Loader) bindAllEnvKeys() {
-	// 定义所有需要绑定的配置键
-	keys := []string{
-		// Server
-		"server.host", "server.port", "server.read_timeout",
-		"server.write_timeout", "server.idle_timeout", "server.max_body_size",
-
-		// Database
-		"database.host", "database.port", "database.user", "database.password",
-		"database.database", "database.ssl_mode", "database.max_open_conns",
-		"database.max_idle_conns", "database.conn_max_lifetime", "database.conn_max_idle_time",
-
-		// Redis
-		"redis.host", "redis.port", "redis.password", "redis.db",
-		"redis.pool_size", "redis.min_idle_conns", "redis.max_retries",
-		"redis.dial_timeout", "redis.read_timeout", "redis.write_timeout",
-
-		// LLM
-		"llm.default_model", "llm.default_provider", "llm.timeout", "llm.max_retries",
-
-		// Logging
-		"logging.level", "logging.format", "logging.output", "logging.output_path",
-
-		// Monitoring
-		"monitoring.enabled", "monitoring.sample_rate",
-		"monitoring.trace_retention", "monitoring.metric_interval",
-	}
-
-	// 批量绑定
-	for _, key := range keys {
-		_ = l.viper.BindEnv(key)
-	}
 }
 
 // setDefaults 设置默认值
