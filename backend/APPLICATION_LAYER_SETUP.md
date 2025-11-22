@@ -259,7 +259,7 @@ domains/chat/
 // domains/chat/http/handler.go
 package http
 
-import "github.com/your-org/go-genai-stack/application/services"
+import "github.com/erweixin/go-genai-stack/application/services"
 
 type Handler struct {
     orchestrator *services.ChatOrchestrator
@@ -354,9 +354,9 @@ go run cmd/server/main.go
 ```go
 // cmd/server/main.go
 import (
-    "github.com/your-org/go-genai-stack/application/services"
-    "github.com/your-org/go-genai-stack/domains/chat/repository"
-    "github.com/your-org/go-genai-stack/infra/database"
+    "github.com/erweixin/go-genai-stack/application/services"
+    "github.com/erweixin/go-genai-stack/domains/chat/repository"
+    "github.com/erweixin/go-genai-stack/infra/database"
 )
 
 func main() {

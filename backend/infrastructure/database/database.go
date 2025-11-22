@@ -7,9 +7,13 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	
-	chatpo "github.com/your-org/go-genai-stack/domains/chat/internal/po"
+
+	chatpo "github.com/erweixin/go-genai-stack/backend/domains/chat/internal/po"
 )
+
+// 注意：本文件为兼容性保留
+// 推荐使用新的 infrastructure/persistence/postgres 包
+// 该包提供了更完善的连接管理、事务处理等功能
 
 // Config 数据库配置
 type Config struct {
@@ -44,15 +48,15 @@ func NewDB(config *Config) (*gorm.DB, error) {
 		config.DBName,
 		config.SSLMode,
 	)
-	
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect database: %w", err)
 	}
-	
+
 	log.Println("✅ Database connected successfully")
 	return db, nil
 }
@@ -60,17 +64,17 @@ func NewDB(config *Config) (*gorm.DB, error) {
 // AutoMigrate 自动迁移表结构
 func AutoMigrate(db *gorm.DB) error {
 	log.Println("🔄 Running database migrations...")
-	
+
 	// Chat Domain 表
 	err := db.AutoMigrate(
 		&chatpo.ConversationPO{},
 		&chatpo.MessagePO{},
 	)
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to migrate: %w", err)
 	}
-	
+
 	log.Println("✅ Database migrations completed")
 	return nil
 }
@@ -82,13 +86,12 @@ func InitDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 自动迁移表结构
 	err = AutoMigrate(db)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return db, nil
 }
-

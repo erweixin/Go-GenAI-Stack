@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/your-org/go-genai-stack/domains/chat/internal/po"
-	"github.com/your-org/go-genai-stack/domains/chat/model"
+	"github.com/erweixin/go-genai-stack/domains/chat/internal/po"
+	"github.com/erweixin/go-genai-stack/domains/chat/model"
 	"gorm.io/gorm"
 )
 

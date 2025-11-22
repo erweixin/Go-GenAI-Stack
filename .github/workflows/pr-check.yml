@@ -1,0 +1,143 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-metadata:
+    name: Check PR Metadata
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+          requireScope: false
+      
+      - name: Check PR size
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: 'size/XS'
+          xs_max_size: 10
+          s_label: 'size/S'
+          s_max_size: 100
+          m_label: 'size/M'
+          m_max_size: 500
+          l_label: 'size/L'
+          l_max_size: 1000
+          xl_label: 'size/XL'
+  
+  ai-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check Vibe-Coding-Friendly compliance
+        run: |
+          echo "🤖 Checking Vibe-Coding-Friendly DDD compliance..."
+          
+          # 检查是否修改了领域文件
+          changed_files=$(git diff --name-only origin/main...HEAD)
+          
+          for file in $changed_files; do
+            if [[ $file == backend/domains/*/handlers/*.go ]]; then
+              domain=$(echo $file | cut -d'/' -f3)
+              echo "Checking handler in domain: $domain"
+              
+              # 检查 handler 是否有对应的 usecases.yaml 引用
+              handler_name=$(basename $file .handler.go)
+              
+              if [ -f "backend/domains/$domain/usecases.yaml" ]; then
+                if ! grep -q "$handler_name" "backend/domains/$domain/usecases.yaml"; then
+                  echo "⚠️  Warning: Handler $file not referenced in usecases.yaml"
+                fi
+              else
+                echo "❌ Error: Missing usecases.yaml for domain $domain"
+                exit 1
+              fi
+            fi
+          done
+          
+          echo "✅ Compliance check passed"
+  
+  test-coverage:
+    name: Test Coverage Check
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_genai_stack_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: backend/go.sum
+      
+      - name: Run tests with coverage
+        working-directory: ./backend
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_NAME: go_genai_stack_test
+          REDIS_ADDR: localhost:6379
+        run: |
+          go test -v -race -coverprofile=coverage.out ./...
+          coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Coverage: ${coverage}%"
+          
+          # 检查覆盖率是否达标（80%）
+          if (( $(echo "$coverage < 80.0" | bc -l) )); then
+            echo "❌ Coverage is below 80%: ${coverage}%"
+            exit 1
+          else
+            echo "✅ Coverage is good: ${coverage}%"
+          fi
+

@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache-dependency-path: backend/go.sum
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: go mod download
+      
+      - name: Build
+        working-directory: ./backend
+        run: |
+          go build -v -o bin/server ./cmd/server/main.go
+      
+      - name: Verify binary
+        working-directory: ./backend
+        run: |
+          ls -lh bin/server
+          file bin/server
+      
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-genai-stack-server
+          path: backend/bin/server
+          retention-days: 7
+

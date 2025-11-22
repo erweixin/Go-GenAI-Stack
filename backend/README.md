@@ -302,7 +302,71 @@ domains/chat/
 - ✅ 手写更清晰（~100 行/表）
 - ✅ AI 容易理解和修改
 
-## 🚧 待办事项
+## 📈 架构优化计划
+
+当前架构已经初步实现 Vibe-Coding-Friendly DDD，但还有提升空间。我们制定了一个为期 5 周的优化计划：
+
+### 📚 优化文档
+- **[架构优化计划](../docs/optimization-plan.md)** - 详细的优化计划（1500+ 行）
+  - 包含完整的任务说明、代码示例、设计思路
+  - 适合：项目负责人、架构师深入阅读
+
+- **[优化任务清单](../docs/optimization-checklist.md)** - 简化的任务清单（300 行）
+  - 快速追踪进度，方便日常使用
+  - 适合：开发人员每日更新
+
+- **[快速上手指南](../docs/optimization-quickstart.md)** - 5 分钟了解如何开始
+  - 新成员快速上手
+  - 常见问题解答
+
+### 🎯 优化重点
+
+**P0 - 最高优先级（前 2 周）**
+- [ ] 完善 LLM 领域（缺少 usecases.yaml 等 5 个文件）⭐ 最关键
+- [ ] 为所有领域添加 tests/ 目录（当前完全缺失）
+- [ ] 创建事件总线（domains/shared/events/）
+
+**P1 - 高优先级（第 3-4 周）**
+- [ ] 重构基础设施层（infra/ → infrastructure/）
+- [ ] 创建 Monitoring 领域（监控、追踪、成本统计）
+
+**P2 - 中优先级（第 5 周）**
+- [ ] 添加 pkg/ 可复用工具包
+- [ ] 实现 ai_codegen.sh 脚本（自动生成代码）
+- [ ] 添加数据库迁移管理
+
+### 🚀 快速开始优化
+
+```bash
+# 1. 查看优化计划
+cat ../docs/optimization-quickstart.md
+
+# 2. 第一个任务：创建 LLM 领域的 glossary.md
+vim domains/llm/glossary.md
+# 参考 domains/chat/glossary.md
+
+# 3. 验证进度
+./scripts/validate_structure.sh  # TODO: 第 5 周实现
+```
+
+### 📊 当前状态
+
+**✅ 已完成**
+- Chat 领域完整（6 个必需文件齐全）
+- 基本的 HTTP 路由和 handlers
+- 应用层编排
+- Repository 模式
+
+**❌ 待完善**
+- LLM 领域缺少 usecases.yaml（最严重）
+- 所有领域缺少 tests/ 目录
+- 缺少事件总线
+- 缺少 Monitoring 领域
+- 缺少 AI 代码生成脚本
+
+**预计完成时间**：2025-12-27
+
+## 🚧 原有待办事项
 
 - [x] 创建应用层（Application Layer）
 - [x] 创建仓储层（Repository Pattern）
