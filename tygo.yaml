@@ -1,29 +1,33 @@
 # tygo 配置文件
 # 用于将 Go Structs 自动转换为 TypeScript 接口
+# 适用于 Monorepo 架构（backend + web + mobile）
 
 packages:
   # 聊天领域
   - path: "backend/domains/chat/http/dto"
-    output_path: "frontend/src/types/domain/chat.ts"
+    output_path: "web/src/types/domains/chat.ts"
     type_mappings:
       "time.Time": "string"
       "github.com/shopspring/decimal.Decimal": "string"
 
   # LLM 领域
   - path: "backend/domains/llm/http/dto"
-    output_path: "frontend/src/types/domain/llm.ts"
+    output_path: "web/src/types/domains/llm.ts"
     type_mappings:
       "time.Time": "string"
 
   # 监控领域
   - path: "backend/domains/monitoring/http/dto"
-    output_path: "frontend/src/types/domain/monitoring.ts"
+    output_path: "web/src/types/domains/monitoring.ts"
     type_mappings:
       "time.Time": "string"
 
   # 共享类型
   - path: "backend/domains/shared/types"
-    output_path: "frontend/src/types/shared.ts"
+    output_path: "web/src/types/shared.ts"
     type_mappings:
       "time.Time": "string"
+
+# 注意：移动端（mobile）使用符号链接共享 web 的类型定义
+# cd mobile/src/types && ln -s ../../../web/src/types/domains ./domains
 

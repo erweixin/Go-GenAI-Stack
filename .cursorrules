@@ -3,10 +3,24 @@
 
 ## 项目架构
 
-本项目采用 **Vibe Coding Friendly DDD** 架构：
+本项目采用 **Monorepo + Vibe Coding Friendly DDD** 架构：
+
+### 目录结构
+- `backend/`  - 后端（Go + Hertz + Eino + DDD）
+- `web/`      - Web 前端（React + TypeScript + shadcn/ui）
+- `mobile/`   - 移动端（React Native + TypeScript）
+- `shared/`   - 跨项目共享代码
+- `scripts/`  - 项目级脚本
+
+### 后端架构
 - 领域优先（Domain-First）：按业务领域垂直切分（domains/chat/, domains/llm/）
 - 自包含（Self-contained）：每个领域包含 model + handlers + http + tests
 - 显式知识（Explicit Knowledge）：每个领域有 6 个必需文件（README.md, glossary.md, rules.md, events.md, usecases.yaml, ai-metadata.json）
+
+### 前端架构
+- 功能优先（Feature-First）：按功能组织（features/chat/, features/llm/）
+- 领域对齐：前端功能对齐后端领域（web/features/chat ← backend/domains/chat）
+- 跨端共享：Web 和 Mobile 共享类型定义和部分逻辑
 
 ## 代码生成规则
 
@@ -30,7 +44,7 @@
    - 覆盖所有 errors 列表中的错误场景
 6. 更新 README.md 添加用例说明
 
-### 2. 前后端类型同步
+### 2. 前后端类型同步（Monorepo）
 
 当用户要求 "同步类型" 或 "sync types {domain}" 时：
 
@@ -45,17 +59,19 @@
    - `map[string]T` → `Record<string, T>`
    - `struct` → `interface`
    - `*T` (指针) → `T | undefined` 或 `T?` (optional)
-4. 生成/更新 `frontend/src/types/domain/{domain}.ts`
+4. 生成/更新 `web/src/types/domains/{domain}.ts`
 5. 添加文件头注释：
    ```typescript
    // Code generated from Go structs. DO NOT EDIT manually.
    // Source: backend/domains/{domain}/http/dto
    // Generated: {timestamp}
    ```
+6. **注意**：Mobile 通过符号链接自动共享 Web 的类型定义
 
 **快捷用法**：
-- 用户: "sync types chat" → 同步聊天领域类型
+- 用户: "sync types chat" → 同步聊天领域类型（Web + Mobile）
 - 用户: "sync types all" → 同步所有领域类型
+- 用户: "setup mobile types" → 设置 Mobile 类型符号链接
 
 ### 3. HTTP 接口设计
 
