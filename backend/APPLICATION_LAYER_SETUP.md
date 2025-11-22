@@ -38,24 +38,24 @@
 - ✅ `domains/chat/repository/conversation_repo.go` - 对话仓储实现
   - Create, FindByID, FindByUser, Update, Delete, CountByUser
 
-### 3. Persistent Objects（持久化对象）
+### 3. 数据库访问（Database/SQL）
 
-**PO 定义**（数据库映射）：
-- ✅ `domains/chat/internal/po/message_po.go` - 消息 PO
-  - GORM 标签定义
-  - 表名：`messages`
-  
-- ✅ `domains/chat/internal/po/conversation_po.go` - 对话 PO
-  - GORM 标签定义
-  - 表名：`conversations`
+**Repository 直接使用领域模型**：
+- ✅ Repository 实现使用 `*sql.DB` 和原生 SQL
+- ✅ 不使用 ORM（已删除 GORM）
+- ✅ 不使用 PO 对象（直接使用领域模型）
+- ✅ Schema 管理使用 Atlas（`infrastructure/database/schema/schema.sql`）
 
 ### 4. Infrastructure（基础设施）
 
-**数据库初始化**：
-- ✅ `infra/database/database.go`
-  - 数据库连接
-  - 自动迁移
-  - 配置管理
+**数据库连接**：
+- ✅ `infrastructure/persistence/postgres/connection.go`
+  - 数据库连接管理
+  - 连接池配置
+  - 健康检查
+- ✅ `infrastructure/persistence/postgres/transaction.go`
+  - 事务管理
+  - 自动 Commit/Rollback
 
 **依赖更新**：
 - ✅ `go.mod` - 添加 GORM 依赖
@@ -124,9 +124,7 @@ Application Service (application/services/chat_orchestrator.go)
     └─→ Monitoring Domain (TODO: 记录指标)
     ↓
 Repository (domains/chat/repository/)
-    ↓ 转换
-PO (domains/chat/internal/po/)
-    ↓ GORM
+    ↓ 使用 database/sql + 原生 SQL
 Database (PostgreSQL)
 ```
 
@@ -150,13 +148,8 @@ Database (PostgreSQL)
 └─────────────────────────────────────┘
               ↓
 ┌─────────────────────────────────────┐
-│  Repository Implementation ★        │  持久化实现
-│  domains/*/repository/*_repo.go     │
-└─────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────┐
-│  Persistent Object ★                │  数据库映射
-│  domains/*/internal/po/             │
+│  Repository Implementation ★        │  使用 database/sql
+│  domains/*/repository/*_repo.go     │  + 原生 SQL 查询
 └─────────────────────────────────────┘
               ↓
 ┌─────────────────────────────────────┐

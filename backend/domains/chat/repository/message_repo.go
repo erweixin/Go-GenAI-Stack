@@ -2,138 +2,179 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
-	"github.com/erweixin/go-genai-stack/domains/chat/internal/po"
 	"github.com/erweixin/go-genai-stack/domains/chat/model"
-	"gorm.io/gorm"
 )
 
 // messageRepository 消息仓储实现
 type messageRepository struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 // NewMessageRepository 创建消息仓储
-func NewMessageRepository(db *gorm.DB) MessageRepository {
+func NewMessageRepository(db *sql.DB) MessageRepository {
 	return &messageRepository{db: db}
 }
 
 // Save 保存消息
 func (r *messageRepository) Save(ctx context.Context, message *model.Message) error {
-	messagePO := r.toMessagePO(message)
-	return r.db.WithContext(ctx).Create(messagePO).Error
+	query := `
+		INSERT INTO messages (message_id, conversation_id, role, content, tokens, model, timestamp)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		message.MessageID,
+		message.ConversationID,
+		message.Role,
+		message.Content,
+		message.Tokens,
+		message.Model,
+		message.Timestamp,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to save message: %w", err)
+	}
+	return nil
 }
 
 // FindByID 根据 ID 查询消息
 func (r *messageRepository) FindByID(ctx context.Context, messageID string) (*model.Message, error) {
-	var messagePO po.MessagePO
-	err := r.db.WithContext(ctx).
-		Where("message_id = ?", messageID).
-		First(&messagePO).Error
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("message not found: %s", messageID)
-		}
-		return nil, err
+	query := `
+		SELECT message_id, conversation_id, role, content, tokens, model, timestamp
+		FROM messages
+		WHERE message_id = $1
+	`
+	
+	var msg model.Message
+	err := r.db.QueryRowContext(ctx, query, messageID).Scan(
+		&msg.MessageID,
+		&msg.ConversationID,
+		&msg.Role,
+		&msg.Content,
+		&msg.Tokens,
+		&msg.Model,
+		&msg.Timestamp,
+	)
+	
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("message not found: %s", messageID)
 	}
-
-	return r.toMessage(&messagePO), nil
+	if err != nil {
+		return nil, fmt.Errorf("failed to find message: %w", err)
+	}
+	
+	return &msg, nil
 }
 
 // FindByConversation 查询对话的所有消息
 func (r *messageRepository) FindByConversation(ctx context.Context, conversationID string, limit, offset int) ([]*model.Message, error) {
-	var pos []*po.MessagePO
-
-	query := r.db.WithContext(ctx).
-		Where("conversation_id = ?", conversationID).
-		Order("timestamp ASC")
-
+	query := `
+		SELECT message_id, conversation_id, role, content, tokens, model, timestamp
+		FROM messages
+		WHERE conversation_id = $1
+		ORDER BY timestamp ASC
+	`
+	
 	if limit > 0 {
-		query = query.Limit(limit).Offset(offset)
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
 	}
-
-	err := query.Find(&pos).Error
+	
+	rows, err := r.db.QueryContext(ctx, query, conversationID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query messages: %w", err)
 	}
-
-	return r.toMessages(pos), nil
+	defer rows.Close()
+	
+	var messages []*model.Message
+	for rows.Next() {
+		var msg model.Message
+		err := rows.Scan(
+			&msg.MessageID,
+			&msg.ConversationID,
+			&msg.Role,
+			&msg.Content,
+			&msg.Tokens,
+			&msg.Model,
+			&msg.Timestamp,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan message: %w", err)
+		}
+		messages = append(messages, &msg)
+	}
+	
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+	
+	return messages, nil
 }
 
 // FindRecent 查询对话的最近 N 条消息
 func (r *messageRepository) FindRecent(ctx context.Context, conversationID string, n int) ([]*model.Message, error) {
-	var pos []*po.MessagePO
-
-	err := r.db.WithContext(ctx).
-		Where("conversation_id = ?", conversationID).
-		Order("timestamp DESC").
-		Limit(n).
-		Find(&pos).Error
-
+	query := `
+		SELECT message_id, conversation_id, role, content, tokens, model, timestamp
+		FROM messages
+		WHERE conversation_id = $1
+		ORDER BY timestamp DESC
+		LIMIT $2
+	`
+	
+	rows, err := r.db.QueryContext(ctx, query, conversationID, n)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query recent messages: %w", err)
 	}
-
+	defer rows.Close()
+	
+	var messages []*model.Message
+	for rows.Next() {
+		var msg model.Message
+		err := rows.Scan(
+			&msg.MessageID,
+			&msg.ConversationID,
+			&msg.Role,
+			&msg.Content,
+			&msg.Tokens,
+			&msg.Model,
+			&msg.Timestamp,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan message: %w", err)
+		}
+		messages = append(messages, &msg)
+	}
+	
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+	
 	// 反转顺序（从旧到新）
-	messages := r.toMessages(pos)
 	for i, j := 0, len(messages)-1; i < j; i, j = i+1, j-1 {
 		messages[i], messages[j] = messages[j], messages[i]
 	}
-
+	
 	return messages, nil
 }
 
 // Count 统计对话的消息数量
 func (r *messageRepository) Count(ctx context.Context, conversationID string) (int64, error) {
+	query := `SELECT COUNT(*) FROM messages WHERE conversation_id = $1`
 	var count int64
-	err := r.db.WithContext(ctx).
-		Model(&po.MessagePO{}).
-		Where("conversation_id = ?", conversationID).
-		Count(&count).Error
-
-	return count, err
+	err := r.db.QueryRowContext(ctx, query, conversationID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count messages: %w", err)
+	}
+	return count, nil
 }
 
 // Delete 删除消息
 func (r *messageRepository) Delete(ctx context.Context, messageID string) error {
-	return r.db.WithContext(ctx).
-		Where("message_id = ?", messageID).
-		Delete(&po.MessagePO{}).Error
-}
-
-// toMessagePO 领域模型转持久化对象
-func (r *messageRepository) toMessagePO(message *model.Message) *po.MessagePO {
-	return &po.MessagePO{
-		MessageID:      message.MessageID,
-		ConversationID: message.ConversationID,
-		Role:           message.Role,
-		Content:        message.Content,
-		Tokens:         message.Tokens,
-		Model:          message.Model,
-		Timestamp:      message.Timestamp,
+	query := `DELETE FROM messages WHERE message_id = $1`
+	_, err := r.db.ExecContext(ctx, query, messageID)
+	if err != nil {
+		return fmt.Errorf("failed to delete message: %w", err)
 	}
-}
-
-// toMessage 持久化对象转领域模型
-func (r *messageRepository) toMessage(po *po.MessagePO) *model.Message {
-	return &model.Message{
-		MessageID:      po.MessageID,
-		ConversationID: po.ConversationID,
-		Role:           po.Role,
-		Content:        po.Content,
-		Tokens:         po.Tokens,
-		Model:          po.Model,
-		Timestamp:      po.Timestamp,
-	}
-}
-
-// toMessages 批量转换
-func (r *messageRepository) toMessages(pos []*po.MessagePO) []*model.Message {
-	messages := make([]*model.Message, len(pos))
-	for i, po := range pos {
-		messages[i] = r.toMessage(po)
-	}
-	return messages
+	return nil
 }

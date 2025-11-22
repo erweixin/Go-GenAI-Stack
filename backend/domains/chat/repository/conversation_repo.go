@@ -2,117 +2,147 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
-	"github.com/erweixin/go-genai-stack/domains/chat/internal/po"
 	"github.com/erweixin/go-genai-stack/domains/chat/model"
-	"gorm.io/gorm"
 )
 
 // conversationRepository 对话仓储实现
 type conversationRepository struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 // NewConversationRepository 创建对话仓储
-func NewConversationRepository(db *gorm.DB) ConversationRepository {
+func NewConversationRepository(db *sql.DB) ConversationRepository {
 	return &conversationRepository{db: db}
 }
 
 // Create 创建对话
 func (r *conversationRepository) Create(ctx context.Context, conv *model.Conversation) error {
-	convPO := &po.ConversationPO{
-		ConversationID: conv.ConversationID,
-		UserID:         conv.UserID,
-		Title:          conv.Title,
-		CreatedAt:      conv.CreatedAt,
-		UpdatedAt:      conv.UpdatedAt,
+	query := `
+		INSERT INTO conversations (conversation_id, user_id, title, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		conv.ConversationID,
+		conv.UserID,
+		conv.Title,
+		conv.CreatedAt,
+		conv.UpdatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create conversation: %w", err)
 	}
-
-	return r.db.WithContext(ctx).Create(convPO).Error
+	return nil
 }
 
 // FindByID 根据 ID 查询对话
 func (r *conversationRepository) FindByID(ctx context.Context, conversationID string) (*model.Conversation, error) {
-	var convPO po.ConversationPO
-	err := r.db.WithContext(ctx).
-		Where("conversation_id = ?", conversationID).
-		First(&convPO).Error
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("conversation not found: %s", conversationID)
-		}
-		return nil, err
+	query := `
+		SELECT conversation_id, user_id, title, created_at, updated_at
+		FROM conversations
+		WHERE conversation_id = $1
+	`
+	
+	var conv model.Conversation
+	err := r.db.QueryRowContext(ctx, query, conversationID).Scan(
+		&conv.ConversationID,
+		&conv.UserID,
+		&conv.Title,
+		&conv.CreatedAt,
+		&conv.UpdatedAt,
+	)
+	
+	if err == sql.ErrNoRows {
+		return nil, fmt.Errorf("conversation not found: %s", conversationID)
 	}
-
-	return &model.Conversation{
-		ConversationID: convPO.ConversationID,
-		UserID:         convPO.UserID,
-		Title:          convPO.Title,
-		Messages:       make([]*model.Message, 0), // 消息需要单独加载
-		CreatedAt:      convPO.CreatedAt,
-		UpdatedAt:      convPO.UpdatedAt,
-	}, nil
+	if err != nil {
+		return nil, fmt.Errorf("failed to find conversation: %w", err)
+	}
+	
+	conv.Messages = make([]*model.Message, 0) // 消息需要单独加载
+	return &conv, nil
 }
 
 // FindByUser 查询用户的对话列表
 func (r *conversationRepository) FindByUser(ctx context.Context, userID string, limit, offset int) ([]*model.Conversation, error) {
-	var convPOs []*po.ConversationPO
-
-	query := r.db.WithContext(ctx).
-		Where("user_id = ?", userID).
-		Order("updated_at DESC")
-
+	query := `
+		SELECT conversation_id, user_id, title, created_at, updated_at
+		FROM conversations
+		WHERE user_id = $1
+		ORDER BY updated_at DESC
+	`
+	
 	if limit > 0 {
-		query = query.Limit(limit).Offset(offset)
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", limit, offset)
 	}
-
-	err := query.Find(&convPOs).Error
+	
+	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query conversations: %w", err)
 	}
-
-	convs := make([]*model.Conversation, len(convPOs))
-	for i, po := range convPOs {
-		convs[i] = &model.Conversation{
-			ConversationID: po.ConversationID,
-			UserID:         po.UserID,
-			Title:          po.Title,
-			Messages:       make([]*model.Message, 0),
-			CreatedAt:      po.CreatedAt,
-			UpdatedAt:      po.UpdatedAt,
+	defer rows.Close()
+	
+	var convs []*model.Conversation
+	for rows.Next() {
+		var conv model.Conversation
+		err := rows.Scan(
+			&conv.ConversationID,
+			&conv.UserID,
+			&conv.Title,
+			&conv.CreatedAt,
+			&conv.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan conversation: %w", err)
 		}
+		conv.Messages = make([]*model.Message, 0)
+		convs = append(convs, &conv)
 	}
-
+	
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+	
 	return convs, nil
 }
 
 // Update 更新对话
 func (r *conversationRepository) Update(ctx context.Context, conv *model.Conversation) error {
-	return r.db.WithContext(ctx).
-		Model(&po.ConversationPO{}).
-		Where("conversation_id = ?", conv.ConversationID).
-		Updates(map[string]interface{}{
-			"title":      conv.Title,
-			"updated_at": conv.UpdatedAt,
-		}).Error
+	query := `
+		UPDATE conversations
+		SET title = $1, updated_at = $2
+		WHERE conversation_id = $3
+	`
+	_, err := r.db.ExecContext(ctx, query,
+		conv.Title,
+		conv.UpdatedAt,
+		conv.ConversationID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update conversation: %w", err)
+	}
+	return nil
 }
 
 // Delete 删除对话
 func (r *conversationRepository) Delete(ctx context.Context, conversationID string) error {
-	return r.db.WithContext(ctx).
-		Where("conversation_id = ?", conversationID).
-		Delete(&po.ConversationPO{}).Error
+	query := `DELETE FROM conversations WHERE conversation_id = $1`
+	_, err := r.db.ExecContext(ctx, query, conversationID)
+	if err != nil {
+		return fmt.Errorf("failed to delete conversation: %w", err)
+	}
+	return nil
 }
 
 // CountByUser 统计用户的对话数量
 func (r *conversationRepository) CountByUser(ctx context.Context, userID string) (int64, error) {
+	query := `SELECT COUNT(*) FROM conversations WHERE user_id = $1`
 	var count int64
-	err := r.db.WithContext(ctx).
-		Model(&po.ConversationPO{}).
-		Where("user_id = ?", userID).
-		Count(&count).Error
-
-	return count, err
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count conversations: %w", err)
+	}
+	return count, nil
 }

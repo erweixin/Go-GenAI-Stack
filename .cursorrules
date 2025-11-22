@@ -155,6 +155,88 @@
 - 每个文件顶部说明文件职责
 - 示例代码放在注释中（Example:）
 
+## 数据库访问规则（⭐ 重要）
+
+本项目**统一使用 database/sql**，不使用 ORM：
+
+### ✅ 正确做法
+
+1. **数据库连接**：
+   ```go
+   import "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/postgres"
+   
+   conn, err := postgres.NewConnection(ctx, config)
+   db := conn.DB()  // *sql.DB
+   ```
+
+2. **Repository 实现**：
+   ```go
+   type MessageRepository struct {
+       db *sql.DB
+   }
+   
+   func (r *MessageRepository) Create(ctx context.Context, msg *model.Message) error {
+       query := `INSERT INTO messages (id, content, ...) VALUES ($1, $2, ...)`
+       _, err := r.db.ExecContext(ctx, query, msg.ID, msg.Content, ...)
+       return err
+   }
+   ```
+
+3. **事务处理**：
+   ```go
+   import "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/postgres"
+   
+   err := postgres.WithTransaction(ctx, db, func(tx *sql.Tx) error {
+       // 在事务中执行多个操作
+       _, err := tx.ExecContext(ctx, query1, ...)
+       _, err = tx.ExecContext(ctx, query2, ...)
+       return err  // 自动 commit 或 rollback
+   })
+   ```
+
+4. **Schema 管理**：
+   - Schema 定义：`infrastructure/database/schema/schema.sql`
+   - 使用 Atlas 生成迁移：`./scripts/schema.sh diff my_change`
+   - 应用迁移：`./scripts/schema.sh apply`
+
+### ❌ 禁止做法
+
+- ❌ **不要使用 GORM**（已删除 `infrastructure/database/database.go`）
+  ```go
+  // ❌ 错误
+  import "gorm.io/gorm"
+  db.Create(&model)
+  db.Where("id = ?", id).First(&model)
+  ```
+
+- ❌ **不要使用 AutoMigrate**
+  ```go
+  // ❌ 错误
+  db.AutoMigrate(&Model{})
+  ```
+
+- ❌ **不要引用已删除的文件**
+  ```go
+  // ❌ 错误
+  import "github.com/erweixin/go-genai-stack/backend/infrastructure/database"
+  ```
+
+### 为什么不用 GORM？
+
+1. ✅ **透明度**：原生 SQL 清晰可见，AI 易于理解
+2. ✅ **性能**：无 ORM 开销，直接操作数据库
+3. ✅ **控制力**：完全控制 SQL 语句，便于优化
+4. ✅ **Vibe-Coding 友好**：Repository 模式已提供抽象，无需 ORM
+5. ✅ **可维护性**：SQL 一目了然，调试和优化更容易
+
+### 参考文档
+
+- [数据库重构迁移指南](docs/database-refactoring-guide.md) - 完整的迁移指南
+- [Postgres Connection](backend/infrastructure/persistence/postgres/connection.go) - 连接管理
+- [Postgres Transaction](backend/infrastructure/persistence/postgres/transaction.go) - 事务管理
+
+---
+
 ## 禁止事项
 
 - ❌ 不要在 handler 中直接写业务逻辑（应该调用 domain service）
@@ -162,6 +244,8 @@
 - ❌ 不要在 DTO 中包含业务逻辑（只做数据传输）
 - ❌ 不要使用全局变量（使用依赖注入）
 - ❌ 不要提交生成的类型文件到 Git（frontend/shared/types/domains/ 应该被忽略或标记为生成）
+- ❌ **不要使用 GORM 或任何 ORM**（统一使用 database/sql）
+- ❌ **不要使用 AutoMigrate**（使用 Atlas 管理 Schema）
 
 ## AI 辅助开发最佳实践
 
