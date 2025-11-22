@@ -1,6 +1,6 @@
 # Infrastructure Layer (基础设施层)
 
-本目录包含所有基础设施相关的代码，包括数据库、缓存、队列、中间件、配置等。
+本目录包含所有基础设施相关的代码，包括数据库、缓存、中间件、配置等。
 
 ## 📁 目录结构
 
@@ -9,8 +9,6 @@ infrastructure/
 ├── persistence/          # 持久化层
 │   ├── postgres/        # PostgreSQL 连接和事务管理
 │   └── redis/           # Redis 连接和缓存
-├── queue/               # 异步任务队列 (Asynq)
-│   └── tasks/           # 任务定义和处理器
 ├── middleware/          # HTTP 中间件
 ├── config/              # 配置管理
 └── database/            # (兼容性保留，推荐使用 persistence/)
@@ -89,83 +87,158 @@ var user User
 err = cache.Get(ctx, "user:123", &user)
 ```
 
-### 2. Queue (异步任务队列)
+### 2. Middleware (HTTP 中间件)
 
-使用 Asynq 实现分布式异步任务处理。
+提供生产级别的 HTTP 中间件，保护和增强 API 服务。
+
+#### 📋 中间件清单
+
+| 中间件 | 文件 | 作用 | 依赖 |
+|--------|------|------|------|
+| **Auth** | `auth.go` | JWT 认证、用户身份验证 | - |
+| **RateLimit** | `ratelimit.go` | 分布式限流、防止 API 滥用 | Redis |
+| **Tracing** | `tracing.go` | 请求追踪、生成 Request ID | - |
+| **Logger** | `logger.go` | 请求日志、耗时统计 | - |
+| **Recovery** | `recovery.go` | Panic 恢复、错误处理 | - |
+| **CORS** | `cors.go` | 跨域请求处理 | - |
+| **Errors** | `errors.go` | 统一错误响应格式 | - |
+
+#### 🔐 Auth (认证中间件)
+
+**功能**：
+- Bearer Token 验证
+- 用户身份注入到上下文
+- 支持可选认证（OptionalAuth）
+
+**Extension point**: 集成 JWT 验证（当前为简化实现）
 
 **使用示例**:
 ```go
-import (
-    "github.com/erweixin/go-genai-stack/backend/infrastructure/queue"
-    "github.com/erweixin/go-genai-stack/backend/infrastructure/queue/tasks"
-)
+authMW := middleware.NewAuthMiddleware()
 
-// 创建队列
-config := &queue.Config{
-    RedisAddr:   "localhost:6379",
-    Concurrency: 10,
-    Queues:      queue.DefaultQueues(),
-}
-q, err := queue.NewAsynqClient(config)
+// 必须认证的路由
+protectedRoutes := router.Group("/api/protected")
+protectedRoutes.Use(authMW.Handle())
 
-// 注册任务处理器
-registry := tasks.NewTaskRegistry()
-tasks.RegisterDefaultTasks(registry)
-registry.RegisterAll(q)
+// 可选认证的路由（公开访问，但识别登录用户）
+publicRoutes := router.Group("/api/public")
+publicRoutes.Use(authMW.OptionalAuth())
 
-// 启动队列处理器
-q.Start()
-
-// 入队任务
-payload, _ := json.Marshal(tasks.SendEmailPayload{
-    To:      "user@example.com",
-    Subject: "Welcome",
-    Body:    "Hello!",
-})
-err = q.Enqueue(tasks.TaskTypeSendEmail, payload)
+// 在 handler 中获取用户ID
+userID, exists := middleware.GetUserID(c)
 ```
 
-### 3. Middleware (HTTP 中间件)
+**详细文档**: 查看 `auth.go` 的代码注释
 
-#### Auth (认证)
-- JWT Token 验证
-- 用户上下文注入
+#### 🚦 RateLimit (限流中间件)
 
-#### RateLimit (限流)
+**功能**：
 - 基于 Redis 的分布式限流
-- Token Bucket 算法
-- 支持按用户、IP、组合等方式限流
+- 滑动窗口计数算法
+- 支持多种限流策略（用户、IP、组合）
+- 标准的 `X-RateLimit-*` 响应头
+- Redis 故障时不阻塞服务（容错设计）
 
-#### Tracing (追踪)
-- 自动生成 Request ID 和 Trace ID
-- 记录请求耗时
-- 预留 OpenTelemetry 集成
+**三种限流策略**：
+```go
+// 1. 基于用户ID（推荐，需要认证）
+middleware.UserBasedKeyFunc
+
+// 2. 基于IP地址（公开API）
+middleware.IPBasedKeyFunc
+
+// 3. 组合策略（优先用户，回退到IP）
+middleware.CombinedKeyFunc
+```
 
 **使用示例**:
 ```go
-import (
-    "github.com/erweixin/go-genai-stack/backend/infrastructure/middleware"
-)
-
-// 认证中间件
-authMW := middleware.NewAuthMiddleware()
-router.Use(authMW.Handle())
-
-// 限流中间件
+// 全局限流：每分钟60次
 rateLimitMW := middleware.NewRateLimitMiddleware(
     redisClient,
-    60,           // 每分钟 60 次
-    time.Minute,
-    middleware.UserBasedKeyFunc,
+    60,                           // 每分钟限额
+    time.Minute,                  // 时间窗口
+    middleware.UserBasedKeyFunc,  // 限流策略
 )
 router.Use(rateLimitMW.Handle())
 
-// 追踪中间件
-tracingMW := middleware.NewTracingMiddleware()
-router.Use(tracingMW.Handle())
+// 针对特定路由的限流（更严格）
+sensitiveAPI := router.Group("/api/sensitive")
+sensitiveAPI.Use(middleware.NewRateLimitMiddleware(
+    redisClient,
+    10,           // 更低的限额
+    time.Minute,
+    middleware.UserBasedKeyFunc,
+).Handle())
 ```
 
-### 4. Config (配置管理)
+**响应示例**:
+```http
+# 正常请求
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 45
+X-RateLimit-Reset: 1700000000
+
+# 超过限额
+HTTP/1.1 429 Too Many Requests
+{
+  "error": "rate limit exceeded",
+  "message": "too many requests, please try again later",
+  "retry_after": 60
+}
+```
+
+**详细文档**: 查看 `ratelimit.go` 的完整注释（包含高级用法）
+
+#### 🔍 Tracing (追踪中间件)
+
+**功能**：
+- 自动生成唯一的 Request ID 和 Trace ID
+- 记录请求耗时（`X-Response-Time` 响应头）
+- 支持跨服务追踪（通过 `X-Trace-ID` 传播）
+
+**Extension point**: 集成 OpenTelemetry
+
+**使用示例**:
+```go
+tracingMW := middleware.NewTracingMiddleware()
+router.Use(tracingMW.Handle())
+
+// 在 handler 中获取追踪信息
+requestID := middleware.GetRequestID(c)
+traceID := middleware.GetTraceID(c)
+duration := middleware.GetDuration(c)
+```
+
+**详细文档**: 查看 `tracing.go` 的代码注释
+
+#### 📝 其他中间件
+
+- **Logger**: 记录每个请求的详细信息（方法、路径、状态码、耗时）
+- **Recovery**: 捕获 panic 并返回友好的 500 错误，防止服务崩溃
+- **CORS**: 配置跨域访问策略
+- **Errors**: 统一错误响应格式
+
+#### 🔄 中间件执行顺序
+
+推荐的中间件顺序（从外到内）：
+```go
+router.Use(
+    recoveryMW.Handle(),    // 1. 最外层：捕获所有 panic
+    tracingMW.Handle(),     // 2. 生成 Request ID
+    loggerMW.Handle(),      // 3. 记录请求日志
+    corsMW.Handle(),        // 4. 处理跨域
+    authMW.Handle(),        // 5. 认证（注入用户信息）
+    rateLimitMW.Handle(),   // 6. 限流（依赖用户信息）
+)
+```
+
+**原则**: 
+- Recovery 在最外层（捕获所有错误）
+- Tracing 在前面（确保有 Request ID）
+- Auth 在 RateLimit 前（限流可能需要用户信息）
+
+### 3. Config (配置管理)
 
 基于 Viper 的配置加载和验证。
 
@@ -245,12 +318,7 @@ conn, err := postgres.NewConnection(ctx, &postgres.Config{
    - 避免长时间持有事务
    - 根据场景选择合适的隔离级别
 
-4. **异步任务**
-   - 耗时操作放入队列异步执行
-   - 合理设置任务优先级
-   - 实现幂等性
-
-5. **中间件**
+4. **中间件**
    - 按顺序添加中间件（tracing → logging → auth → ratelimit）
    - 避免在中间件中执行耗时操作
    - 中间件异常应该有日志记录

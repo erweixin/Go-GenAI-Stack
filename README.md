@@ -22,10 +22,7 @@ Go-GenAI-Stack/
 │   │   └── queue/        # 异步任务队列
 │   ├── application/      # 应用层（跨领域编排）
 │   ├── pkg/              # 可复用工具包
-│   │   ├── logger/       # 日志
-│   │   ├── ratelimiter/  # 限流
-│   │   ├── circuitbreaker/ # 熔断
-│   │   └── validator/    # 验证
+│   │   └── validator/    # 验证器
 │   ├── migrations/       # 数据库迁移
 │   └── scripts/          # 开发脚本
 ├── frontend/             # 前端 Monorepo
@@ -52,19 +49,19 @@ Go-GenAI-Stack/
 - **AI 友好**：结构化知识 + 语义化命名 + 完整注释
 - **扩展友好**：明确标注扩展点，易于集成真实 LLM、数据库等
 
-### 🤖 AI 辅助开发
+### 🤖 AI 友好设计
 
-- **AI 代码生成**：`./scripts/ai_codegen.sh` 一键生成 handler 和 test
-- **自动化文档**：`./scripts/generate_docs.sh` 生成领域文档
-- **结构验证**：`./scripts/validate_structure.sh` 检查规范性
-- **完整 CI/CD**：6 个 GitHub Actions 工作流
+- **声明式用例**：`usecases.yaml` 描述业务流程，AI 可直接理解
+- **显式知识**：每个领域有完整的术语表、规则、事件文档
+- **扩展点标注**：代码中明确标注 "Extension point"，指导集成
+- **清晰的架构**：DDD + Repository 模式，易于 AI 生成代码
 
 ### 🛠️ 开发工具链
 
-- **pkg/ 工具包**：Logger, RateLimiter, CircuitBreaker, Validator
-- **数据库迁移**：`./scripts/migrate.sh` 管理数据库变更
-- **测试覆盖率**：`./scripts/test_all.sh --coverage` 生成报告
-- **代码质量**：`./scripts/lint.sh` 自动检查和修复
+- **pkg/ 工具包**：Validator（参数验证）
+- **数据库管理**：Atlas Schema 管理（`./backend/scripts/schema.sh`）
+- **测试**：`./backend/scripts/test_all.sh` 运行测试
+- **代码质量**：`./backend/scripts/lint.sh` 代码检查
 
 ---
 
@@ -138,24 +135,24 @@ cd backend
 - [Atlas 详细指南](backend/infrastructure/database/README.md)
 - [迁移完成报告](docs/atlas-migration-guide.md)
 
-### 创建新用例
+### 添加新用例
 
 ```bash
 # 1. 在 usecases.yaml 中定义用例
 vim backend/domains/chat/usecases.yaml
 
-# 2. 生成代码骨架
-cd backend
-./scripts/ai_codegen.sh --domain chat --usecase NewUseCase
+# 2. 创建 handler（手动或用 AI 生成）
+vim backend/domains/chat/handlers/new_use_case.handler.go
 
-# 3. 实现业务逻辑
-vim domains/chat/handlers/new_use_case.handler.go
+# 3. 添加 DTO 定义
+vim backend/domains/chat/http/dto/new_use_case.go
 
-# 4. 完善测试
-vim domains/chat/tests/new_use_case.test.go
+# 4. 注册路由
+vim backend/domains/chat/http/router.go
 
 # 5. 运行测试
-./scripts/test_all.sh chat
+cd backend
+./scripts/test_all.sh
 ```
 
 ### 同步前后端类型
@@ -179,10 +176,7 @@ cd backend
 # 2. 运行测试
 ./scripts/test_all.sh --coverage
 
-# 3. 验证结构
-./scripts/validate_structure.sh
-
-# 4. 提交
+# 3. 提交
 git add .
 git commit -m "feat(chat): add new use case"
 git push
@@ -243,11 +237,10 @@ git push
   - 应用层编排（ChatOrchestrator）
   - Repository 模式（使用 database/sql）
 - ✅ 基础设施层
-  - 中间件（认证、日志、限流、追踪、恢复）
+  - 中间件（认证、CORS、错误处理、日志、限流、恢复、追踪）
   - 数据库（Postgres + Redis）
-  - 异步队列（Asynq）
   - 配置管理（Viper）
-- ✅ 可复用工具包（Logger, RateLimiter, CircuitBreaker, Validator）
+- ✅ 可复用工具包（Validator）
 - ✅ 数据库 Schema 管理（Atlas）
 - ✅ 前端 Monorepo 设置（Web + Mobile + Shared）
 - ✅ 类型同步（Go → TypeScript）

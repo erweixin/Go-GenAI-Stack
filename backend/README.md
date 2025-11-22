@@ -295,80 +295,52 @@ domains/chat/
 - ✅ **Vibe-Coding 友好**：Repository 模式已提供抽象，无需 ORM
 - ✅ **可维护性强**：SQL 一目了然，调试和优化更容易
 
-## 📈 架构优化计划
+## 🎯 扩展指南
 
-当前架构已经初步实现 Vibe-Coding-Friendly DDD，但还有提升空间。我们制定了一个为期 5 周的优化计划：
+本 Starter 提供了完整的 Chat 领域实现，作为最佳实践示例。
 
-### 📚 优化文档
-- **[架构优化计划](../docs/optimization-plan.md)** - 详细的优化计划（1500+ 行）
-  - 包含完整的任务说明、代码示例、设计思路
-  - 适合：项目负责人、架构师深入阅读
+### 🔌 可选扩展（标注为 "Extension point"）
 
-- **[优化任务清单](../docs/optimization-checklist.md)** - 简化的任务清单（300 行）
-  - 快速追踪进度，方便日常使用
-  - 适合：开发人员每日更新
+代码中所有标注 `Extension point` 的地方都是预留的扩展位置：
 
-- **[快速上手指南](../docs/optimization-quickstart.md)** - 5 分钟了解如何开始
-  - 新成员快速上手
-  - 常见问题解答
+1. **LLM 集成** - 集成真实的 AI 服务（OpenAI, Claude 等）
+   - 位置：`application/services/chat_orchestrator.go`
+   - 参考：代码注释中的示例
 
-### 🎯 优化重点
+2. **数据库持久化** - 连接真实数据库
+   - 位置：`domains/chat/handlers/*.go`
+   - 参考：`infrastructure/persistence/postgres/`
 
-**P0 - 最高优先级（前 2 周）**
-- [ ] 完善 LLM 领域（缺少 usecases.yaml 等 5 个文件）⭐ 最关键
-- [ ] 为所有领域添加 tests/ 目录（当前完全缺失）
-- [ ] 创建事件总线（domains/shared/events/）
+3. **事件总线** - 实现领域事件发布
+   - 位置：`domains/shared/events/bus.go`
+   - 选项：内存、Redis、Kafka
 
-**P1 - 高优先级（第 3-4 周）**
-- [ ] 重构基础设施层（infra/ → infrastructure/）
-- [ ] 创建 Monitoring 领域（监控、追踪、成本统计）
+4. **JWT 认证** - 完整的 Token 验证
+   - 位置：`infrastructure/middleware/auth.go`
+   - 参考：代码注释中的示例
 
-**P2 - 中优先级（第 5 周）**
-- [ ] 添加 pkg/ 可复用工具包
-- [ ] 实现 ai_codegen.sh 脚本（自动生成代码）
-- [ ] 添加数据库迁移管理
+5. **OpenTelemetry** - 分布式追踪
+   - 位置：`infrastructure/middleware/tracing.go`
+   - 参考：go.opentelemetry.io/otel
 
-### 🚀 快速开始优化
+### 📚 扩展文档
+
+详细的扩展指南请参考：`docs/extensions/`（待创建）
+
+### 🚀 快速开始开发
 
 ```bash
-# 1. 查看优化计划
-cat ../docs/optimization-quickstart.md
+# 1. 启动数据库
+docker-compose up -d
 
-# 2. 第一个任务：创建 LLM 领域的 glossary.md
-vim domains/llm/glossary.md
-# 参考 domains/chat/glossary.md
+# 2. 运行数据库迁移
+cd backend
+./scripts/schema.sh apply
 
-# 3. 验证进度
-./scripts/validate_structure.sh  # TODO: 第 5 周实现
+# 3. 启动开发服务器
+./scripts/dev.sh
+
+# 4. 运行测试
+./scripts/test_all.sh
 ```
-
-### 📊 当前状态
-
-**✅ 已完成**
-- Chat 领域完整（6 个必需文件齐全）
-- 基本的 HTTP 路由和 handlers
-- 应用层编排
-- Repository 模式
-
-**❌ 待完善**
-- LLM 领域缺少 usecases.yaml（最严重）
-- 所有领域缺少 tests/ 目录
-- 缺少事件总线
-- 缺少 Monitoring 领域
-- 缺少 AI 代码生成脚本
-
-**预计完成时间**：2025-12-27
-
-## 🚧 原有待办事项
-
-- [x] 创建应用层（Application Layer）
-- [x] 创建仓储层（Repository Pattern）
-- [x] 数据库初始化
-- [ ] 集成 Eino LLM 框架
-- [ ] 实现 Redis 缓存和限流
-- [ ] 实现事件总线（Kafka）
-- [ ] 添加认证和授权
-- [ ] 实现 Structured Output
-- [ ] 实现多模型路由
-- [ ] 添加监控和可观测性
 

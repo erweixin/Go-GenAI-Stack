@@ -6,12 +6,11 @@ import (
 
 // Config 应用配置
 type Config struct {
-	Server    ServerConfig    `mapstructure:"server"`
-	Database  DatabaseConfig  `mapstructure:"database"`
-	Redis     RedisConfig     `mapstructure:"redis"`
-	LLM       LLMConfig       `mapstructure:"llm"`
-	Queue     QueueConfig     `mapstructure:"queue"`
-	Logging   LoggingConfig   `mapstructure:"logging"`
+	Server     ServerConfig     `mapstructure:"server"`
+	Database   DatabaseConfig   `mapstructure:"database"`
+	Redis      RedisConfig      `mapstructure:"redis"`
+	LLM        LLMConfig        `mapstructure:"llm"`
+	Logging    LoggingConfig    `mapstructure:"logging"`
 	Monitoring MonitoringConfig `mapstructure:"monitoring"`
 }
 
@@ -60,14 +59,6 @@ type LLMConfig struct {
 	Timeout         time.Duration     `mapstructure:"timeout"`
 	MaxRetries      int               `mapstructure:"max_retries"`
 	Providers       map[string]string `mapstructure:"providers"` // provider -> API key
-}
-
-// QueueConfig 队列配置
-type QueueConfig struct {
-	RedisAddr     string `mapstructure:"redis_addr"`
-	RedisPassword string `mapstructure:"redis_password"`
-	RedisDB       int    `mapstructure:"redis_db"`
-	Concurrency   int    `mapstructure:"concurrency"`
 }
 
 // LoggingConfig 日志配置
@@ -127,10 +118,6 @@ func DefaultConfig() *Config {
 			Timeout:         30 * time.Second,
 			MaxRetries:      3,
 			Providers:       make(map[string]string),
-		},
-		Queue: QueueConfig{
-			RedisAddr:   "localhost:6379",
-			Concurrency: 10,
 		},
 		Logging: LoggingConfig{
 			Level:  "info",

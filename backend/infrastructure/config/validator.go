@@ -38,9 +38,6 @@ func (v *Validator) Validate(config *Config) error {
 	// 验证 LLM 配置
 	v.validateLLM(&config.LLM)
 
-	// 验证队列配置
-	v.validateQueue(&config.Queue)
-
 	// 验证日志配置
 	v.validateLogging(&config.Logging)
 
@@ -144,17 +141,6 @@ func (v *Validator) validateLLM(config *LLMConfig) {
 
 	if config.MaxRetries < 0 {
 		v.addError("llm.max_retries cannot be negative")
-	}
-}
-
-// validateQueue 验证队列配置
-func (v *Validator) validateQueue(config *QueueConfig) {
-	if config.RedisAddr == "" {
-		v.addError("queue.redis_addr is required")
-	}
-
-	if config.Concurrency <= 0 {
-		v.addError("queue.concurrency must be positive")
 	}
 }
 
