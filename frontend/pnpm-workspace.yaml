@@ -1,0 +1,11 @@
+# pnpm workspace 配置
+# Monorepo 依赖管理
+
+packages:
+  # 前端应用
+  - 'web'
+  - 'mobile'
+  
+  # 共享包
+  - 'shared/*'
+

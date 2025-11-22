@@ -1,0 +1,210 @@
+Go-GenAI-Stack 目录结构
+======================
+
+go-genai-stack/
+├── README.md                                   # 项目主文档
+├── pnpm-workspace.yaml                        # pnpm workspace 配置
+├── package.json                               # 根 package.json
+├── tygo.yaml                                  # tygo 类型生成配置
+├── .gitignore                                 # Git 忽略规则
+├── .cursorrules                               # Cursor AI 规则
+│
+├── backend/                                    # Go 后端服务
+│   ├── cmd/                                   # 应用入口
+│   │   └── server/
+│   │       └── main.go
+│   ├── domains/                               # DDD 领域（Vibe-friendly）
+│   │   ├── chat/                             # 聊天领域
+│   │   │   ├── README.md                     # 领域说明
+│   │   │   ├── glossary.md                   # 领域术语
+│   │   │   ├── rules.md                      # 业务规则
+│   │   │   ├── events.md                     # 领域事件
+│   │   │   ├── usecases.yaml                 # 用例声明（AI 可读）
+│   │   │   ├── ai-metadata.json              # AI 元数据
+│   │   │   ├── model/                        # 领域模型
+│   │   │   ├── handlers/                     # 用例实现
+│   │   │   │   ├── send_message.handler.go
+│   │   │   │   └── get_history.handler.go
+│   │   │   ├── http/                         # HTTP 层
+│   │   │   │   └── dto/                      # DTO（tygo 来源）
+│   │   │   │       ├── send_message.go
+│   │   │   │       └── get_history.go
+│   │   │   └── tests/                        # 测试
+│   │   │
+│   │   ├── llm/                              # LLM 领域
+│   │   │   ├── README.md
+│   │   │   ├── usecases.yaml
+│   │   │   ├── handlers/
+│   │   │   └── http/dto/
+│   │   │
+│   │   ├── monitoring/                        # 监控领域
+│   │   │   ├── README.md
+│   │   │   ├── handlers/
+│   │   │   └── http/dto/
+│   │   │
+│   │   └── shared/                           # 领域间共享
+│   │       ├── errors/
+│   │       └── types/
+│   │
+│   ├── infra/                                 # 基础设施
+│   │   ├── db/
+│   │   ├── cache/
+│   │   └── mq/
+│   │
+│   ├── shared/                                # 后端共享代码
+│   │   ├── middleware/
+│   │   └── utils/
+│   │
+│   ├── go.mod
+│   └── go.sum
+│
+├── web/                                       # React Web 前端
+│   ├── src/
+│   │   ├── features/                         # 功能模块（对齐领域）
+│   │   │   ├── chat/                         # 聊天功能
+│   │   │   │   ├── api/                      # API 调用
+│   │   │   │   │   └── chatApi.ts            # 使用 @go-genai-stack/types
+│   │   │   │   ├── components/               # 组件
+│   │   │   │   │   └── MessageItem.tsx
+│   │   │   │   ├── hooks/                    # 自定义 hooks
+│   │   │   │   ├── stores/                   # Zustand stores
+│   │   │   │   └── types.ts                  # Web UI 特有类型
+│   │   │   │
+│   │   │   ├── llm/                          # LLM 功能
+│   │   │   └── monitoring/                   # 监控功能
+│   │   │
+│   │   ├── components/                       # 全局组件
+│   │   │   └── ui/                           # shadcn/ui 组件
+│   │   │
+│   │   ├── types/                            # Web 全局类型
+│   │   │   └── ui.ts
+│   │   │
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   │
+│   ├── public/
+│   ├── package.json                          # 依赖 @go-genai-stack/*
+│   ├── tsconfig.json                         # 路径配置
+│   ├── vite.config.ts
+│   └── index.html
+│
+├── mobile/                                    # React Native 移动端
+│   ├── src/
+│   │   ├── features/                         # 功能模块
+│   │   │   ├── chat/
+│   │   │   │   ├── api/                      # 使用 @go-genai-stack/types
+│   │   │   │   │   └── chatApi.ts
+│   │   │   │   ├── components/
+│   │   │   │   ├── hooks/
+│   │   │   │   └── types.ts                  # Mobile UI 特有类型
+│   │   │   │
+│   │   │   ├── llm/
+│   │   │   └── monitoring/
+│   │   │
+│   │   ├── components/
+│   │   ├── navigation/
+│   │   └── types/
+│   │       └── navigation.ts
+│   │
+│   ├── app/                                   # Expo Router
+│   ├── assets/
+│   ├── package.json                          # 依赖 @go-genai-stack/*
+│   ├── tsconfig.json
+│   └── app.json
+│
+├── shared/                                    # 共享包（pnpm workspace）
+│   ├── README.md                             # Shared 包总览
+│   │
+│   ├── types/                                # API 接口类型（tygo 生成）
+│   │   ├── domains/                          # 领域类型
+│   │   │   ├── chat.ts                       # 从 backend/domains/chat/http/dto 生成
+│   │   │   ├── llm.ts                        # 从 backend/domains/llm/http/dto 生成
+│   │   │   └── monitoring.ts                 # 从 backend/domains/monitoring/http/dto 生成
+│   │   │
+│   │   ├── index.ts                          # 统一导出
+│   │   ├── package.json                      # @go-genai-stack/types
+│   │   ├── tsconfig.json
+│   │   └── README.md
+│   │
+│   ├── utils/                                # 工具函数（跨 Web/Mobile）
+│   │   ├── format.ts                         # 格式化函数
+│   │   ├── validation.ts                     # 验证函数
+│   │   ├── storage.ts                        # 存储抽象
+│   │   ├── index.ts
+│   │   ├── package.json                      # @go-genai-stack/utils
+│   │   ├── tsconfig.json
+│   │   └── README.md
+│   │
+│   └── constants/                            # 常量定义（跨 Web/Mobile）
+│       ├── api-endpoints.ts                  # API 路径
+│       ├── error-codes.ts                    # 错误码
+│       ├── models.ts                         # LLM 模型
+│       ├── index.ts
+│       ├── package.json                      # @go-genai-stack/constants
+│       ├── tsconfig.json
+│       └── README.md
+│
+├── scripts/                                   # 项目脚本
+│   ├── sync_types.sh                         # 类型同步脚本
+│   ├── dev_all.sh                            # 启动所有服务
+│   └── test_all.sh                           # 测试所有项目
+│
+└── docs/                                      # 项目文档
+    ├── vibe-coding-ddd-structure.md          # Vibe-friendly DDD 架构
+    ├── ai_workflow.md                        # AI 协作工作流
+    ├── type-sync.md                          # 类型同步详细指南
+    ├── monorepo-setup.md                     # Monorepo 设置指南
+    ├── quick-reference.md                    # 快速参考
+    ├── SETUP_COMPLETE.md                     # 设置完成清单
+    └── directory-structure.txt               # 本文件
+
+关键路径说明
+===========
+
+【类型生成流程】
+backend/domains/{domain}/http/dto/*.go  →  [tygo]  →  shared/types/domains/{domain}.ts
+
+【类型使用流程】
+shared/types/  →  [pnpm workspace]  →  web/  ✓
+                                      →  mobile/  ✓
+
+【工具函数流程】
+shared/utils/  →  [pnpm workspace]  →  web/  ✓
+                                      →  mobile/  ✓
+
+【常量流程】
+shared/constants/  →  [pnpm workspace]  →  web/  ✓
+                                         →  mobile/  ✓
+
+【领域对齐】
+backend/domains/chat/     ↔  web/src/features/chat/
+backend/domains/llm/      ↔  web/src/features/llm/
+backend/domains/monitoring/  ↔  web/src/features/monitoring/
+
+包依赖关系
+=========
+
+backend (Go)
+  ↓ (tygo)
+shared/types (TypeScript)
+  ↓ (workspace)
+web (React) + mobile (React Native)
+
+shared/utils (TypeScript)
+  ↓ (workspace)
+web + mobile
+
+shared/constants (TypeScript)
+  ↓ (workspace)
+web + mobile
+
+文件统计
+=======
+
+配置文件: 12
+代码文件: 20+
+文档文件: 10+
+示例文件: 4
+
+总计: 46+ 文件
+

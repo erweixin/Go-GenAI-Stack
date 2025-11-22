@@ -6,11 +6,13 @@
 本项目采用 **Monorepo + Vibe Coding Friendly DDD** 架构：
 
 ### 目录结构
-- `backend/`  - 后端（Go + Hertz + Eino + DDD）
-- `web/`      - Web 前端（React + TypeScript + shadcn/ui）
-- `mobile/`   - 移动端（React Native + TypeScript）
-- `shared/`   - 跨项目共享代码
-- `scripts/`  - 项目级脚本
+- `backend/`    - 后端（Go + Hertz + Eino + DDD）
+- `frontend/`   - 前端 Monorepo
+  - `web/`      - React Web 应用
+  - `mobile/`   - React Native 移动应用
+  - `shared/`   - 前端共享代码（types, utils, constants）
+- `scripts/`    - 项目级脚本
+- `docs/`       - 项目文档
 
 ### 后端架构
 - 领域优先（Domain-First）：按业务领域垂直切分（domains/chat/, domains/llm/）
@@ -19,8 +21,8 @@
 
 ### 前端架构
 - 功能优先（Feature-First）：按功能组织（features/chat/, features/llm/）
-- 领域对齐：前端功能对齐后端领域（web/features/chat ← backend/domains/chat）
-- 跨端共享：Web 和 Mobile 共享类型定义和部分逻辑
+- 领域对齐：前端功能对齐后端领域（frontend/web/features/chat ← backend/domains/chat）
+- 跨端共享：Web 和 Mobile 通过 pnpm workspace 共享 types, utils, constants
 
 ## 代码生成规则
 
@@ -59,19 +61,19 @@
    - `map[string]T` → `Record<string, T>`
    - `struct` → `interface`
    - `*T` (指针) → `T | undefined` 或 `T?` (optional)
-4. 生成/更新 `web/src/types/domains/{domain}.ts`
+4. 生成/更新 `frontend/shared/types/domains/{domain}.ts`
 5. 添加文件头注释：
    ```typescript
    // Code generated from Go structs. DO NOT EDIT manually.
    // Source: backend/domains/{domain}/http/dto
    // Generated: {timestamp}
    ```
-6. **注意**：Mobile 通过符号链接自动共享 Web 的类型定义
+6. **注意**：Web 和 Mobile 通过 pnpm workspace 共享类型定义
 
 **快捷用法**：
-- 用户: "sync types chat" → 同步聊天领域类型（Web + Mobile）
+- 用户: "sync types chat" → 同步聊天领域类型到 frontend/shared/types
 - 用户: "sync types all" → 同步所有领域类型
-- 用户: "setup mobile types" → 设置 Mobile 类型符号链接
+- Web 和 Mobile 通过 `@go-genai-stack/types` 导入
 
 ### 3. HTTP 接口设计
 
@@ -159,7 +161,7 @@
 - ❌ 不要跨领域直接调用（应该通过事件或应用服务编排）
 - ❌ 不要在 DTO 中包含业务逻辑（只做数据传输）
 - ❌ 不要使用全局变量（使用依赖注入）
-- ❌ 不要提交生成的类型文件到 Git（frontend/src/types/ 应该被忽略或标记为生成）
+- ❌ 不要提交生成的类型文件到 Git（frontend/shared/types/domains/ 应该被忽略或标记为生成）
 
 ## AI 辅助开发最佳实践
 

@@ -1,0 +1,42 @@
+{
+  "name": "go-genai-stack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-friendly fullstack GenAI application with Go backend and TypeScript frontend",
+  "scripts": {
+    "dev": "./scripts/dev_all.sh",
+    "dev:backend": "cd backend && go run cmd/server/main.go",
+    "dev:web": "pnpm --filter @go-genai-stack/web dev",
+    "dev:mobile": "pnpm --filter @go-genai-stack/mobile start",
+    "sync": "./scripts/sync_types.sh",
+    "build": "pnpm -r build",
+    "build:backend": "cd backend && go build -o bin/server cmd/server/main.go",
+    "build:web": "pnpm --filter @go-genai-stack/web build",
+    "build:mobile": "pnpm --filter @go-genai-stack/mobile build",
+    "test": "./scripts/test_all.sh",
+    "test:backend": "cd backend && go test ./...",
+    "test:web": "pnpm --filter @go-genai-stack/web test",
+    "test:mobile": "pnpm --filter @go-genai-stack/mobile test",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean && rm -rf node_modules"
+  },
+  "keywords": [
+    "genai",
+    "llm",
+    "golang",
+    "hertz",
+    "eino",
+    "react",
+    "typescript",
+    "monorepo",
+    "vibe-coding"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
+

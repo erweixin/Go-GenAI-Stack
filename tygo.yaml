@@ -1,33 +1,32 @@
 # tygo 配置文件
 # 用于将 Go Structs 自动转换为 TypeScript 接口
 # 适用于 Monorepo 架构（backend + web + mobile）
+# 
+# 生成到 shared/types，供 Web 和 Mobile 通过 pnpm workspace 共享
 
 packages:
   # 聊天领域
   - path: "backend/domains/chat/http/dto"
-    output_path: "web/src/types/domains/chat.ts"
+    output_path: "frontend/shared/types/domains/chat.ts"
+    fallback_type: "any"
     type_mappings:
       "time.Time": "string"
       "github.com/shopspring/decimal.Decimal": "string"
 
   # LLM 领域
   - path: "backend/domains/llm/http/dto"
-    output_path: "web/src/types/domains/llm.ts"
+    output_path: "frontend/shared/types/domains/llm.ts"
+    fallback_type: "any"
     type_mappings:
       "time.Time": "string"
 
   # 监控领域
   - path: "backend/domains/monitoring/http/dto"
-    output_path: "web/src/types/domains/monitoring.ts"
+    output_path: "frontend/shared/types/domains/monitoring.ts"
+    fallback_type: "any"
     type_mappings:
       "time.Time": "string"
 
-  # 共享类型
-  - path: "backend/domains/shared/types"
-    output_path: "web/src/types/shared.ts"
-    type_mappings:
-      "time.Time": "string"
-
-# 注意：移动端（mobile）使用符号链接共享 web 的类型定义
-# cd mobile/src/types && ln -s ../../../web/src/types/domains ./domains
+# Web 和 Mobile 通过 pnpm workspace 导入：
+# import { SendMessageRequest } from '@go-genai-stack/types';
 

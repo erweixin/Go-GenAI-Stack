@@ -1,0 +1,20 @@
+{
+  "name": "@go-genai-stack/constants",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared constants for Web and Mobile",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "constants",
+    "shared",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+
