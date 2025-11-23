@@ -1,0 +1,202 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ main, develop ]
+
+jobs:
+  validate-pr:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 需要完整历史
+    
+    - name: Check PR title
+      uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        types: |
+          feat
+          fix
+          docs
+          style
+          refactor
+          perf
+          test
+          chore
+        requireScope: false
+    
+    - name: Check for breaking changes
+      run: |
+        # 检查是否包含 BREAKING CHANGE
+        if git log --format=%B origin/${{ github.base_ref }}..${{ github.sha }} | grep -q "BREAKING CHANGE"; then
+          echo "⚠️  This PR contains breaking changes"
+          echo "breaking_change=true" >> $GITHUB_ENV
+        else
+          echo "✅ No breaking changes detected"
+          echo "breaking_change=false" >> $GITHUB_ENV
+        fi
+    
+    - name: Check PR size
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { data: pr } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number,
+          });
+          
+          const additions = pr.additions;
+          const deletions = pr.deletions;
+          const changedFiles = pr.changed_files;
+          
+          let size = 'S';
+          let color = 'green';
+          let emoji = '✅';
+          
+          const totalChanges = additions + deletions;
+          
+          if (totalChanges > 1000 || changedFiles > 20) {
+            size = 'XL';
+            color = 'red';
+            emoji = '⚠️';
+          } else if (totalChanges > 500 || changedFiles > 10) {
+            size = 'L';
+            color = 'orange';
+            emoji = '⚠️';
+          } else if (totalChanges > 200 || changedFiles > 5) {
+            size = 'M';
+            color = 'yellow';
+            emoji = '✅';
+          }
+          
+          console.log(`${emoji} PR Size: ${size} (${totalChanges} lines, ${changedFiles} files)`);
+          
+          if (size === 'XL' || size === 'L') {
+            console.log('⚠️  Large PR detected. Consider splitting into smaller PRs.');
+          }
+
+  quick-tests:
+    name: Quick Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache-dependency-path: backend/go.sum
+    
+    - name: Install dependencies
+      working-directory: backend
+      run: go mod download
+    
+    - name: Run quick tests
+      working-directory: backend
+      run: |
+        # 只运行快速测试（不包括集成测试）
+        go test -short -v ./...
+    
+    - name: Check for test files
+      working-directory: backend
+      run: |
+        # 检查是否添加了测试文件
+        changed_files=$(git diff --name-only origin/${{ github.base_ref }}...${{ github.sha }})
+        
+        go_files=$(echo "$changed_files" | grep '\.go$' | grep -v '_test\.go$' || true)
+        test_files=$(echo "$changed_files" | grep '_test\.go$' || true)
+        
+        if [ -n "$go_files" ] && [ -z "$test_files" ]; then
+          echo "⚠️  Warning: Go files were modified but no test files were added/modified"
+          echo "Please consider adding tests for your changes."
+        else
+          echo "✅ Tests are included in this PR"
+        fi
+
+  check-todos:
+    name: Check TODOs
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Check for new TODOs
+      run: |
+        # 查找新增的 TODO 注释
+        todos=$(git diff origin/${{ github.base_ref }}...${{ github.sha }} | grep -i "^+.*TODO" || true)
+        
+        if [ -n "$todos" ]; then
+          echo "⚠️  New TODOs found in this PR:"
+          echo "$todos"
+          echo ""
+          echo "Please ensure TODOs are tracked in issues."
+        else
+          echo "✅ No new TODOs found"
+        fi
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+        deny-licenses: GPL-3.0, AGPL-3.0
+
+  summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [validate-pr, quick-tests, check-todos]
+    if: always()
+    
+    steps:
+    - name: Generate PR summary
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const results = {
+            'Validate PR': '${{ needs.validate-pr.result }}',
+            'Quick Tests': '${{ needs.quick-tests.result }}',
+            'Check TODOs': '${{ needs.check-todos.result }}'
+          };
+          
+          let summary = '## 🔍 PR Check Summary\n\n';
+          
+          for (const [check, result] of Object.entries(results)) {
+            const emoji = result === 'success' ? '✅' : result === 'failure' ? '❌' : '⚠️';
+            summary += `- ${emoji} ${check}: ${result}\n`;
+          }
+          
+          if (Object.values(results).every(r => r === 'success')) {
+            summary += '\n✅ **All checks passed! Ready for review.**';
+          } else {
+            summary += '\n⚠️  **Some checks failed. Please review the results.**';
+          }
+          
+          console.log(summary);
+          
+          // 添加评论到 PR
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: summary
+          });
+

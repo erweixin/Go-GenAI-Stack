@@ -130,7 +130,10 @@ func (t *Task) Update(title, description string, priority Priority) error {
 
 // SetDueDate 设置截止日期
 func (t *Task) SetDueDate(dueDate time.Time) error {
-	// 允许过去日期，也可以根据业务规则调整为错误
+	// 验证日期不能早于当前时间
+	if dueDate.Before(time.Now()) {
+		return ErrInvalidDueDate
+	}
 	t.DueDate = &dueDate
 	t.UpdatedAt = time.Now()
 	return nil
@@ -139,7 +142,7 @@ func (t *Task) SetDueDate(dueDate time.Time) error {
 // Complete 标记任务为已完成
 func (t *Task) Complete() error {
 	if t.Status == StatusCompleted {
-		return nil // 已经完成，无需重复操作
+		return ErrTaskAlreadyCompleted // 已经完成，返回错误
 	}
 	t.Status = StatusCompleted
 	now := time.Now()

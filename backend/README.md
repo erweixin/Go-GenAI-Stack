@@ -603,17 +603,18 @@ func (o *TaskOrchestrator) CreateTaskWithNotification(ctx context.Context, req *
 ## 🔗 相关文档
 
 ### 架构文档
-- [Vibe Coding DDD 架构](../docs/vibe-coding-ddd-structure.md)
-- [最优架构设计](../docs/optimal-architecture.md)
-- [Vibe-Coding-Friendly 理念](../docs/Vibe-Coding-Friendly.md)
+- [架构概览](../docs/Core/architecture-overview.md)
+- [Vibe-Coding-Friendly 理念](../docs/Core/vibe-coding-friendly.md)
+- [架构审计报告](../docs/Core/architecture-audit.md)
 
 ### 开发指南
-- [类型同步指南](../docs/type-sync.md)
-- [快速参考](../docs/quick-reference.md)
-- [Atlas 数据库管理](../docs/atlas-quickstart.md)
+- [类型同步指南](../docs/Guides/type-sync.md)
+- [快速参考](../docs/Guides/quick-reference.md)
+- [数据库管理](../docs/Guides/database.md)
 
-### 整改计划
-- [Starter 整改计划](../docs/STARTER-REFACTORING-PLAN.md) - 项目优化路线图
+### 扩展指南
+- [Application 层指南](../docs/Extensions/APPLICATION-LAYER-GUIDE.md)
+- [数据库提供者](../docs/Extensions/DATABASE-PROVIDERS.md)
 
 ---
 

@@ -1,0 +1,154 @@
+name: Coverage Report
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  coverage:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 需要完整历史以便对比
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache-dependency-path: backend/go.sum
+    
+    - name: Install dependencies
+      working-directory: backend
+      run: go mod download
+    
+    - name: Run tests with coverage
+      working-directory: backend
+      run: |
+        # 为每个包生成覆盖率
+        go test -v -coverprofile=coverage.out -covermode=atomic ./...
+        
+        # 生成 HTML 报告
+        go tool cover -html=coverage.out -o coverage.html
+        
+        # 生成详细的文本报告
+        go tool cover -func=coverage.out -o coverage-detail.txt
+    
+    - name: Generate coverage badge
+      working-directory: backend
+      run: |
+        # 提取覆盖率百分比
+        coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "COVERAGE=${coverage}" >> $GITHUB_ENV
+        
+        # 根据覆盖率生成颜色
+        if (( $(echo "$coverage >= 90" | bc -l) )); then
+          color="brightgreen"
+        elif (( $(echo "$coverage >= 80" | bc -l) )); then
+          color="green"
+        elif (( $(echo "$coverage >= 70" | bc -l) )); then
+          color="yellowgreen"
+        elif (( $(echo "$coverage >= 60" | bc -l) )); then
+          color="yellow"
+        else
+          color="red"
+        fi
+        echo "COVERAGE_COLOR=${color}" >> $GITHUB_ENV
+    
+    - name: Create coverage report comment
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const coverage = process.env.COVERAGE;
+          const coverageDetail = fs.readFileSync('backend/coverage-detail.txt', 'utf8');
+          
+          // 解析详细覆盖率
+          const lines = coverageDetail.split('\n').filter(line => line.trim());
+          const packages = lines.slice(0, -1).map(line => {
+            const parts = line.split(/\s+/);
+            return {
+              package: parts[0],
+              coverage: parts[1]
+            };
+          });
+          
+          // 生成 Markdown 表格
+          let table = '| Package | Coverage |\n|---------|----------|\n';
+          packages.forEach(pkg => {
+            const emoji = parseFloat(pkg.coverage) >= 80 ? '✅' : '⚠️';
+            table += `| ${pkg.package} | ${emoji} ${pkg.coverage} |\n`;
+          });
+          
+          const body = `## 📊 Coverage Report
+          
+          **Total Coverage: ${coverage}%**
+          
+          ${table}
+          
+          ### 覆盖率标准
+          - ✅ ≥ 80%: 良好
+          - ⚠️ < 80%: 需要改进
+          
+          ### 详细报告
+          查看 [覆盖率详情](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+          `;
+          
+          // 查找现有评论
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const existingComment = comments.data.find(
+            comment => comment.user.login === 'github-actions[bot]' && comment.body.includes('Coverage Report')
+          );
+          
+          if (existingComment) {
+            // 更新现有评论
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existingComment.id,
+              body: body
+            });
+          } else {
+            // 创建新评论
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          backend/coverage.out
+          backend/coverage.html
+          backend/coverage-detail.txt
+        retention-days: 90
+    
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: backend/coverage.out
+        flags: unittests
+        name: backend-coverage
+        fail_ci_if_error: true
+        verbose: true
+
