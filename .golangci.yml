@@ -1,18 +1,16 @@
 # golangci-lint configuration for Go-GenAI-Stack
-# Docs: https://golangci-lint.run/usage/configuration/
-
-version: v1.61
+# Compatible with golangci-lint v1.64.8+
 
 run:
   timeout: 5m
   tests: true
   modules-download-mode: readonly
-  skip-dirs:
+
+issues:
+  exclude-dirs:
     - vendor
     - .git
     - .github
-
-issues:
   exclude-files:
     - ".*\\.pb\\.go$"
     - ".*_gen\\.go$"
@@ -30,25 +28,25 @@ linters-settings:
     enable-all: true
     disable:
       - shadow
-      - fieldalignment  # 已手动优化过
+      - fieldalignment  # Already optimized manually
 
 linters:
   disable-all: true
   enable:
-    # 代码格式 (自动修复)
-    - gofmt         # 代码格式化
-    - goimports     # 导入排序
+    # Code formatting (auto-fixable)
+    - gofmt         # Code formatting
+    - goimports     # Import sorting
     
-    # 代码质量检查
-    - errcheck      # 检查未处理的错误
-    - gosimple      # 简化代码建议
-    - govet         # Go 官方检查工具
-    - ineffassign   # 检测无效赋值
-    - staticcheck   # 静态分析
-    - unused        # 未使用的代码
+    # Code quality checks
+    - errcheck      # Check unchecked errors
+    - gosimple      # Simplify code suggestions
+    - govet         # Go official checker
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Static analysis
+    - unused        # Unused code detection
     
-    # 可选检查
-    - misspell      # 拼写检查
+    # Optional checks
+    - misspell      # Spell checker
     
-  # 注意: typecheck 被禁用，因为在某些测试文件中会产生误报
-  # 实际的类型检查由 `go build` 和 `go test` 保证
+  # Note: typecheck is disabled because it may produce false positives
+  # Actual type checking is guaranteed by `go build` and `go test`
