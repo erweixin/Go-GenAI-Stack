@@ -177,4 +177,3 @@ func (d *MySQLDialect) AutoIncrement() string {
 func (d *MySQLDialect) JSONType() string {
 	return "JSON"
 }
-

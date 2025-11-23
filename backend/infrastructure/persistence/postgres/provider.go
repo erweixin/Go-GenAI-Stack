@@ -166,4 +166,3 @@ func (d *PostgresDialect) AutoIncrement() string {
 func (d *PostgresDialect) JSONType() string {
 	return "JSONB"
 }
-

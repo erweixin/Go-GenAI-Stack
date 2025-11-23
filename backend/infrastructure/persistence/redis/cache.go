@@ -195,4 +195,3 @@ func (c *Cache) GetMulti(ctx context.Context, keys []string) (map[string]interfa
 
 // ErrCacheMiss 缓存未命中错误
 var ErrCacheMiss = fmt.Errorf("cache miss")
-

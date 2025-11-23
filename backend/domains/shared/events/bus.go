@@ -214,4 +214,3 @@ func (l *defaultLogger) Warn(msg string, fields ...interface{})  {}
 func NewDefaultEventBus() *InMemoryEventBus {
 	return NewInMemoryEventBus(&defaultLogger{})
 }
-

@@ -30,10 +30,9 @@ func RegisterMiddleware(h *server.Hertz) {
 	h.Use(middleware.Logger())
 	h.Use(middleware.Recovery())
 	h.Use(middleware.ErrorHandler())
-	
+
 	// Extension point: 添加更多中间件
 	// h.Use(middleware.Auth())
 	// h.Use(middleware.RateLimit())
 	// h.Use(middleware.Tracing())
 }
-

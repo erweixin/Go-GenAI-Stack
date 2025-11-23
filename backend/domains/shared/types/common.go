@@ -95,12 +95,12 @@ func (t *TimeRange) Duration() time.Duration {
 //
 // 包含请求的追踪信息
 type RequestMetadata struct {
-	RequestID  string    `json:"request_id"`
-	TraceID    string    `json:"trace_id"`
-	UserID     string    `json:"user_id"`
-	ClientIP   string    `json:"client_ip"`
-	UserAgent  string    `json:"user_agent"`
-	StartTime  time.Time `json:"start_time"`
+	RequestID string    `json:"request_id"`
+	TraceID   string    `json:"trace_id"`
+	UserID    string    `json:"user_id"`
+	ClientIP  string    `json:"client_ip"`
+	UserAgent string    `json:"user_agent"`
+	StartTime time.Time `json:"start_time"`
 }
 
 // Duration 计算请求持续时间
@@ -166,4 +166,3 @@ func NewError(code, message string) *Error {
 		Message: message,
 	}
 }
-

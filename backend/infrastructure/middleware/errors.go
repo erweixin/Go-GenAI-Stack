@@ -8,4 +8,3 @@ var (
 	ErrForbidden    = fmt.Errorf("forbidden")
 	ErrRateLimited  = fmt.Errorf("rate limited")
 )
-

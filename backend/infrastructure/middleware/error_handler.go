@@ -11,8 +11,8 @@ import (
 
 // ErrorResponse 统一错误响应格式
 type ErrorResponse struct {
-	Error   string `json:"error"`            // 错误码
-	Message string `json:"message"`          // 错误消息
+	Error   string `json:"error"`             // 错误码
+	Message string `json:"message"`           // 错误消息
 	Details string `json:"details,omitempty"` // 详细信息（可选）
 }
 
@@ -24,7 +24,7 @@ func ErrorHandler() app.HandlerFunc {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("ERROR: Panic recovered: %v", r)
-				
+
 				// 尝试转换为 DomainError
 				if err, ok := r.(error); ok {
 					if domainErr, ok := err.(*errors.DomainError); ok {
@@ -86,4 +86,3 @@ func HandleError(c *app.RequestContext, err error) {
 		log.Printf("ERROR: Unhandled error: %v", err)
 	}
 }
-

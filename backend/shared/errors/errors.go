@@ -55,10 +55,9 @@ var (
 	ErrRateLimitExceeded    = New("RATE_LIMIT_EXCEEDED", "请求过于频繁，请稍后再试", 429)
 
 	// 服务器错误 (5xx)
-	ErrInternalError  = New("INTERNAL_ERROR", "内部服务器错误", 500)
-	ErrDatabaseError  = New("DATABASE_ERROR", "数据库错误", 500)
-	ErrServiceError   = New("SERVICE_ERROR", "服务错误", 500)
-	ErrExternalAPIError = New("EXTERNAL_API_ERROR", "外部 API 调用失败", 502)
+	ErrInternalError      = New("INTERNAL_ERROR", "内部服务器错误", 500)
+	ErrDatabaseError      = New("DATABASE_ERROR", "数据库错误", 500)
+	ErrServiceError       = New("SERVICE_ERROR", "服务错误", 500)
+	ErrExternalAPIError   = New("EXTERNAL_API_ERROR", "外部 API 调用失败", 502)
 	ErrServiceUnavailable = New("SERVICE_UNAVAILABLE", "服务暂时不可用", 503)
 )
-

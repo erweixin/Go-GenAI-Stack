@@ -206,4 +206,3 @@ func ValidateConfig(config *Config) error {
 	validator := NewValidator()
 	return validator.Validate(config)
 }
-

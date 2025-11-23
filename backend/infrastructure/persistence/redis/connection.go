@@ -125,4 +125,3 @@ func (c *Connection) HealthCheck(ctx context.Context) error {
 func (c *Connection) Stats() *redis.PoolStats {
 	return c.client.PoolStats()
 }
-

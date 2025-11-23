@@ -14,10 +14,11 @@ import (
 //
 // Extension point: 集成 JWT 验证
 // 示例：使用 github.com/golang-jwt/jwt 库
-//   type AuthMiddleware struct {
-//       jwtSecret string
-//       issuer    string
-//   }
+//
+//	type AuthMiddleware struct {
+//	    jwtSecret string
+//	    issuer    string
+//	}
 type AuthMiddleware struct {
 	// jwtSecret string // JWT 密钥（可选）
 }
@@ -113,4 +114,3 @@ func RequireUserID(c *app.RequestContext) (string, error) {
 	}
 	return userID, nil
 }
-

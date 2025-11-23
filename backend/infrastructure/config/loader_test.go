@@ -129,4 +129,3 @@ func TestDefaultConfig(t *testing.T) {
 		t.Error("Expected default monitoring.enabled = true, got false")
 	}
 }
-

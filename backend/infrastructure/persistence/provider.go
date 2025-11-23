@@ -122,7 +122,7 @@ func (f *ProviderFactory) Register(dbType string, constructor ProviderConstructo
 func (f *ProviderFactory) Create(config *Config) (DatabaseProvider, error) {
 	constructor, exists := f.constructors[config.Type]
 	if !exists {
-		return nil, fmt.Errorf("unsupported database type: %s (available: %v)", 
+		return nil, fmt.Errorf("unsupported database type: %s (available: %v)",
 			config.Type, f.availableTypes())
 	}
 
@@ -156,4 +156,3 @@ func init() {
 func NewProvider(config *Config) (DatabaseProvider, error) {
 	return DefaultFactory.Create(config)
 }
-

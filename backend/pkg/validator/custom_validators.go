@@ -140,4 +140,3 @@ func RegisterAllCustomValidators(v *validator.Validate) {
 	v.RegisterValidation("pagination_limit", IsValidPaginationLimit)
 	v.RegisterValidation("pagination_offset", IsValidOffset)
 }
-

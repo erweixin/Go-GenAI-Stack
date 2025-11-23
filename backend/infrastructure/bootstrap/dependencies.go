@@ -44,7 +44,7 @@ func InitDependencies(
 	// ============================================
 	// Task 领域依赖注入
 	// ============================================
-	
+
 	// 1. 初始化 Task repository（数据访问层）
 	taskRepo := taskrepo.NewTaskRepository(db)
 
@@ -77,4 +77,3 @@ func InitDependenciesFromDB(db *sql.DB, redisConn *redis.Connection) *AppContain
 		TaskHandlerService: taskHandlerService,
 	}
 }
-

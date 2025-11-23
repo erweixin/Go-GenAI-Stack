@@ -28,4 +28,3 @@ func Logger() app.HandlerFunc {
 		)
 	}
 }
-

@@ -106,4 +106,3 @@ func GetDuration(c *app.RequestContext) time.Duration {
 	startTime := GetStartTime(c)
 	return time.Since(startTime)
 }
-

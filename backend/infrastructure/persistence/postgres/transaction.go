@@ -147,4 +147,3 @@ func WithReadOnlyTransaction(ctx context.Context, db *sql.DB, fn TxFunc) error {
 
 	return nil
 }
-

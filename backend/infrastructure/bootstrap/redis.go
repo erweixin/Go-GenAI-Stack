@@ -26,4 +26,3 @@ func InitRedis(ctx context.Context, cfg *config.Config) (*redis.Connection, erro
 
 	return redis.NewConnection(ctx, redisConfig)
 }
-

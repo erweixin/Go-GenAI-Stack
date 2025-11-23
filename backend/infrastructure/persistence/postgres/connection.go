@@ -133,4 +133,3 @@ func (c *Connection) Reconnect(ctx context.Context) error {
 
 	return nil
 }
-

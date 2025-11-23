@@ -33,13 +33,13 @@ type customValidator struct {
 // Example:
 //
 //	v := validator.New()
-//	
+//
 //	type User struct {
 //	    Username string `validate:"required,min=3,max=20"`
 //	    Email    string `validate:"required,email"`
 //	    Age      int    `validate:"gte=0,lte=130"`
 //	}
-//	
+//
 //	user := User{Username: "test", Email: "test@example.com", Age: 25}
 //	if err := v.Validate(user); err != nil {
 //	    log.Println("Validation error:", err)
@@ -223,4 +223,3 @@ func Validate(data interface{}) error {
 func ValidateVar(field interface{}, tag string) error {
 	return GetGlobalValidator().ValidateVar(field, tag)
 }
-

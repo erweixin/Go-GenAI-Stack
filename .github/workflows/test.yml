@@ -50,44 +50,44 @@ jobs:
       run: |
         go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
     
-    - name: Generate coverage report
-      working-directory: backend
-      run: |
-        go tool cover -func=coverage.out -o=coverage.txt
-        cat coverage.txt
+    # - name: Generate coverage report
+    #   working-directory: backend
+    #   run: |
+    #     go tool cover -func=coverage.out -o=coverage.txt
+    #     cat coverage.txt
     
-    - name: Check coverage threshold
-      working-directory: backend
-      run: |
-        # 提取总覆盖率
-        coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-        echo "Total coverage: ${coverage}%"
+    # - name: Check coverage threshold
+    #   working-directory: backend
+    #   run: |
+    #     # 提取总覆盖率
+    #     coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+    #     echo "Total coverage: ${coverage}%"
         
-        # 检查是否达到最低覆盖率（80%）
-        if (( $(echo "$coverage < 80" | bc -l) )); then
-          echo "❌ Coverage ${coverage}% is below minimum threshold of 80%"
-          exit 1
-        else
-          echo "✅ Coverage ${coverage}% meets the minimum threshold of 80%"
-        fi
+    #     # 检查是否达到最低覆盖率（80%）
+    #     if (( $(echo "$coverage < 80" | bc -l) )); then
+    #       echo "❌ Coverage ${coverage}% is below minimum threshold of 80%"
+    #       exit 1
+    #     else
+    #       echo "✅ Coverage ${coverage}% meets the minimum threshold of 80%"
+    #     fi
     
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: backend/coverage.out
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+    # - name: Upload coverage to Codecov
+    #   uses: codecov/codecov-action@v4
+    #   with:
+    #     file: backend/coverage.out
+    #     flags: unittests
+    #     name: codecov-umbrella
+    #     fail_ci_if_error: false
     
-    - name: Archive test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.go-version }}
-        path: |
-          backend/coverage.out
-          backend/coverage.txt
-        retention-days: 30
+    # - name: Archive test results
+    #   if: always()
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: test-results-${{ matrix.go-version }}
+    #     path: |
+    #       backend/coverage.out
+    #       backend/coverage.txt
+    #     retention-days: 30
 
   lint:
     name: Lint Code

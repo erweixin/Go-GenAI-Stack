@@ -8,4 +8,3 @@ import (
 func init() {
 	persistence.DefaultFactory.Register("postgres", NewProvider)
 }
-

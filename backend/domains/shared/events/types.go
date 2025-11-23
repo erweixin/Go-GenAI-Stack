@@ -252,4 +252,3 @@ func NewAlertTriggeredEvent(payload AlertTriggeredPayload) *AlertTriggeredEvent 
 		BaseEvent: NewBaseEvent("AlertTriggered", "monitoring", payload),
 	}
 }
-

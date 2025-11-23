@@ -177,7 +177,7 @@ func (m *RateLimitMiddleware) Handle() app.HandlerFunc {
 		if !allowed {
 			c.JSON(429, utils.H{
 				"error":       "rate limit exceeded",
-				"message":     fmt.Sprintf("too many requests, please try again later"),
+				"message":     "too many requests, please try again later",
 				"retry_after": int(m.window.Seconds()),
 			})
 			c.Abort()
