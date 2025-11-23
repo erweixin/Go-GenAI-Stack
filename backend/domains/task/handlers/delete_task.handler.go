@@ -2,15 +2,28 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
 )
 
-// DeleteTaskHandler 删除任务
-func (s *HandlerService) DeleteTaskHandler(ctx context.Context, c *app.RequestContext) {
+// DeleteTaskHandler 删除任务（HTTP 适配层）
+//
+// 用例：DeleteTask（参考 usecases.yaml）
+//
+// HTTP:
+//   - Method: DELETE
+//   - Path: /api/tasks/:id
+//
+// Handler 职责：
+//  1. 解析 HTTP 请求
+//  2. 调用 Domain Service
+//  3. 返回 HTTP 响应
+//
+// 业务逻辑在 service.TaskService.DeleteTask() 中实现
+func (deps *HandlerDependencies) DeleteTaskHandler(ctx context.Context, c *app.RequestContext) {
+	// 1. 获取路径参数
 	taskID := c.Param("id")
 	if taskID == "" {
 		c.JSON(400, dto.ErrorResponse{
@@ -20,37 +33,14 @@ func (s *HandlerService) DeleteTaskHandler(ctx context.Context, c *app.RequestCo
 		return
 	}
 
-	// 检查任务是否存在
-	exists, err := s.taskRepo.Exists(ctx, taskID)
+	// 2. 调用 Domain Service
+	err := deps.taskService.DeleteTask(ctx, taskID)
 	if err != nil {
-		log.Printf("Error checking task existence: %v", err)
-		c.JSON(500, dto.ErrorResponse{
-			Error:   "QUERY_FAILED",
-			Message: "查询任务失败",
-		})
-		return
-	}
-	if !exists {
-		c.JSON(404, dto.ErrorResponse{
-			Error:   "TASK_NOT_FOUND",
-			Message: "任务不存在",
-		})
+		handleDomainError(c, err)
 		return
 	}
 
-	// 删除任务
-	if err := s.taskRepo.Delete(ctx, taskID); err != nil {
-		log.Printf("Error deleting task: %v", err)
-		c.JSON(500, dto.ErrorResponse{
-			Error:   "DELETION_FAILED",
-			Message: "删除任务失败",
-		})
-		return
-	}
-
-	// Extension point: 发布事件
-	log.Printf("Task deleted: %s", taskID)
-
+	// 3. 返回成功响应
 	c.JSON(200, dto.DeleteTaskResponse{
 		Success:   true,
 		DeletedAt: time.Now().Format(time.RFC3339),

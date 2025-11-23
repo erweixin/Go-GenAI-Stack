@@ -57,7 +57,7 @@ func TestCompleteTask_Success(t *testing.T) {
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
-	helper.HandlerService.CompleteTaskHandler(context.Background(), c)
+	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusOK, c.Response.StatusCode())
@@ -88,7 +88,7 @@ func TestCompleteTask_TASK_NOT_FOUND(t *testing.T) {
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "nonexistent"})
 
-	helper.HandlerService.CompleteTaskHandler(context.Background(), c)
+	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusNotFound, c.Response.StatusCode())
@@ -124,7 +124,7 @@ func TestCompleteTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
-	helper.HandlerService.CompleteTaskHandler(context.Background(), c)
+	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusBadRequest, c.Response.StatusCode())
@@ -168,7 +168,7 @@ func TestCompleteTask_COMPLETION_FAILED(t *testing.T) {
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
-	helper.HandlerService.CompleteTaskHandler(context.Background(), c)
+	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusInternalServerError, c.Response.StatusCode())

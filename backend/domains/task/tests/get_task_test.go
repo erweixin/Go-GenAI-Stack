@@ -52,7 +52,7 @@ func TestGetTask_Success(t *testing.T) {
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
 	// 执行 Handler
-	helper.HandlerService.GetTaskHandler(context.Background(), c)
+	helper.HandlerDeps.GetTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusOK, c.Response.StatusCode())
@@ -83,7 +83,7 @@ func TestGetTask_TASK_NOT_FOUND(t *testing.T) {
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "nonexistent-task"})
 
-	helper.HandlerService.GetTaskHandler(context.Background(), c)
+	helper.HandlerDeps.GetTaskHandler(context.Background(), c)
 
 	// 验证响应：应返回 404
 	assert.Equal(t, consts.StatusNotFound, c.Response.StatusCode())

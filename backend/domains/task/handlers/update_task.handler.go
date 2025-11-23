@@ -2,17 +2,30 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
 	"github.com/erweixin/go-genai-stack/domains/task/model"
-	"github.com/erweixin/go-genai-stack/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/domains/task/service"
 )
 
-// UpdateTaskHandler 更新任务
-func (s *HandlerService) UpdateTaskHandler(ctx context.Context, c *app.RequestContext) {
+// UpdateTaskHandler 更新任务（HTTP 适配层）
+//
+// 用例：UpdateTask（参考 usecases.yaml）
+//
+// HTTP:
+//   - Method: PUT
+//   - Path: /api/tasks/:id
+//
+// Handler 职责：
+//  1. 解析 HTTP 请求 → Domain Input
+//  2. 调用 Domain Service
+//  3. 转换 Domain Output → HTTP 响应
+//
+// 业务逻辑在 service.TaskService.UpdateTask() 中实现
+func (deps *HandlerDependencies) UpdateTaskHandler(ctx context.Context, c *app.RequestContext) {
+	// 1. 获取路径参数
 	taskID := c.Param("id")
 	if taskID == "" {
 		c.JSON(400, dto.ErrorResponse{
@@ -22,6 +35,7 @@ func (s *HandlerService) UpdateTaskHandler(ctx context.Context, c *app.RequestCo
 		return
 	}
 
+	// 2. 解析请求体
 	var req dto.UpdateTaskRequest
 	if err := c.BindAndValidate(&req); err != nil {
 		c.JSON(400, dto.ErrorResponse{
@@ -32,80 +46,55 @@ func (s *HandlerService) UpdateTaskHandler(ctx context.Context, c *app.RequestCo
 		return
 	}
 
-	task, err := s.taskRepo.FindByID(ctx, taskID)
-	if err != nil {
-		if err == repository.ErrTaskNotFound {
-			c.JSON(404, dto.ErrorResponse{
-				Error:   "TASK_NOT_FOUND",
-				Message: "任务不存在",
-			})
-		} else {
-			log.Printf("Error finding task: %v", err)
-			c.JSON(500, dto.ErrorResponse{
-				Error:   "QUERY_FAILED",
-				Message: "查询任务失败",
-			})
-		}
-		return
+	// 3. 转换为 Domain Input
+	input := service.UpdateTaskInput{
+		TaskID:      taskID,
+		Title:       stringPtr(req.Title),
+		Description: stringPtr(req.Description),
+		Tags:        req.Tags,
 	}
 
-	// 更新字段
-	priority := model.Priority(req.Priority)
-	if err := task.Update(req.Title, req.Description, priority); err != nil {
-		c.JSON(400, dto.ErrorResponse{
-			Error:   errorCode(err),
-			Message: err.Error(),
-		})
-		return
+	// 转换优先级
+	if req.Priority != "" {
+		priority := model.Priority(req.Priority)
+		input.Priority = &priority
 	}
 
-	// 更新截止日期
+	// 解析截止日期
 	if req.DueDate != "" {
 		dueDate, err := time.Parse(time.RFC3339, req.DueDate)
 		if err != nil {
 			c.JSON(400, dto.ErrorResponse{
 				Error:   "INVALID_DUE_DATE",
 				Message: "截止日期格式无效",
+				Details: err.Error(),
 			})
 			return
 		}
-		if err := task.SetDueDate(dueDate); err != nil {
-			c.JSON(400, dto.ErrorResponse{
-				Error:   errorCode(err),
-				Message: err.Error(),
-			})
-			return
-		}
+		input.DueDate = &dueDate
 	}
 
-	// 更新标签（先清空再添加）
-	if req.Tags != nil {
-		task.Tags = []model.Tag{}
-		for _, tagName := range req.Tags {
-			tag := model.Tag{Name: tagName, Color: "#808080"}
-			if err := task.AddTag(tag); err != nil {
-				c.JSON(400, dto.ErrorResponse{
-					Error:   errorCode(err),
-					Message: err.Error(),
-				})
-				return
-			}
-		}
-	}
-
-	if err := s.taskRepo.Update(ctx, task); err != nil {
-		log.Printf("Error updating task: %v", err)
-		c.JSON(500, dto.ErrorResponse{
-			Error:   "UPDATE_FAILED",
-			Message: "更新任务失败",
-		})
+	// 4. 调用 Domain Service
+	output, err := deps.taskService.UpdateTask(ctx, input)
+	if err != nil {
+		handleDomainError(c, err)
 		return
 	}
 
+	// 5. 转换为 HTTP 响应
+	task := output.Task
 	c.JSON(200, dto.UpdateTaskResponse{
 		TaskID:    task.ID,
 		Title:     task.Title,
 		Status:    string(task.Status),
 		UpdatedAt: task.UpdatedAt.Format(time.RFC3339),
 	})
+}
+
+// stringPtr 辅助函数：将字符串转为指针
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

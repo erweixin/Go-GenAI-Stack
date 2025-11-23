@@ -2,16 +2,28 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
-	"github.com/erweixin/go-genai-stack/domains/task/repository"
 )
 
-// GetTaskHandler 获取任务详情
-func (s *HandlerService) GetTaskHandler(ctx context.Context, c *app.RequestContext) {
+// GetTaskHandler 获取任务详情（HTTP 适配层）
+//
+// 用例：GetTask（参考 usecases.yaml）
+//
+// HTTP:
+//   - Method: GET
+//   - Path: /api/tasks/:id
+//
+// Handler 职责：
+//  1. 解析 HTTP 请求
+//  2. 调用 Domain Service
+//  3. 转换 Domain Output → HTTP 响应
+//
+// 业务逻辑在 service.TaskService.GetTask() 中实现
+func (deps *HandlerDependencies) GetTaskHandler(ctx context.Context, c *app.RequestContext) {
+	// 1. 获取路径参数
 	taskID := c.Param("id")
 	if taskID == "" {
 		c.JSON(400, dto.ErrorResponse{
@@ -21,24 +33,14 @@ func (s *HandlerService) GetTaskHandler(ctx context.Context, c *app.RequestConte
 		return
 	}
 
-	task, err := s.taskRepo.FindByID(ctx, taskID)
+	// 2. 调用 Domain Service
+	task, err := deps.taskService.GetTask(ctx, taskID)
 	if err != nil {
-		if err == repository.ErrTaskNotFound {
-			c.JSON(404, dto.ErrorResponse{
-				Error:   "TASK_NOT_FOUND",
-				Message: "任务不存在",
-			})
-		} else {
-			log.Printf("Error finding task: %v", err)
-			c.JSON(500, dto.ErrorResponse{
-				Error:   "QUERY_FAILED",
-				Message: "查询任务失败",
-			})
-		}
+		handleDomainError(c, err)
 		return
 	}
 
-	// 格式化响应
+	// 3. 转换为 HTTP 响应
 	resp := dto.GetTaskResponse{
 		TaskID:      task.ID,
 		Title:       task.Title,
@@ -49,6 +51,7 @@ func (s *HandlerService) GetTaskHandler(ctx context.Context, c *app.RequestConte
 		UpdatedAt:   task.UpdatedAt.Format(time.RFC3339),
 	}
 
+	// 处理可选字段
 	if task.DueDate != nil {
 		dueDate := task.DueDate.Format(time.RFC3339)
 		resp.DueDate = &dueDate
@@ -59,6 +62,7 @@ func (s *HandlerService) GetTaskHandler(ctx context.Context, c *app.RequestConte
 		resp.CompletedAt = &completedAt
 	}
 
+	// 转换标签
 	tags := make([]string, len(task.Tags))
 	for i, tag := range task.Tags {
 		tags[i] = tag.Name

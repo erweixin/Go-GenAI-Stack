@@ -54,7 +54,7 @@ func TestListTasks_Success(t *testing.T) {
 	c.Request.SetRequestURI("/api/tasks?page=1&limit=10")
 
 	// 执行 Handler
-	helper.HandlerService.ListTasksHandler(context.Background(), c)
+	helper.HandlerDeps.ListTasksHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusOK, c.Response.StatusCode())
@@ -101,7 +101,7 @@ func TestListTasks_WithFilters(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("GET", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.ListTasksHandler(ctx, c)
+		helper.HandlerDeps.ListTasksHandler(ctx, c)
 	})
 
 	// 使用 ut.PerformRequest 执行请求（带查询参数）
@@ -140,7 +140,7 @@ func TestListTasks_EmptyResult(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("GET", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.ListTasksHandler(ctx, c)
+		helper.HandlerDeps.ListTasksHandler(ctx, c)
 	})
 
 	// 使用 ut.PerformRequest 执行请求
@@ -171,7 +171,7 @@ func TestListTasks_INVALID_FILTER(t *testing.T) {
 	c := app.NewContext(0)
 	c.Request.SetRequestURI("/api/tasks?status=invalid_status")
 
-	helper.HandlerService.ListTasksHandler(context.Background(), c)
+	helper.HandlerDeps.ListTasksHandler(context.Background(), c)
 
 	// 验证响应
 	// 注意：根据实际实现，可能返回 400 或忽略无效参数
@@ -199,7 +199,7 @@ func TestListTasks_INVALID_PAGINATION(t *testing.T) {
 	c := app.NewContext(0)
 	c.Request.SetRequestURI("/api/tasks?page=-1&limit=1000")
 
-	helper.HandlerService.ListTasksHandler(context.Background(), c)
+	helper.HandlerDeps.ListTasksHandler(context.Background(), c)
 
 	// 验证响应
 	if c.Response.StatusCode() == consts.StatusBadRequest {
@@ -246,7 +246,7 @@ func TestListTasks_Pagination(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("GET", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.ListTasksHandler(ctx, c)
+		helper.HandlerDeps.ListTasksHandler(ctx, c)
 	})
 
 	// 使用 ut.PerformRequest 执行请求

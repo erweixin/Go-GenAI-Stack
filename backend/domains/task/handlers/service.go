@@ -1,29 +1,37 @@
 package handlers
 
 import (
-	"github.com/erweixin/go-genai-stack/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/domains/task/service"
 )
 
-// HandlerService 处理器服务
+// HandlerDependencies Handler 依赖容器
 //
-// 依赖注入容器，持有所有 Handler 需要的依赖。
-// 遵循依赖注入原则，所有依赖通过构造函数注入。
-type HandlerService struct {
-	taskRepo repository.TaskRepository
+// 这是一个依赖注入容器，持有所有 Handler 需要的依赖。
+// 与 Domain Service 的区别：
+// - HandlerDependencies: 只是容器，不包含业务逻辑
+// - Domain Service: 包含领域业务逻辑
+//
+// Handler 的职责：
+// - 解析 HTTP 请求
+// - 调用 Domain Service
+// - 构造 HTTP 响应
+// - 处理错误转换
+type HandlerDependencies struct {
+	taskService *service.TaskService
 	// Extension point: 添加更多依赖
 	// eventBus events.EventBus
-	// cache cache.Cache
+	// cache    cache.Cache
 }
 
-// NewHandlerService 创建新的处理器服务
+// NewHandlerDependencies 创建新的依赖容器
 //
 // 参数：
-//   - taskRepo: 任务仓储
+//   - taskService: 任务领域服务
 //
 // 返回：
-//   - *HandlerService: 处理器服务实例
-func NewHandlerService(taskRepo repository.TaskRepository) *HandlerService {
-	return &HandlerService{
-		taskRepo: taskRepo,
+//   - *HandlerDependencies: 依赖容器实例
+func NewHandlerDependencies(taskService *service.TaskService) *HandlerDependencies {
+	return &HandlerDependencies{
+		taskService: taskService,
 	}
 }

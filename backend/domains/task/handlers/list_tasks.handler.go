@@ -2,16 +2,16 @@ package handlers
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
 	"github.com/erweixin/go-genai-stack/domains/task/model"
 	"github.com/erweixin/go-genai-stack/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/domains/task/service"
 )
 
-// ListTasksHandler 列出任务
+// ListTasksHandler 列出任务（HTTP 适配层）
 //
 // 用例：ListTasks（参考 usecases.yaml）
 //
@@ -19,25 +19,14 @@ import (
 //   - Method: GET
 //   - Path: /api/tasks
 //
-// 输入（Query Parameters）：
-//   - status: 按状态筛选
-//   - priority: 按优先级筛选
-//   - tag: 按标签筛选
-//   - due_date_from/to: 按截止日期范围筛选
-//   - keyword: 关键词搜索
-//   - sort_by: 排序字段
-//   - sort_order: 排序方向
-//   - page: 页码
-//   - limit: 每页数量
+// Handler 职责：
+//  1. 解析 HTTP 查询参数 → Domain Input
+//  2. 调用 Domain Service
+//  3. 转换 Domain Output → HTTP 响应
 //
-// 输出：
-//   - tasks: 任务列表
-//   - total_count: 总数
-//   - page: 当前页码
-//   - limit: 每页数量
-//   - has_more: 是否还有更多
-func (s *HandlerService) ListTasksHandler(ctx context.Context, c *app.RequestContext) {
-	// Step 1: ValidateQueryParams - 解析查询参数
+// 业务逻辑在 service.TaskService.ListTasks() 中实现
+func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.RequestContext) {
+	// 1. 解析查询参数
 	var req dto.ListTasksRequest
 	if err := c.BindQuery(&req); err != nil {
 		c.JSON(400, dto.ErrorResponse{
@@ -48,7 +37,7 @@ func (s *HandlerService) ListTasksHandler(ctx context.Context, c *app.RequestCon
 		return
 	}
 
-	// 设置默认值
+	// 2. 设置默认值
 	if req.Page == 0 {
 		req.Page = 1
 	}
@@ -62,7 +51,7 @@ func (s *HandlerService) ListTasksHandler(ctx context.Context, c *app.RequestCon
 		req.SortOrder = "desc"
 	}
 
-	// Step 2: BuildQuery - 构建筛选条件
+	// 3. 构建 Domain Input（Filter）
 	filter := repository.NewTaskFilter()
 	filter.Page = req.Page
 	filter.Limit = req.Limit
@@ -90,20 +79,18 @@ func (s *HandlerService) ListTasksHandler(ctx context.Context, c *app.RequestCon
 		filter.Keyword = &req.Keyword
 	}
 
-	// Step 3: QueryTasks - 查询任务列表
-	tasks, totalCount, err := s.taskRepo.List(ctx, filter)
+	// 4. 调用 Domain Service
+	output, err := deps.taskService.ListTasks(ctx, service.ListTasksInput{
+		Filter: *filter, // 解引用指针
+	})
 	if err != nil {
-		log.Printf("Error listing tasks: %v", err)
-		c.JSON(500, dto.ErrorResponse{
-			Error:   "QUERY_FAILED",
-			Message: "查询任务失败",
-		})
+		handleDomainError(c, err)
 		return
 	}
 
-	// Step 4 & 5: FormatResponse - 格式化响应
-	taskItems := make([]dto.TaskItem, 0, len(tasks))
-	for _, task := range tasks {
+	// 5. 转换为 HTTP 响应
+	taskItems := make([]dto.TaskItem, 0, len(output.Tasks))
+	for _, task := range output.Tasks {
 		item := dto.TaskItem{
 			TaskID:    task.ID,
 			Title:     task.Title,
@@ -118,7 +105,7 @@ func (s *HandlerService) ListTasksHandler(ctx context.Context, c *app.RequestCon
 			item.DueDate = &dueDate
 		}
 
-		// 处理标签
+		// 转换标签
 		tags := make([]string, len(task.Tags))
 		for i, tag := range task.Tags {
 			tags[i] = tag.Name
@@ -128,15 +115,12 @@ func (s *HandlerService) ListTasksHandler(ctx context.Context, c *app.RequestCon
 		taskItems = append(taskItems, item)
 	}
 
-	// 计算是否还有更多
-	hasMore := (req.Page * req.Limit) < totalCount
-
-	// 返回响应
+	// 6. 返回响应
 	c.JSON(200, dto.ListTasksResponse{
 		Tasks:      taskItems,
-		TotalCount: totalCount,
-		Page:       req.Page,
-		Limit:      req.Limit,
-		HasMore:    hasMore,
+		TotalCount: output.TotalCount,
+		Page:       output.Page,
+		Limit:      output.Limit,
+		HasMore:    output.HasMore,
 	})
 }

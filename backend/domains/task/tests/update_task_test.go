@@ -56,7 +56,7 @@ func TestUpdateTask_Success(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("PUT", "/api/tasks/:id", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.UpdateTaskHandler(ctx, c)
+		helper.HandlerDeps.UpdateTaskHandler(ctx, c)
 	})
 
 	// 准备请求
@@ -95,7 +95,7 @@ func TestUpdateTask_TASK_NOT_FOUND(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("PUT", "/api/tasks/:id", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.UpdateTaskHandler(ctx, c)
+		helper.HandlerDeps.UpdateTaskHandler(ctx, c)
 	})
 
 	req := dto.UpdateTaskRequest{
@@ -142,7 +142,7 @@ func TestUpdateTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("PUT", "/api/tasks/:id", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.UpdateTaskHandler(ctx, c)
+		helper.HandlerDeps.UpdateTaskHandler(ctx, c)
 	})
 
 	req := dto.UpdateTaskRequest{
@@ -193,7 +193,7 @@ func TestUpdateTask_INVALID_PRIORITY(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("PUT", "/api/tasks/:id", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.UpdateTaskHandler(ctx, c)
+		helper.HandlerDeps.UpdateTaskHandler(ctx, c)
 	})
 
 	// 准备请求（无效的优先级）
@@ -244,7 +244,7 @@ func TestUpdateTask_UPDATE_FAILED(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("PUT", "/api/tasks/:id", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.UpdateTaskHandler(ctx, c)
+		helper.HandlerDeps.UpdateTaskHandler(ctx, c)
 	})
 
 	req := dto.UpdateTaskRequest{

@@ -14,10 +14,48 @@
 - `scripts/`    - 项目级脚本
 - `docs/`       - 项目文档
 
-### 后端架构
-- 领域优先（Domain-First）：按业务领域垂直切分（domains/chat/, domains/llm/）
-- 自包含（Self-contained）：每个领域包含 model + handlers + http + tests
+### 后端架构（三层DDD架构）
+- 领域优先（Domain-First）：按业务领域垂直切分（domains/task/, domains/chat/, domains/llm/）
+- 自包含（Self-contained）：每个领域包含 model + service + repository + handlers + http + tests
 - 显式知识（Explicit Knowledge）：每个领域有 6 个必需文件（README.md, glossary.md, rules.md, events.md, usecases.yaml, ai-metadata.json）
+
+#### 三层架构详解
+
+```
+domains/{domain}/
+├── model/                 # 【领域模型层】
+│   └── {entity}.go        # 聚合根、实体、值对象
+│                          # 职责：简单的领域规则和状态变更
+│
+├── service/               # 【领域服务层】⭐ 核心
+│   └── {domain}_service.go # 业务逻辑实现
+│                          # 职责：实现业务用例、封装复杂流程
+│
+├── repository/            # 【仓储层】
+│   ├── interface.go       # 仓储接口
+│   └── {entity}_repo.go   # 仓储实现（database/sql）
+│                          # 职责：数据持久化
+│
+├── handlers/              # 【HTTP 适配层】
+│   ├── dependencies.go    # Handler 依赖容器（注入 Service）
+│   └── {usecase}.handler.go # HTTP 请求处理
+│                          # 职责：HTTP → Domain Input → HTTP
+│
+├── http/                  # 【HTTP 接口层】
+│   ├── dto/              # 数据传输对象（贴近 API 规范）
+│   └── router.go         # 路由注册
+│
+└── tests/                # 【测试】
+    └── {usecase}_test.go
+```
+
+**依赖方向**：Handler → Service → Repository → Database
+
+**核心原则**：
+1. Handler 层（薄）：只做 HTTP 适配，不包含业务逻辑
+2. Service 层（厚）：实现业务用例，封装复杂流程
+3. Model 层：简单的领域规则和状态变更
+4. Repository 层：数据访问抽象
 
 ### 前端架构
 - 功能优先（Feature-First）：按功能组织（features/chat/, features/llm/）
@@ -26,25 +64,74 @@
 
 ## 代码生成规则
 
-### 1. 添加新用例（Use Case）
+### 1. 添加新用例（Use Case）⭐ 重要
 
 当用户要求添加新的业务用例时：
 
-1. 首先检查 `domains/{domain}/usecases.yaml` 是否已定义该用例
-2. 如果已定义，读取 usecases.yaml 中的步骤、输入、输出
-3. 同时读取以下显式知识文件：
-   - domains/{domain}/README.md
-   - domains/{domain}/glossary.md
-   - domains/{domain}/rules.md
-   - domains/{domain}/events.md
-4. 生成 handler：`domains/{domain}/handlers/{usecase}.handler.go`
-   - 按照 usecases.yaml 的 steps 顺序实现
-   - 根据 on_fail 策略实现错误处理
-   - 包含完整的注释和示例
-5. 生成测试：`domains/{domain}/tests/{usecase}.test.go`
+**步骤（三层架构）**：
+
+1. **读取显式知识**：
+   - domains/{domain}/usecases.yaml（查看用例定义）
+   - domains/{domain}/README.md（理解领域边界）
+   - domains/{domain}/glossary.md（理解术语）
+   - domains/{domain}/rules.md（理解业务规则）
+   - domains/{domain}/events.md（理解领域事件）
+
+2. **生成 Domain Service 层**（核心业务逻辑）：
+   - 文件：`domains/{domain}/service/{domain}_service.go`
+   - 方法：按照 usecases.yaml 的 steps 顺序实现
+   - Input/Output：定义专用的 Input/Output 结构体
+   - 错误处理：使用 "ERROR_CODE: message" 格式
+   - 示例：
+     ```go
+     // service/task_service.go
+     func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput) (*CreateTaskOutput, error) {
+         // Step 1: ValidateInput
+         // Step 2: CreateTaskEntity
+         // Step 3: SaveTask
+         // Step 4: PublishEvent
+     }
+     ```
+
+3. **生成 Handler 层**（HTTP 适配）：
+   - 文件：`domains/{domain}/handlers/{usecase}.handler.go`
+   - 职责：HTTP 请求 → Domain Input → 调用 Service → HTTP 响应
+   - 示例：
+     ```go
+     // handlers/create_task.handler.go
+     func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.RequestContext) {
+         // 1. 解析 HTTP 请求
+         var req dto.CreateTaskRequest
+         c.BindAndValidate(&req)
+         
+         // 2. 转换为 Domain Input
+         input := service.CreateTaskInput{...}
+         
+         // 3. 调用 Domain Service
+         output, err := deps.taskService.CreateTask(ctx, input)
+         
+         // 4. 返回 HTTP 响应
+         c.JSON(200, dto.CreateTaskResponse{...})
+     }
+     ```
+
+4. **生成 DTO**：
+   - 文件：`domains/{domain}/http/dto/{usecase}.go`
+   - 包含 json tag、validation tag
+
+5. **生成测试**：
+   - 文件：`domains/{domain}/tests/{usecase}_test.go`
    - 覆盖所有 steps
    - 覆盖所有 errors 列表中的错误场景
-6. 更新 README.md 添加用例说明
+
+6. **更新文档**：
+   - 更新 README.md 添加用例说明
+
+**关键原则**：
+- ✅ 业务逻辑在 Service 层
+- ✅ Handler 层只做 HTTP 适配（薄层）
+- ✅ 每个用例对应一个 Service 方法
+- ✅ Service 的 Input/Output 是纯业务概念（不包含 HTTP 细节）
 
 ### 2. 前后端类型同步（Monorepo）
 
@@ -237,9 +324,117 @@
 
 ---
 
+## 业务逻辑分层规则 ⭐ 重要
+
+### Handler 层职责（薄层）
+
+✅ **应该做的**：
+- 解析 HTTP 请求（BindAndValidate）
+- 转换 HTTP DTO → Domain Input
+- 调用 Domain Service
+- 转换 Domain Output → HTTP 响应
+- 处理错误转换（领域错误 → HTTP 状态码）
+
+❌ **不应该做的**：
+- 不要实现业务逻辑
+- 不要直接调用 Repository
+- 不要包含验证规则（应该在 Service 或 Model 中）
+
+**示例**：
+```go
+// ✅ Good: Handler 只做适配
+func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.RequestContext) {
+    var req dto.CreateTaskRequest
+    c.BindAndValidate(&req)
+    
+    input := service.CreateTaskInput{...}  // 转换
+    output, err := deps.taskService.CreateTask(ctx, input)  // 调用 Service
+    
+    if err != nil {
+        handleDomainError(c, err)  // 错误转换
+        return
+    }
+    
+    c.JSON(200, toResponse(output))  // 响应转换
+}
+
+// ❌ Bad: Handler 包含业务逻辑
+func CreateTaskHandler(...) {
+    // 验证业务规则
+    if task.Priority == "high" && !user.IsVIP() {
+        return errors.New("only VIP can create high priority tasks")
+    }
+    // 这些应该在 Service 层！
+}
+```
+
+### Service 层职责（厚层）
+
+✅ **应该做的**：
+- 实现业务用例（对应 usecases.yaml）
+- 封装复杂的业务流程
+- 协调多个 Repository
+- 验证复杂的业务规则
+- 发布领域事件
+- 管理事务
+
+❌ **不应该做的**：
+- 不要处理 HTTP 请求/响应
+- 不要使用 HTTP 相关的类型（如 app.RequestContext）
+- 不要实现简单的领域规则（应该在 Model 中）
+
+**示例**：
+```go
+// ✅ Good: Service 实现业务逻辑
+func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput) (*CreateTaskOutput, error) {
+    // 业务规则验证
+    if input.Title == "" {
+        return nil, fmt.Errorf("TASK_TITLE_EMPTY: 任务标题不能为空")
+    }
+    
+    // 创建领域对象
+    task, err := model.NewTask(input.Title, input.Description, input.Priority)
+    
+    // 持久化
+    if err := s.taskRepo.Create(ctx, task); err != nil {
+        return nil, fmt.Errorf("保存任务失败: %w", err)
+    }
+    
+    // 发布事件
+    // s.eventBus.Publish(ctx, TaskCreatedEvent{...})
+    
+    return &CreateTaskOutput{Task: task}, nil
+}
+```
+
+### Model 层职责
+
+✅ **应该做的**：
+- 简单的领域规则
+- 状态变更逻辑
+- 不变量维护
+
+❌ **不应该做的**：
+- 不要包含数据访问逻辑
+- 不要包含复杂的业务流程
+
+**示例**：
+```go
+// ✅ Good: Model 包含简单的领域规则
+func (t *Task) Complete() error {
+    if t.Status == StatusCompleted {
+        return ErrTaskAlreadyCompleted
+    }
+    t.Status = StatusCompleted
+    t.CompletedAt = timePtr(time.Now())
+    return nil
+}
+```
+
 ## 禁止事项
 
-- ❌ 不要在 handler 中直接写业务逻辑（应该调用 domain service）
+- ❌ **不要在 Handler 中写业务逻辑**（应该调用 Service 层）
+- ❌ **不要在 Handler 中直接调用 Repository**（应该通过 Service 层）
 - ❌ 不要跨领域直接调用（应该通过事件或应用服务编排）
 - ❌ 不要在 DTO 中包含业务逻辑（只做数据传输）
 - ❌ 不要使用全局变量（使用依赖注入）

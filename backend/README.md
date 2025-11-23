@@ -80,13 +80,18 @@ backend/
 │   │   │   ├── interface.go
 │   │   │   └── task_repo.go     # 使用 database/sql
 │   │   │
-│   │   ├── handlers/            # 用例实现
+│   │   ├── service/             # 【领域服务层】★ 核心
+│   │   │   └── task_service.go  # 业务逻辑实现
+│   │   │
+│   │   ├── handlers/            # 【HTTP 适配层】
+│   │   │   ├── dependencies.go  # Handler 依赖容器
 │   │   │   ├── create_task.handler.go
 │   │   │   ├── update_task.handler.go
 │   │   │   ├── complete_task.handler.go
 │   │   │   ├── delete_task.handler.go
 │   │   │   ├── get_task.handler.go
-│   │   │   └── list_tasks.handler.go
+│   │   │   ├── list_tasks.handler.go
+│   │   │   └── helpers.go       # 错误处理辅助函数
 │   │   │
 │   │   ├── http/                # HTTP 层
 │   │   │   ├── dto/             # DTO（tygo 同步到前端）★
@@ -161,10 +166,11 @@ backend/
 ### 核心原则
 
 1. **领域优先**：按业务领域垂直切分（Domain-First）
-2. **自包含**：每个领域包含完整的实现（model + handlers + http + repository + tests）
-3. **显式知识**：6 个必需文件让业务规则可被 AI 理解
-4. **声明式用例**：在 `usecases.yaml` 中声明用例，AI 可直接生成代码
-5. **手写仓储**：使用 Repository 模式 + database/sql，不使用 ORM
+2. **三层架构**：Handler（薄）→ Service（厚）→ Repository（数据访问）
+3. **自包含**：每个领域包含完整的实现（model + service + repository + handlers + http + tests）
+4. **显式知识**：6 个必需文件让业务规则可被 AI 理解
+5. **声明式用例**：在 `usecases.yaml` 中声明用例，AI 可直接生成代码
+6. **手写仓储**：使用 Repository 模式 + database/sql，不使用 ORM
 
 ### 6 个必需文件
 

@@ -17,11 +17,11 @@ func TestDeleteTask_Success(t *testing.T) {
 	helper := NewTestHelper(t)
 	defer helper.Close()
 
-	// Mock Exists 查询（检查存在）
-	existsRows := sqlmock.NewRows([]string{"exists"}).AddRow(true)
-	helper.Mock.ExpectQuery("SELECT EXISTS").
-		WithArgs("task-123").
-		WillReturnRows(existsRows)
+	// 创建测试任务
+	task := CreateTestTaskWithID("task-123")
+
+	// Mock FindByID 查询（检查存在）
+	MockFindByID(helper.Mock, task)
 
 	// Mock 删除操作
 	helper.Mock.ExpectExec("DELETE FROM tasks WHERE id").
@@ -31,7 +31,7 @@ func TestDeleteTask_Success(t *testing.T) {
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
-	helper.HandlerService.DeleteTaskHandler(context.Background(), c)
+	helper.HandlerDeps.DeleteTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusOK, c.Response.StatusCode())
@@ -48,16 +48,15 @@ func TestDeleteTask_TASK_NOT_FOUND(t *testing.T) {
 	helper := NewTestHelper(t)
 	defer helper.Close()
 
-	// Mock Exists 查询返回 false
-	existsRows := sqlmock.NewRows([]string{"exists"}).AddRow(false)
-	helper.Mock.ExpectQuery("SELECT EXISTS").
+	// Mock FindByID 查询返回 not found
+	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("nonexistent").
-		WillReturnRows(existsRows)
+		WillReturnError(sql.ErrNoRows)
 
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "nonexistent"})
 
-	helper.HandlerService.DeleteTaskHandler(context.Background(), c)
+	helper.HandlerDeps.DeleteTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusNotFound, c.Response.StatusCode())
@@ -74,11 +73,11 @@ func TestDeleteTask_DELETION_FAILED(t *testing.T) {
 	helper := NewTestHelper(t)
 	defer helper.Close()
 
-	// Mock Exists 查询成功
-	existsRows := sqlmock.NewRows([]string{"exists"}).AddRow(true)
-	helper.Mock.ExpectQuery("SELECT EXISTS").
-		WithArgs("task-123").
-		WillReturnRows(existsRows)
+	// 创建测试任务
+	task := CreateTestTaskWithID("task-123")
+
+	// Mock FindByID 查询成功
+	MockFindByID(helper.Mock, task)
 
 	// Mock 删除失败
 	helper.Mock.ExpectExec("DELETE FROM tasks WHERE id").
@@ -88,7 +87,7 @@ func TestDeleteTask_DELETION_FAILED(t *testing.T) {
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
-	helper.HandlerService.DeleteTaskHandler(context.Background(), c)
+	helper.HandlerDeps.DeleteTaskHandler(context.Background(), c)
 
 	// 验证响应
 	assert.Equal(t, consts.StatusInternalServerError, c.Response.StatusCode())

@@ -16,6 +16,7 @@ import (
 	"github.com/erweixin/go-genai-stack/domains/task/handlers"
 	"github.com/erweixin/go-genai-stack/domains/task/model"
 	"github.com/erweixin/go-genai-stack/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/domains/task/service"
 )
 
 // ========== 测试常量 ==========
@@ -40,28 +41,34 @@ var TestTime = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // TestHelper 提供测试辅助方法
 type TestHelper struct {
-	DB             *sql.DB
-	Mock           sqlmock.Sqlmock
-	HandlerService *handlers.HandlerService
-	Server         *server.Hertz // 使用完整的 Server 而不是 Engine
-	Ctx            context.Context
+	DB          *sql.DB
+	Mock        sqlmock.Sqlmock
+	HandlerDeps *handlers.HandlerDependencies
+	Server      *server.Hertz // 使用完整的 Server 而不是 Engine
+	Ctx         context.Context
 }
 
 // NewTestHelper 创建测试辅助工具
 //
 // 使用 sqlmock 模拟数据库，避免依赖真实数据库
 // 使用 server.Default() 创建完整的 Server 以支持 BindAndValidate
+//
+// 三层架构：
+// - Repository Layer → Service Layer → Handler Dependencies
 func NewTestHelper(t *testing.T) *TestHelper {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
 
-	// 创建 Repository
+	// 1. 创建 Repository（基础设施层）
 	taskRepo := repository.NewTaskRepository(db)
 
-	// 创建 Handler Service
-	handlerService := handlers.NewHandlerService(taskRepo)
+	// 2. 创建 Domain Service（领域层）
+	taskService := service.NewTaskService(taskRepo)
+
+	// 3. 创建 Handler Dependencies（Handler 层）
+	handlerDeps := handlers.NewHandlerDependencies(taskService)
 
 	// 创建完整的 Server（包含绑定器初始化）
 	// 使用测试端口，快速退出
@@ -71,11 +78,11 @@ func NewTestHelper(t *testing.T) *TestHelper {
 	)
 
 	return &TestHelper{
-		DB:             db,
-		Mock:           mock,
-		HandlerService: handlerService,
-		Server:         h,
-		Ctx:            context.Background(),
+		DB:          db,
+		Mock:        mock,
+		HandlerDeps: handlerDeps,
+		Server:      h,
+		Ctx:         context.Background(),
 	}
 }
 

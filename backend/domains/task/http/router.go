@@ -10,6 +10,10 @@ import (
 // 将 HTTP 路由映射到 handler 方法。
 // 遵循 RESTful 风格。
 //
+// 架构说明：
+// - handlers.HandlerDependencies 包含 Domain Service
+// - 每个 Handler 是一个薄适配层（HTTP → Domain → HTTP）
+//
 // 路由列表：
 //   - POST   /api/tasks          - 创建任务
 //   - GET    /api/tasks          - 列出任务
@@ -17,25 +21,25 @@ import (
 //   - PUT    /api/tasks/:id      - 更新任务
 //   - DELETE /api/tasks/:id      - 删除任务
 //   - POST   /api/tasks/:id/complete - 完成任务
-func RegisterRoutes(r *route.RouterGroup, handlerService *handlers.HandlerService) {
+func RegisterRoutes(r *route.RouterGroup, deps *handlers.HandlerDependencies) {
 	tasks := r.Group("/tasks")
 	{
 		// 创建任务
-		tasks.POST("", handlerService.CreateTaskHandler)
+		tasks.POST("", deps.CreateTaskHandler)
 
 		// 列出任务
-		tasks.GET("", handlerService.ListTasksHandler)
+		tasks.GET("", deps.ListTasksHandler)
 
 		// 获取任务详情
-		tasks.GET("/:id", handlerService.GetTaskHandler)
+		tasks.GET("/:id", deps.GetTaskHandler)
 
 		// 更新任务
-		tasks.PUT("/:id", handlerService.UpdateTaskHandler)
+		tasks.PUT("/:id", deps.UpdateTaskHandler)
 
 		// 删除任务
-		tasks.DELETE("/:id", handlerService.DeleteTaskHandler)
+		tasks.DELETE("/:id", deps.DeleteTaskHandler)
 
 		// 完成任务
-		tasks.POST("/:id/complete", handlerService.CompleteTaskHandler)
+		tasks.POST("/:id/complete", deps.CompleteTaskHandler)
 	}
 }

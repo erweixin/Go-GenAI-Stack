@@ -46,7 +46,7 @@ func TestCreateTask_Success(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.CreateTaskHandler(ctx, c)
+		helper.HandlerDeps.CreateTaskHandler(ctx, c)
 	})
 
 	// 准备请求
@@ -91,7 +91,7 @@ func TestCreateTask_TASK_TITLE_EMPTY(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.CreateTaskHandler(ctx, c)
+		helper.HandlerDeps.CreateTaskHandler(ctx, c)
 	})
 
 	// 准备请求（标题为空）
@@ -131,7 +131,7 @@ func TestCreateTask_TASK_DESCRIPTION_TOO_LONG(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.CreateTaskHandler(ctx, c)
+		helper.HandlerDeps.CreateTaskHandler(ctx, c)
 	})
 
 	// 准备请求（描述超过 5000 字符）
@@ -171,7 +171,7 @@ func TestCreateTask_INVALID_PRIORITY(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.CreateTaskHandler(ctx, c)
+		helper.HandlerDeps.CreateTaskHandler(ctx, c)
 	})
 
 	// 准备请求（无效的优先级）
@@ -234,7 +234,7 @@ func TestCreateTask_INVALID_DUE_DATE(t *testing.T) {
 
 			// 注册路由
 			helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-				helper.HandlerService.CreateTaskHandler(ctx, c)
+				helper.HandlerDeps.CreateTaskHandler(ctx, c)
 			})
 
 			req := dto.CreateTaskRequest{
@@ -274,7 +274,7 @@ func TestCreateTask_TOO_MANY_TAGS(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.CreateTaskHandler(ctx, c)
+		helper.HandlerDeps.CreateTaskHandler(ctx, c)
 	})
 
 	// 准备请求（超过 10 个标签）
@@ -319,7 +319,7 @@ func TestCreateTask_CREATION_FAILED(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.CreateTaskHandler(ctx, c)
+		helper.HandlerDeps.CreateTaskHandler(ctx, c)
 	})
 
 	// Mock 数据库操作失败
@@ -357,7 +357,7 @@ func TestCreateTask_WithOptionalFields(t *testing.T) {
 
 	// 注册路由
 	helper.RegisterRoute("POST", "/api/tasks", func(ctx context.Context, c *app.RequestContext) {
-		helper.HandlerService.CreateTaskHandler(ctx, c)
+		helper.HandlerDeps.CreateTaskHandler(ctx, c)
 	})
 
 	// Mock 数据库操作
