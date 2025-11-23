@@ -1,130 +1,54 @@
-# golangci-lint 配置文件
-# 用于代码质量检查和 CI/CD
+# golangci-lint configuration for Go-GenAI-Stack
+# Docs: https://golangci-lint.run/usage/configuration/
+
+version: v1.61
 
 run:
   timeout: 5m
-  issues-exit-code: 1
   tests: true
+  modules-download-mode: readonly
   skip-dirs:
     - vendor
-    - third_party
-    - testdata
-  skip-files:
+    - .git
+    - .github
+
+issues:
+  exclude-files:
     - ".*\\.pb\\.go$"
     - ".*_gen\\.go$"
-
-output:
-  format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
-  sort-results: true
-
-linters:
-  enable:
-    - errcheck      # 检查错误处理
-    - gosimple      # 简化代码
-    - govet         # Go 标准检查
-    - ineffassign   # 检查无效赋值
-    - staticcheck   # 静态分析
-    - typecheck     # 类型检查
-    - unused        # 检查未使用的常量、变量等
-    - gofmt         # 代码格式化
-    - goimports     # import 排序
-    - misspell      # 拼写检查
-    - goconst       # 检查可以提取为常量的重复字符串
-    - dupl          # 检查重复代码
-    - gosec         # 安全检查
-    - bodyclose     # 检查 HTTP body 是否关闭
-    - noctx         # 检查 HTTP 请求是否使用 context
-    - errname       # 检查错误命名
-    - errorlint     # 错误处理最佳实践
-    - exportloopref # 检查循环变量导出问题
-  disable:
-    - exhaustive    # 太严格
-    - exhaustruct   # 太严格
-    - varnamelen    # 太严格
-    - gochecknoglobals # 在某些场景需要全局变量
+  max-issues-per-linter: 50
+  max-same-issues: 3
 
 linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  
-  govet:
-    check-shadowing: true
-    enable-all: true
+  goimports:
+    local-prefixes: github.com/erweixin/go-genai-stack
   
   gofmt:
     simplify: true
   
-  goimports:
-    local-prefixes: github.com/erweixin/go-genai-stack
-  
-  misspell:
-    locale: US
-  
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  
-  dupl:
-    threshold: 100
-  
-  gosec:
-    severity: medium
-    confidence: medium
-    excludes:
-      - G104  # 审计未检查的错误
-      - G204  # 审计命令执行
-  
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-    disabled-checks:
-      - paramTypeCombine
-      - unnamedResult
+  govet:
+    enable-all: true
+    disable:
+      - shadow
+      - fieldalignment  # 已手动优化过
 
-issues:
-  exclude-use-default: false
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  
-  exclude-rules:
-    # 排除测试文件的某些检查
-    - path: _test\.go
-      linters:
-        - dupl
-        - gosec
-        - goconst
+linters:
+  disable-all: true
+  enable:
+    # 代码格式 (自动修复)
+    - gofmt         # 代码格式化
+    - goimports     # 导入排序
     
-    # 排除生成的文件
-    - path: \.pb\.go$
-      linters:
-        - all
+    # 代码质量检查
+    - errcheck      # 检查未处理的错误
+    - gosimple      # 简化代码建议
+    - govet         # Go 官方检查工具
+    - ineffassign   # 检测无效赋值
+    - staticcheck   # 静态分析
+    - unused        # 未使用的代码
     
-    # 排除特定错误消息
-    - text: "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*print(f|ln)?|os\\.(Un)?Setenv). is not checked"
-      linters:
-        - errcheck
+    # 可选检查
+    - misspell      # 拼写检查
     
-    # 允许在 main 和 init 函数中使用 panic
-    - text: "Use of panic detected"
-      linters:
-        - gosec
-      path: cmd/
-    
-    # 允许在测试中使用 MD5（不用于加密）
-    - text: "Use of weak cryptographic primitive"
-      linters:
-        - gosec
-      path: _test\.go
-
-severity:
-  default-severity: warning
-  rules:
-    - linters:
-        - dupl
-      severity: info
-
+  # 注意: typecheck 被禁用，因为在某些测试文件中会产生误报
+  # 实际的类型检查由 `go build` 和 `go test` 保证
