@@ -43,11 +43,12 @@ if ! command -v psql &> /dev/null; then
 fi
 
 # 读取数据库配置（从环境变量或使用默认值）
-DB_HOST=${DB_HOST:-localhost}
-DB_PORT=${DB_PORT:-5432}
-DB_USER=${DB_USER:-postgres}
-DB_PASSWORD=${DB_PASSWORD:-password}
-DB_NAME=${DB_NAME:-go_genai_stack}
+# 支持两种格式：APP_DATABASE_* (Go 后端格式) 和 POSTGRES_* (Docker Compose 格式)
+DB_HOST=${APP_DATABASE_HOST:-${POSTGRES_HOST:-localhost}}
+DB_PORT=${APP_DATABASE_PORT:-${POSTGRES_PORT:-5432}}
+DB_USER=${APP_DATABASE_USER:-${POSTGRES_USER:-genai}}
+DB_PASSWORD=${APP_DATABASE_PASSWORD:-${POSTGRES_PASSWORD:-genai_password}}
+DB_NAME=${APP_DATABASE_DATABASE:-${POSTGRES_DB:-go_genai_stack}}
 
 echo ""
 echo "================================================"

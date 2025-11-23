@@ -152,12 +152,12 @@ if [ "$PSQL_AVAILABLE" = true ]; then
     if [ -f "$SEED_FILE" ]; then
         info "加载种子数据..."
         
-        # 读取数据库配置
-        DB_HOST=${DB_HOST:-localhost}
-        DB_PORT=${DB_PORT:-5432}
-        DB_USER=${DB_USER:-postgres}
-        DB_PASSWORD=${DB_PASSWORD:-password}
-        DB_NAME=${DB_NAME:-go_genai_stack}
+        # 读取数据库配置（与 env.example 一致）
+        DB_HOST=${APP_DATABASE_HOST:-${POSTGRES_HOST:-localhost}}
+        DB_PORT=${APP_DATABASE_PORT:-${POSTGRES_PORT:-5432}}
+        DB_USER=${APP_DATABASE_USER:-${POSTGRES_USER:-genai}}
+        DB_PASSWORD=${APP_DATABASE_PASSWORD:-${POSTGRES_PASSWORD:-genai_password}}
+        DB_NAME=${APP_DATABASE_DATABASE:-${POSTGRES_DB:-go_genai_stack}}
         
         PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f "$SEED_FILE" > /dev/null 2>&1 || {
             warning "种子数据加载失败（可能已存在）"

@@ -23,7 +23,19 @@ SEED_DIR="${BACKEND_DIR}/migrations/seed"
 
 # 环境变量
 ENV="${ATLAS_ENV:-local}"
-DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/go_genai_stack?sslmode=disable}"
+
+# 从环境变量构建 DATABASE_URL
+# 支持两种格式：
+#   1. APP_DATABASE_* (Go 后端格式)
+#   2. POSTGRES_* (Docker Compose 格式)
+DB_HOST="${APP_DATABASE_HOST:-${POSTGRES_HOST:-localhost}}"
+DB_PORT="${APP_DATABASE_PORT:-${POSTGRES_PORT:-5432}}"
+DB_USER="${APP_DATABASE_USER:-${POSTGRES_USER:-genai}}"
+DB_PASSWORD="${APP_DATABASE_PASSWORD:-${POSTGRES_PASSWORD:-genai_password}}"
+DB_NAME="${APP_DATABASE_DATABASE:-${POSTGRES_DB:-go_genai_stack}}"
+DB_SSL_MODE="${APP_DATABASE_SSL_MODE:-disable}"
+
+DATABASE_URL="${DATABASE_URL:-postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}}"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -264,21 +276,27 @@ ${GREEN}Atlas Schema 管理工具${NC}
   clean           清理开发数据库（谨慎使用）
 
 环境变量:
-  ATLAS_ENV       Atlas 环境 (默认: local)
-  DATABASE_URL    数据库连接字符串
+  ATLAS_ENV                Atlas 环境 (默认: local)
+  DATABASE_URL             数据库连接字符串（可选）
+  APP_DATABASE_HOST        数据库主机 (默认: localhost)
+  APP_DATABASE_PORT        数据库端口 (默认: 5432)
+  APP_DATABASE_USER        数据库用户 (默认: genai)
+  APP_DATABASE_PASSWORD    数据库密码 (默认: genai_password)
+  APP_DATABASE_DATABASE    数据库名 (默认: go_genai_stack)
+  APP_DATABASE_SSL_MODE    SSL 模式 (默认: disable)
 
 示例:
+  # 使用默认配置
+  $0 apply
+  
+  # 使用环境变量
+  source docker/.env && $0 apply
+  
   # 修改 schema 后生成迁移
   $0 diff add_user_email
   
-  # 应用迁移
-  $0 apply
-  
   # 查看状态
   $0 status
-  
-  # 检查 schema 质量
-  $0 lint
 
 更多信息: https://atlasgo.io/
 
