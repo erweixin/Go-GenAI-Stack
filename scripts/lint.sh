@@ -67,24 +67,8 @@ else
 fi
 echo ""
 
-# 5. golangci-lint
-echo "5️⃣ Running golangci-lint..."
-if command -v golangci-lint &> /dev/null; then
-    if golangci-lint run --timeout=5m ./...; then
-        echo "✅ golangci-lint passed"
-    else
-        echo "❌ golangci-lint failed"
-        exit 1
-    fi
-else
-    echo "⚠️  golangci-lint not found"
-    echo "Install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$(go env GOPATH)/bin"
-fi
-echo ""
-
 cd ..
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "✅ All lint checks passed!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-

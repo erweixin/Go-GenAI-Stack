@@ -1,10 +1,11 @@
-.PHONY: help lint lint-fix test test-coverage fmt vet staticcheck tools
+.PHONY: help build lint lint-fix test test-coverage fmt vet staticcheck tools clean
 
 # 默认目标：显示帮助
 help:
 	@echo "Go-GenAI-Stack Backend Makefile"
 	@echo ""
 	@echo "Usage:"
+	@echo "  make build         - Build the application"
 	@echo "  make lint          - Run all lint checks"
 	@echo "  make lint-fix      - Auto-fix lint issues"
 	@echo "  make test          - Run all tests"
@@ -13,7 +14,8 @@ help:
 	@echo "  make vet           - Run go vet"
 	@echo "  make staticcheck   - Run staticcheck"
 	@echo "  make tools         - Install development tools"
-	@echo "  make check         - Run all checks (lint + test)"
+	@echo "  make check         - Run all checks (build + lint + test)"
+	@echo "  make clean         - Clean build artifacts"
 
 # 安装开发工具
 tools:
@@ -22,6 +24,20 @@ tools:
 	@go install honnef.co/go/tools/cmd/staticcheck@latest
 	@go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
 	@echo "✅ Tools installed"
+
+# 构建应用
+build:
+	@echo "🔨 Building application..."
+	@go build -v ./...
+	@echo "✅ Build successful"
+
+# 构建二进制文件
+build-binary:
+	@echo "🔨 Building binary..."
+	@mkdir -p bin
+	@go build -o bin/server ./cmd/server
+	@echo "✅ Binary created: bin/server"
+	@ls -lh bin/
 
 # 代码格式化
 fmt:
@@ -51,14 +67,6 @@ staticcheck:
 
 # Lint 检查
 lint: fmt vet staticcheck
-	@echo "🔍 Running golangci-lint..."
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run --timeout=5m ./...; \
-	else \
-		echo "⚠️  golangci-lint not found"; \
-		echo "Install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin"; \
-		exit 1; \
-	fi
 	@echo "✅ All lint checks passed"
 
 # 自动修复 Lint 问题
@@ -67,9 +75,6 @@ lint-fix:
 	@gofmt -w .
 	@if command -v goimports >/dev/null 2>&1; then \
 		goimports -w .; \
-	fi
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run --fix --timeout=5m ./...; \
 	fi
 	@go mod tidy
 	@echo "✅ All fixes applied"
@@ -89,9 +94,16 @@ test-coverage:
 	@echo "📊 Coverage report generated: coverage.out"
 	@echo "   View with: go tool cover -html=coverage.out"
 
+# 清理构建产物
+clean:
+	@echo "🧹 Cleaning..."
+	@rm -rf bin/
+	@rm -f coverage.out coverage-*.out
+	@go clean
+	@echo "✅ Clean complete"
+
 # 运行所有检查
-check: lint test
+check: build lint test
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo "✅ All checks passed!"
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-

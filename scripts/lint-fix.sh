@@ -29,19 +29,8 @@ else
 fi
 echo ""
 
-# 3. golangci-lint auto-fix
-echo "3️⃣ Running golangci-lint --fix..."
-if command -v golangci-lint &> /dev/null; then
-    golangci-lint run --fix --timeout=5m ./... || true
-    echo "✅ golangci-lint fixes applied"
-else
-    echo "⚠️  golangci-lint not found"
-    echo "Install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$(go env GOPATH)/bin"
-fi
-echo ""
-
-# 4. go mod tidy
-echo "4️⃣ Tidying go.mod..."
+# 3. go mod tidy
+echo "3️⃣ Tidying go.mod..."
 go mod tidy
 echo "✅ go.mod tidied"
 echo ""
@@ -56,4 +45,3 @@ echo "   1. Review the changes: git diff"
 echo "   2. Run tests: cd backend && go test ./..."
 echo "   3. Commit: git add . && git commit"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-

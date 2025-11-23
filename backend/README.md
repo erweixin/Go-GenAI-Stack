@@ -291,7 +291,8 @@ go test -cover ./...
 
 ### 开发工具
 - **Atlas** - 数据库 Schema 管理
-- **golangci-lint** - 代码检查（计划中）
+- **gofmt / goimports** - 代码格式化
+- **go vet / staticcheck** - 代码检查
 
 ---
 

@@ -38,20 +38,8 @@ else
 fi
 echo ""
 
-# 4. golangci-lint
-echo "4️⃣ Installing golangci-lint..."
-if command -v golangci-lint &> /dev/null; then
-    echo "✅ golangci-lint already installed"
-    golangci-lint version
-else
-    echo "Installing golangci-lint..."
-    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
-    echo "✅ golangci-lint installed"
-fi
-echo ""
-
-# 5. 设置 Git hooks
-echo "5️⃣ Setting up Git hooks..."
+# 4. 设置 Git hooks
+echo "4️⃣ Setting up Git hooks..."
 HOOKS_DIR=".git/hooks"
 if [ -f "$HOOKS_DIR/pre-commit" ]; then
     echo "✅ pre-commit hook already exists"
@@ -68,11 +56,9 @@ echo "📝 Installed tools:"
 echo "   ✓ goimports     - $(which goimports || echo 'not found')"
 echo "   ✓ staticcheck   - $(which staticcheck || echo 'not found')"
 echo "   ✓ fieldalignment - $(which fieldalignment || echo 'not found')"
-echo "   ✓ golangci-lint - $(which golangci-lint || echo 'not found')"
 echo ""
 echo "🎯 Next steps:"
 echo "   1. Run lint checks: ./scripts/lint.sh"
 echo "   2. Auto-fix issues: ./scripts/lint-fix.sh"
-echo "   3. Commit changes with automatic checks"
+echo "   3. Build project: cd backend && make build"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
