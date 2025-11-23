@@ -5,8 +5,12 @@ import (
 
 	taskhandlers "github.com/erweixin/go-genai-stack/domains/task/handlers"
 	taskrepo "github.com/erweixin/go-genai-stack/domains/task/repository"
-	"github.com/erweixin/go-genai-stack/infrastructure/persistence/postgres"
+	"github.com/erweixin/go-genai-stack/infrastructure/persistence"
 	"github.com/erweixin/go-genai-stack/infrastructure/persistence/redis"
+
+	// 导入数据库提供者（自动注册）
+	_ "github.com/erweixin/go-genai-stack/infrastructure/persistence/mysql"
+	_ "github.com/erweixin/go-genai-stack/infrastructure/persistence/postgres"
 )
 
 // AppContainer 应用依赖容器
@@ -31,11 +35,11 @@ type AppContainer struct {
 //
 // 遵循依赖注入原则，从外层向内层注入
 func InitDependencies(
-	dbConn *postgres.Connection,
+	dbProvider persistence.DatabaseProvider,
 	redisConn *redis.Connection,
 ) *AppContainer {
 	// 获取底层数据库实例
-	db := dbConn.DB()
+	db := dbProvider.DB()
 
 	// ============================================
 	// Task 领域依赖注入

@@ -26,16 +26,18 @@ type ServerConfig struct {
 
 // DatabaseConfig 数据库配置
 type DatabaseConfig struct {
-	Host            string        `mapstructure:"host"`
-	Port            int           `mapstructure:"port"`
-	User            string        `mapstructure:"user"`
-	Password        string        `mapstructure:"password"`
-	Database        string        `mapstructure:"database"`
-	SSLMode         string        `mapstructure:"ssl_mode"`
-	MaxOpenConns    int           `mapstructure:"max_open_conns"`
-	MaxIdleConns    int           `mapstructure:"max_idle_conns"`
-	ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
-	ConnMaxIdleTime time.Duration `mapstructure:"conn_max_idle_time"`
+	Type            string            `mapstructure:"type"` // 数据库类型：postgres, mysql, sqlite
+	Host            string            `mapstructure:"host"`
+	Port            int               `mapstructure:"port"`
+	User            string            `mapstructure:"user"`
+	Password        string            `mapstructure:"password"`
+	Database        string            `mapstructure:"database"`
+	SSLMode         string            `mapstructure:"ssl_mode"` // PostgreSQL 专用
+	MaxOpenConns    int               `mapstructure:"max_open_conns"`
+	MaxIdleConns    int               `mapstructure:"max_idle_conns"`
+	ConnMaxLifetime time.Duration     `mapstructure:"conn_max_lifetime"`
+	ConnMaxIdleTime time.Duration     `mapstructure:"conn_max_idle_time"`
+	Options         map[string]string `mapstructure:"options"` // 数据库特定选项
 }
 
 // RedisConfig Redis 配置
@@ -89,16 +91,18 @@ func DefaultConfig() *Config {
 			MaxBodySize:  10 * 1024 * 1024, // 10MB
 		},
 		Database: DatabaseConfig{
+			Type:            "postgres",
 			Host:            "localhost",
 			Port:            5432,
-			User:            "postgres",
-			Password:        "postgres",
+			User:            "genai",
+			Password:        "genai_password",
 			Database:        "go_genai_stack",
 			SSLMode:         "disable",
 			MaxOpenConns:    25,
-			MaxIdleConns:    25,
+			MaxIdleConns:    5,
 			ConnMaxLifetime: time.Hour,
 			ConnMaxIdleTime: 10 * time.Minute,
+			Options:         make(map[string]string),
 		},
 		Redis: RedisConfig{
 			Host:         "localhost",

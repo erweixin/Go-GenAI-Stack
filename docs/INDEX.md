@@ -155,6 +155,17 @@ docs/
 
 **适合**：需要实现跨领域功能的开发者
 
+### Database Providers 数据库提供者
+
+**[DATABASE-PROVIDERS.md](Extensions/DATABASE-PROVIDERS.md)**
+
+- 数据库依赖注入架构
+- 切换 PostgreSQL/MySQL/SQLite
+- 实现自定义数据库提供者
+- SQL 方言抽象
+
+**适合**：需要切换数据库或添加自定义数据库支持的开发者
+
 ### 其他扩展（规划中）
 
 - LLM 集成指南
