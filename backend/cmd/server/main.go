@@ -100,8 +100,7 @@ func main() {
 
 // loadConfig 加载配置
 func loadConfig() (*config.Config, error) {
-	loader := config.NewLoader()
-	cfg, err := loader.LoadFromEnv()
+	cfg, err := config.Load()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}

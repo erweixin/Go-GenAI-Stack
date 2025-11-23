@@ -248,7 +248,7 @@ git push
   - 启动引导（server, database, redis, dependencies, routes）
   - 中间件（认证、CORS、错误处理、日志、限流、恢复、追踪）
   - 数据库（Postgres + Redis）
-  - 配置管理（Viper）
+  - 配置管理（原生标准库，零第三方依赖）
 - ✅ 可复用工具包（Validator）
 - ✅ 数据库 Schema 管理（Atlas）
 - ✅ 前端 Monorepo 设置（Web + Mobile + Shared）

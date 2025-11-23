@@ -5,81 +5,88 @@ import (
 )
 
 // Config 应用配置
+//
+// 环境变量命名规则（前缀：APP_）：
+//   - APP_SERVER_HOST → Config.Server.Host
+//   - APP_DATABASE_PORT → Config.Database.Port
+//   - APP_REDIS_POOL_SIZE → Config.Redis.PoolSize
 type Config struct {
-	Server     ServerConfig     `mapstructure:"server"`
-	Database   DatabaseConfig   `mapstructure:"database"`
-	Redis      RedisConfig      `mapstructure:"redis"`
-	LLM        LLMConfig        `mapstructure:"llm"`
-	Logging    LoggingConfig    `mapstructure:"logging"`
-	Monitoring MonitoringConfig `mapstructure:"monitoring"`
+	Server     ServerConfig
+	Database   DatabaseConfig
+	Redis      RedisConfig
+	LLM        LLMConfig
+	Logging    LoggingConfig
+	Monitoring MonitoringConfig
 }
 
 // ServerConfig 服务器配置
 type ServerConfig struct {
-	Host         string        `mapstructure:"host"`
-	Port         int           `mapstructure:"port"`
-	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
-	WriteTimeout time.Duration `mapstructure:"write_timeout"`
-	IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
-	MaxBodySize  int64         `mapstructure:"max_body_size"`
+	Host         string
+	Port         int
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	IdleTimeout  time.Duration
+	MaxBodySize  int64
 }
 
 // DatabaseConfig 数据库配置
 type DatabaseConfig struct {
-	Type            string            `mapstructure:"type"` // 数据库类型：postgres, mysql, sqlite
-	Host            string            `mapstructure:"host"`
-	Port            int               `mapstructure:"port"`
-	User            string            `mapstructure:"user"`
-	Password        string            `mapstructure:"password"`
-	Database        string            `mapstructure:"database"`
-	SSLMode         string            `mapstructure:"ssl_mode"` // PostgreSQL 专用
-	MaxOpenConns    int               `mapstructure:"max_open_conns"`
-	MaxIdleConns    int               `mapstructure:"max_idle_conns"`
-	ConnMaxLifetime time.Duration     `mapstructure:"conn_max_lifetime"`
-	ConnMaxIdleTime time.Duration     `mapstructure:"conn_max_idle_time"`
-	Options         map[string]string `mapstructure:"options"` // 数据库特定选项
+	Type            string // postgres, mysql, sqlite
+	Host            string
+	Port            int
+	User            string
+	Password        string
+	Database        string
+	SSLMode         string // PostgreSQL 专用：disable, require, verify-ca, verify-full
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+	ConnMaxIdleTime time.Duration
+	Options         map[string]string // 数据库特定选项
 }
 
 // RedisConfig Redis 配置
 type RedisConfig struct {
-	Host         string        `mapstructure:"host"`
-	Port         int           `mapstructure:"port"`
-	Password     string        `mapstructure:"password"`
-	DB           int           `mapstructure:"db"`
-	PoolSize     int           `mapstructure:"pool_size"`
-	MinIdleConns int           `mapstructure:"min_idle_conns"`
-	MaxRetries   int           `mapstructure:"max_retries"`
-	DialTimeout  time.Duration `mapstructure:"dial_timeout"`
-	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
-	WriteTimeout time.Duration `mapstructure:"write_timeout"`
+	Host         string
+	Port         int
+	Password     string
+	DB           int
+	PoolSize     int
+	MinIdleConns int
+	MaxRetries   int
+	DialTimeout  time.Duration
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
 }
 
 // LLMConfig LLM 配置
 type LLMConfig struct {
-	DefaultModel    string            `mapstructure:"default_model"`
-	DefaultProvider string            `mapstructure:"default_provider"`
-	Timeout         time.Duration     `mapstructure:"timeout"`
-	MaxRetries      int               `mapstructure:"max_retries"`
-	Providers       map[string]string `mapstructure:"providers"` // provider -> API key
+	DefaultModel    string
+	DefaultProvider string
+	Timeout         time.Duration
+	MaxRetries      int
+	Providers       map[string]string // provider -> API key
 }
 
 // LoggingConfig 日志配置
 type LoggingConfig struct {
-	Level      string `mapstructure:"level"`       // debug, info, warn, error
-	Format     string `mapstructure:"format"`      // json, console
-	Output     string `mapstructure:"output"`      // stdout, stderr, file
-	OutputPath string `mapstructure:"output_path"` // 日志文件路径
+	Level      string // debug, info, warn, error
+	Format     string // json, console
+	Output     string // stdout, stderr, file
+	OutputPath string // 日志文件路径（当 output=file 时）
 }
 
 // MonitoringConfig 监控配置
 type MonitoringConfig struct {
-	Enabled        bool          `mapstructure:"enabled"`
-	SampleRate     float64       `mapstructure:"sample_rate"`     // 采样率 (0.0-1.0)
-	TraceRetention time.Duration `mapstructure:"trace_retention"` // Trace 保留时间
-	MetricInterval time.Duration `mapstructure:"metric_interval"` // 指标聚合间隔
+	Enabled        bool
+	SampleRate     float64       // 采样率 (0.0-1.0)
+	TraceRetention time.Duration // Trace 保留时间
+	MetricInterval time.Duration // 指标聚合间隔
 }
 
 // DefaultConfig 返回默认配置
+//
+// 当环境变量未设置时，Load() 会使用这些默认值。
 func DefaultConfig() *Config {
 	return &Config{
 		Server: ServerConfig{
@@ -88,7 +95,7 @@ func DefaultConfig() *Config {
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
 			IdleTimeout:  60 * time.Second,
-			MaxBodySize:  10 * 1024 * 1024, // 10MB
+			MaxBodySize:  10 * 1024 * 1024,
 		},
 		Database: DatabaseConfig{
 			Type:            "postgres",
@@ -130,7 +137,7 @@ func DefaultConfig() *Config {
 		},
 		Monitoring: MonitoringConfig{
 			Enabled:        true,
-			SampleRate:     0.1, // 10%
+			SampleRate:     0.1,
 			TraceRetention: 7 * 24 * time.Hour,
 			MetricInterval: time.Minute,
 		},

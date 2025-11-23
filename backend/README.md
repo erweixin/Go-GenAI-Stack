@@ -287,7 +287,7 @@ go test -cover ./...
 - **validator/v10** - 参数验证
 - **lib/pq** - PostgreSQL 驱动
 - **go-redis/v9** - Redis 客户端
-- **Viper** - 配置管理
+- **配置管理** - 原生标准库（os.Getenv，零第三方依赖）
 
 ### 开发工具
 - **Atlas** - 数据库 Schema 管理

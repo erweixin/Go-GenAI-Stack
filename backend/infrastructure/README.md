@@ -240,30 +240,91 @@ router.Use(
 
 ### 3. Config (配置管理)
 
-基于 Viper 的配置加载和验证。
+**完全基于标准库的配置加载**，直接使用 `os.Getenv` 读取环境变量，零第三方依赖。
+
+**设计理念**：
+- ✅ **零依赖**：仅使用 Go 标准库（os, strconv, time）
+- ✅ **完全透明**：每个环境变量的读取、类型转换、默认值逻辑都显式可见
+- ✅ **AI 最友好**：无任何"魔法"行为，所有代码逻辑清晰明了
+- ✅ **自动验证**：配置加载后自动执行业务规则验证
+- ✅ **易于调试**：错误信息精确到具体的环境变量和原因
 
 **使用示例**:
 ```go
 import "github.com/erweixin/go-genai-stack/backend/infrastructure/config"
 
-// 从文件加载
-cfg, err := config.LoadFromFile("config.yaml")
+// 从环境变量加载配置
+cfg, err := config.Load()
+if err != nil {
+    log.Fatal(err)
+}
 
-// 从环境变量加载
-cfg, err := config.LoadFromEnv()
-
-// 验证配置
-err = config.ValidateConfig(cfg)
+// 访问配置
+fmt.Printf("Server running on %s:%d\n", cfg.Server.Host, cfg.Server.Port)
 ```
 
 **环境变量命名规则**:
 - 前缀：`APP_`
-- 分隔符：`_`（替代 `.`）
+- 分隔符：`_`
+- 格式：`APP_<SECTION>_<FIELD>`
 - 示例：
-  - `APP_SERVER_PORT` → `server.port`
-  - `APP_DATABASE_HOST` → `database.host`
+  - `APP_SERVER_PORT=8080` → `Config.Server.Port`
+  - `APP_DATABASE_HOST=localhost` → `Config.Database.Host`
+  - `APP_REDIS_PASSWORD=secret` → `Config.Redis.Password`
+
+**默认值**:
+所有字段都有合理的默认值，定义在 `DefaultConfig()` 函数中：
+```go
+func DefaultConfig() *Config {
+    return &Config{
+        Server: ServerConfig{
+            Host: "0.0.0.0",
+            Port: 8080,
+            ReadTimeout: 10 * time.Second,
+        },
+        // ...
+    }
+}
+```
+
+无需设置任何环境变量即可直接运行，生产环境只需覆盖需要的配置。
+
+**类型支持**:
+- ✅ 字符串（string）
+- ✅ 整数（int, int64）
+- ✅ 浮点数（float64）
+- ✅ 布尔值（bool）- 支持 "true", "false", "1", "0"
+- ✅ 时间间隔（time.Duration）- 如 "10s", "5m", "2h"
+
+**错误处理**:
+类型转换错误会返回清晰的错误信息：
+```
+invalid APP_SERVER_PORT: invalid integer value '9999999': strconv.Atoi: parsing "9999999": value out of range
+```
 
 ## 🔄 迁移指南
+
+### 从 Viper 迁移到原生 os.Getenv
+
+项目已从 Viper 切换到原生 Go 标准库，**零第三方依赖**，配置更加透明。
+
+**旧代码（Viper）**:
+```go
+loader := config.NewLoader()
+cfg, err := loader.LoadFromEnv()
+```
+
+**新代码（原生标准库）**:
+```go
+cfg, err := config.Load()
+```
+
+**变更说明**：
+- ✅ 环境变量命名规则不变（`APP_` 前缀）
+- ✅ 配置结构体不变，无需修改使用配置的代码
+- ✅ 默认值在 `DefaultConfig()` 中定义，清晰明了
+- ✅ 自动验证已集成到 `Load()` 函数中
+- ✅ **零依赖**：不再需要任何第三方配置管理库
 
 ### 从旧的 infra/database 迁移
 
@@ -282,7 +343,7 @@ import (
 )
 
 // 使用配置管理
-cfg, err := config.LoadFromEnv()
+cfg, err := config.Load()
 if err != nil {
     log.Fatal(err)
 }
