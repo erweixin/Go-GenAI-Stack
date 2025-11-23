@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -455,32 +454,3 @@ func (r *TaskRepositoryImpl) FindOverdueTasks(ctx context.Context) ([]*model.Tas
 
 	return tasks, rows.Err()
 }
-
-// ============================================
-// 类型转换辅助函数
-// ============================================
-
-// tagsToJSON 将标签转换为 JSON（如果需要存储为 JSON 列）
-func tagsToJSON(tags []model.Tag) (string, error) {
-	if len(tags) == 0 {
-		return "[]", nil
-	}
-	data, err := json.Marshal(tags)
-	if err != nil {
-		return "", fmt.Errorf("marshal tags failed: %w", err)
-	}
-	return string(data), nil
-}
-
-// tagsFromJSON 从 JSON 解析标签
-func tagsFromJSON(data string) ([]model.Tag, error) {
-	if data == "" || data == "[]" {
-		return []model.Tag{}, nil
-	}
-	var tags []model.Tag
-	if err := json.Unmarshal([]byte(data), &tags); err != nil {
-		return nil, fmt.Errorf("unmarshal tags failed: %w", err)
-	}
-	return tags, nil
-}
-

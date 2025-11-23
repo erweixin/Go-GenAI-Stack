@@ -571,4 +571,3 @@ func TestNewTaskFilter(t *testing.T) {
 	assert.Nil(t, filter.Priority)
 	assert.Nil(t, filter.Tag)
 }
-

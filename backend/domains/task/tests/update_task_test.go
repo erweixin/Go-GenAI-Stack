@@ -28,7 +28,7 @@ func TestUpdateTask_Success(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
 		WillReturnRows(rows)
-	
+
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
@@ -38,14 +38,14 @@ func TestUpdateTask_Success(t *testing.T) {
 	// Mock 更新任务（先更新任务）
 	helper.Mock.ExpectExec("UPDATE tasks SET (.+) WHERE id").
 		WithArgs(
-			"New Title",      // title
+			"New Title",       // title
 			"New Description", // description
-			sqlmock.AnyArg(), // status
-			"high",           // priority
-			sqlmock.AnyArg(), // due_date
-			sqlmock.AnyArg(), // updated_at
-			sqlmock.AnyArg(), // completed_at
-			"task-123",       // id
+			sqlmock.AnyArg(),  // status
+			"high",            // priority
+			sqlmock.AnyArg(),  // due_date
+			sqlmock.AnyArg(),  // updated_at
+			sqlmock.AnyArg(),  // completed_at
+			"task-123",        // id
 		).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
@@ -68,7 +68,7 @@ func TestUpdateTask_Success(t *testing.T) {
 	reqBody, _ := json.Marshal(req)
 
 	// 使用 ut.PerformRequest 执行请求
-	w := helper.PerformRequest("PUT", "/api/tasks/task-123", 
+	w := helper.PerformRequest("PUT", "/api/tasks/task-123",
 		bytes.NewReader(reqBody),
 		map[string]string{"Content-Type": "application/json"},
 	)
@@ -104,7 +104,7 @@ func TestUpdateTask_TASK_NOT_FOUND(t *testing.T) {
 	reqBody, _ := json.Marshal(req)
 
 	// 使用 ut.PerformRequest 执行请求
-	w := helper.PerformRequest("PUT", "/api/tasks/nonexistent", 
+	w := helper.PerformRequest("PUT", "/api/tasks/nonexistent",
 		bytes.NewReader(reqBody),
 		map[string]string{"Content-Type": "application/json"},
 	)
@@ -133,7 +133,7 @@ func TestUpdateTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
 		WillReturnRows(rows)
-	
+
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
@@ -151,7 +151,7 @@ func TestUpdateTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 	reqBody, _ := json.Marshal(req)
 
 	// 使用 ut.PerformRequest 执行请求
-	w := helper.PerformRequest("PUT", "/api/tasks/task-123", 
+	w := helper.PerformRequest("PUT", "/api/tasks/task-123",
 		bytes.NewReader(reqBody),
 		map[string]string{"Content-Type": "application/json"},
 	)
@@ -184,7 +184,7 @@ func TestUpdateTask_INVALID_PRIORITY(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
 		WillReturnRows(rows)
-	
+
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
@@ -203,7 +203,7 @@ func TestUpdateTask_INVALID_PRIORITY(t *testing.T) {
 	reqBody, _ := json.Marshal(req)
 
 	// 使用 ut.PerformRequest 执行请求
-	w := helper.PerformRequest("PUT", "/api/tasks/task-123", 
+	w := helper.PerformRequest("PUT", "/api/tasks/task-123",
 		bytes.NewReader(reqBody),
 		map[string]string{"Content-Type": "application/json"},
 	)
@@ -231,7 +231,7 @@ func TestUpdateTask_UPDATE_FAILED(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
 		WillReturnRows(rows)
-	
+
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
@@ -255,7 +255,7 @@ func TestUpdateTask_UPDATE_FAILED(t *testing.T) {
 	reqBody, _ := json.Marshal(req)
 
 	// 使用 ut.PerformRequest 执行请求
-	w := helper.PerformRequest("PUT", "/api/tasks/task-123", 
+	w := helper.PerformRequest("PUT", "/api/tasks/task-123",
 		bytes.NewReader(reqBody),
 		map[string]string{"Content-Type": "application/json"},
 	)
@@ -265,4 +265,3 @@ func TestUpdateTask_UPDATE_FAILED(t *testing.T) {
 
 	helper.AssertExpectations(t)
 }
-

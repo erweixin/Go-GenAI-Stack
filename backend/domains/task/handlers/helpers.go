@@ -42,4 +42,3 @@ func errorCode(err error) string {
 		return "UNKNOWN_ERROR"
 	}
 }
-

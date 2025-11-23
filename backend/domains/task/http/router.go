@@ -39,4 +39,3 @@ func RegisterRoutes(r *route.RouterGroup, handlerService *handlers.HandlerServic
 		tasks.POST("/:id/complete", handlerService.CompleteTaskHandler)
 	}
 }
-

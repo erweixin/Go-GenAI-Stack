@@ -102,8 +102,7 @@ type ListTasksResponse struct {
 
 // ErrorResponse 错误响应
 type ErrorResponse struct {
-	Error   string `json:"error"`           // 错误码
-	Message string `json:"message"`         // 错误消息
+	Error   string `json:"error"`             // 错误码
+	Message string `json:"message"`           // 错误消息
 	Details string `json:"details,omitempty"` // 详细信息（可选）
 }
-

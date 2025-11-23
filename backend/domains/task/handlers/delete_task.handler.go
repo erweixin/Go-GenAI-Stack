@@ -56,4 +56,3 @@ func (s *HandlerService) DeleteTaskHandler(ctx context.Context, c *app.RequestCo
 		DeletedAt: time.Now().Format(time.RFC3339),
 	})
 }
-

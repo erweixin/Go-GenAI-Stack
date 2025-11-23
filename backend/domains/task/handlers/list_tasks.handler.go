@@ -140,4 +140,3 @@ func (s *HandlerService) ListTasksHandler(ctx context.Context, c *app.RequestCon
 		HasMore:    hasMore,
 	})
 }
-

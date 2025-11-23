@@ -95,4 +95,3 @@ func TestDeleteTask_DELETION_FAILED(t *testing.T) {
 
 	helper.AssertExpectations(t)
 }
-

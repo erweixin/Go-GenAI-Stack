@@ -27,4 +27,3 @@ func NewHandlerService(taskRepo repository.TaskRepository) *HandlerService {
 		taskRepo: taskRepo,
 	}
 }
-

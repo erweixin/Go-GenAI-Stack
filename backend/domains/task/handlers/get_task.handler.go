@@ -67,4 +67,3 @@ func (s *HandlerService) GetTaskHandler(ctx context.Context, c *app.RequestConte
 
 	c.JSON(200, resp)
 }
-

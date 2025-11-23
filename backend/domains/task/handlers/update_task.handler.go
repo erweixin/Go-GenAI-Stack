@@ -109,4 +109,3 @@ func (s *HandlerService) UpdateTaskHandler(ctx context.Context, c *app.RequestCo
 		UpdatedAt: task.UpdatedAt.Format(time.RFC3339),
 	})
 }
-

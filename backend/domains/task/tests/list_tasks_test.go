@@ -34,7 +34,7 @@ func TestListTasks_Success(t *testing.T) {
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
 		WillReturnRows(rows)
-	
+
 	// Mock 加载 tags (为每个任务)
 	tagsRows1 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
@@ -92,7 +92,7 @@ func TestListTasks_WithFilters(t *testing.T) {
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
 		WillReturnRows(rows)
-	
+
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
@@ -238,7 +238,7 @@ func TestListTasks_Pagination(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
 		WithArgs("task-11").
 		WillReturnRows(tagsRows1)
-	
+
 	tagsRows2 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
 		WithArgs("task-12").
@@ -266,4 +266,3 @@ func TestListTasks_Pagination(t *testing.T) {
 
 	helper.AssertExpectations(t)
 }
-

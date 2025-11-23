@@ -40,7 +40,7 @@ func TestGetTask_Success(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
 		WillReturnRows(rows)
-	
+
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
 	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
@@ -95,4 +95,3 @@ func TestGetTask_TASK_NOT_FOUND(t *testing.T) {
 
 	helper.AssertExpectations(t)
 }
-

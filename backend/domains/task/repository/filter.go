@@ -32,4 +32,3 @@ func NewTaskFilter() *TaskFilter {
 		Limit:     20,
 	}
 }
-

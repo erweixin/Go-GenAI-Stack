@@ -32,11 +32,11 @@ import (
 //   - created_at: 创建时间
 //
 // 步骤：
-//   1. ValidateInput - 验证输入参数
-//   2. GenerateTaskID - 生成唯一的任务 ID
-//   3. CreateTaskEntity - 创建任务实体
-//   4. SaveTask - 保存任务到数据库
-//   5. PublishTaskCreatedEvent - 发布任务创建事件
+//  1. ValidateInput - 验证输入参数
+//  2. GenerateTaskID - 生成唯一的任务 ID
+//  3. CreateTaskEntity - 创建任务实体
+//  4. SaveTask - 保存任务到数据库
+//  5. PublishTaskCreatedEvent - 发布任务创建事件
 //
 // 错误：
 //   - TASK_TITLE_EMPTY: 任务标题不能为空
@@ -129,4 +129,3 @@ func (s *HandlerService) CreateTaskHandler(ctx context.Context, c *app.RequestCo
 		CreatedAt: task.CreatedAt.Format(time.RFC3339),
 	})
 }
-

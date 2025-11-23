@@ -76,4 +76,3 @@ func (s *HandlerService) CompleteTaskHandler(ctx context.Context, c *app.Request
 		CompletedAt: task.CompletedAt.Format(time.RFC3339),
 	})
 }
-
