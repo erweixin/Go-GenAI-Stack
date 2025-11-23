@@ -10,11 +10,11 @@ import (
 //
 // 所有领域事件应该嵌入这个结构
 type BaseEvent struct {
+	timestamp time.Time
+	payload   interface{}
 	id        string
 	eventType string
 	source    string
-	timestamp time.Time
-	payload   interface{}
 }
 
 // NewBaseEvent 创建基础事件
@@ -64,8 +64,8 @@ type MessageSentPayload struct {
 	UserID         string
 	Content        string
 	Role           string
-	Tokens         int
 	Model          string
+	Tokens         int
 }
 
 // MessageSentEvent 消息发送事件
@@ -86,9 +86,9 @@ type MessageReceivedPayload struct {
 	ConversationID string
 	Content        string
 	Role           string
-	Tokens         int
 	Model          string
-	Latency        int64 // 毫秒
+	Tokens         int
+	Latency        int64
 }
 
 // MessageReceivedEvent 消息接收事件
@@ -170,11 +170,11 @@ type GenerationCompletedPayload struct {
 	RequestID    string
 	Model        string
 	Provider     string
+	Error        string
 	InputTokens  int
 	OutputTokens int
-	Latency      int64 // 毫秒
+	Latency      int64
 	Success      bool
-	Error        string
 }
 
 // GenerationCompletedEvent 生成完成事件
@@ -216,9 +216,9 @@ func NewSchemaValidationFailedEvent(payload SchemaValidationFailedPayload) *Sche
 
 // MetricCollectedPayload 指标收集事件负载
 type MetricCollectedPayload struct {
+	Labels map[string]string
 	Name   string
 	Value  float64
-	Labels map[string]string
 }
 
 // MetricCollectedEvent 指标收集事件
@@ -235,10 +235,10 @@ func NewMetricCollectedEvent(payload MetricCollectedPayload) *MetricCollectedEve
 
 // AlertTriggeredPayload 告警触发事件负载
 type AlertTriggeredPayload struct {
-	AlertName string
-	Severity  string // critical, warning, info
-	Message   string
 	Labels    map[string]string
+	AlertName string
+	Severity  string
+	Message   string
 }
 
 // AlertTriggeredEvent 告警触发事件

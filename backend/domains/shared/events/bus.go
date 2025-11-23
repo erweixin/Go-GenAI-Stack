@@ -54,9 +54,9 @@ type EventBus interface {
 // 适用于开发环境和单体应用
 // 生产环境建议使用 Kafka 等消息队列
 type InMemoryEventBus struct {
+	logger   Logger
 	handlers map[string][]EventHandler
 	mu       sync.RWMutex
-	logger   Logger
 }
 
 // Logger 日志接口

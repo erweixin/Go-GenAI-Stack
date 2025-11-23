@@ -6,16 +6,15 @@ import (
 	"log"
 	"os"
 	"os/signal"
-
-	// "path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
+	"github.com/joho/godotenv"
+
 	"github.com/erweixin/go-genai-stack/infrastructure/bootstrap"
 	"github.com/erweixin/go-genai-stack/infrastructure/config"
-	"github.com/joho/godotenv"
 )
 
 func main() {
