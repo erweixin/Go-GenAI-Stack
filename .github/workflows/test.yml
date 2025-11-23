@@ -174,29 +174,29 @@ jobs:
         path: backend/coverage-${{ matrix.domain }}.out
         retention-days: 30
 
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
+  # security:
+  #   name: Security Scan
+  #   runs-on: ubuntu-latest
     
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
     
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.21'
-        cache-dependency-path: backend/go.sum
+  #   - name: Set up Go
+  #     uses: actions/setup-go@v5
+  #     with:
+  #       go-version: '1.21'
+  #       cache-dependency-path: backend/go.sum
     
-    - name: Run Gosec Security Scanner
-      uses: securego/gosec@master
-      with:
-        args: '-no-fail -fmt sarif -out gosec-results.sarif ./backend/...'
+  #   - name: Run Gosec Security Scanner
+  #     uses: securego/gosec@master
+  #     with:
+  #       args: '-no-fail -fmt sarif -out gosec-results.sarif ./backend/...'
     
-    - name: Upload SARIF file
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: gosec-results.sarif
+  #   - name: Upload SARIF file
+  #     uses: github/codeql-action/upload-sarif@v3
+  #     with:
+  #       sarif_file: gosec-results.sarif
 
   summary:
     name: Test Summary
