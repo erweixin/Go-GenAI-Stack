@@ -1,8 +1,11 @@
 # Go-GenAI-Stack
 
-> 🚀 一个采用 **Vibe-Coding-Friendly DDD** 架构的 GenAI 应用全栈项目
+> 🚀 一个采用 **Vibe-Coding-Friendly DDD** 架构的全栈 Starter 项目
 >
 > **特点**：显式知识 + 声明式用例 + AI 友好 + Monorepo
+
+> 🎯 **项目定位**：这是一个全栈 Starter 项目，内置 **Task 领域** 作为完整示例。
+> 你可以直接使用 Task 功能，或将其作为模板创建自己的业务领域。
 
 ---
 
@@ -10,20 +13,23 @@
 
 ```
 Go-GenAI-Stack/
-├── backend/              # 后端（Go + Hertz + Eino + DDD）
+├── backend/              # 后端（Go + Hertz + DDD）
 │   ├── domains/          # 领域层（Domain-First）
-│   │   ├── chat/         # 聊天领域
-│   │   ├── llm/          # LLM 领域
+│   │   ├── task/         # Task 领域（示例实现）★
 │   │   └── shared/       # 共享组件
 │   ├── infrastructure/   # 基础设施层
+│   │   ├── bootstrap/    # 启动引导
 │   │   ├── persistence/  # 持久化（Postgres, Redis）
 │   │   ├── middleware/   # 中间件
 │   │   ├── config/       # 配置管理
-│   │   └── queue/        # 异步任务队列
-│   ├── application/      # 应用层（跨领域编排）
+│   │   └── database/     # 数据库 Schema
 │   ├── pkg/              # 可复用工具包
 │   │   └── validator/    # 验证器
 │   ├── migrations/       # 数据库迁移
+│   │   ├── atlas/        # Atlas 迁移文件
+│   │   └── seed/         # 种子数据
+│   ├── shared/           # 共享代码
+│   │   └── errors/       # 错误定义
 │   └── scripts/          # 开发脚本
 ├── frontend/             # 前端 Monorepo
 │   ├── web/              # React Web 应用
@@ -33,6 +39,7 @@ Go-GenAI-Stack/
 │       ├── utils/        # 工具函数
 │       └── constants/    # 常量
 ├── docs/                 # 项目文档
+├── docker/               # Docker 配置
 └── scripts/              # 项目级脚本
 ```
 
@@ -42,12 +49,12 @@ Go-GenAI-Stack/
 
 ### 🎯 Vibe-Coding-Friendly DDD
 
-- **领域优先**：按业务领域垂直切分（当前聚焦 Chat 领域）
-- **自包含**：每个领域包含 model + handlers + http + repository
+- **领域优先**：按业务领域垂直切分（内置 Task 领域作为示例）
+- **自包含**：每个领域包含 model + handlers + http + repository + tests
 - **显式知识**：6 个必需文件（README, glossary, rules, events, usecases.yaml, ai-metadata.json）
-- **声明式用例**：在 `usecases.yaml` 中定义业务流程
+- **声明式用例**：在 `usecases.yaml` 中定义业务流程，AI 可直接生成代码
 - **AI 友好**：结构化知识 + 语义化命名 + 完整注释
-- **扩展友好**：明确标注扩展点，易于集成真实 LLM、数据库等
+- **扩展友好**：Task 作为模板，轻松创建自己的业务领域
 
 ### 🤖 AI 友好设计
 
@@ -230,13 +237,15 @@ git push
 ## 📋 项目状态
 
 ### ✅ 已完成（v0.1 - Starter）
+
 - ✅ 基础架构搭建（Hertz + DDD）
-- ✅ **Chat 领域完整实现**（6 个必需文件 + 完整代码）
-  - 对话管理（创建、列表、删除）
-  - 消息发送（普通、流式）
-  - 应用层编排（ChatOrchestrator）
+- ✅ **Task 领域完整实现**（示例领域）
+  - 6 个必需文件齐全（README、glossary、rules、events、usecases.yaml、ai-metadata.json）
+  - 完整的 CRUD 操作（创建、更新、完成、删除、查询、列表）
   - Repository 模式（使用 database/sql）
+  - 完整的测试（handlers + repository）
 - ✅ 基础设施层
+  - 启动引导（server, database, redis, dependencies, routes）
   - 中间件（认证、CORS、错误处理、日志、限流、恢复、追踪）
   - 数据库（Postgres + Redis）
   - 配置管理（Viper）
@@ -244,20 +253,29 @@ git push
 - ✅ 数据库 Schema 管理（Atlas）
 - ✅ 前端 Monorepo 设置（Web + Mobile + Shared）
 - ✅ 类型同步（Go → TypeScript）
-- ✅ 开发脚本和工具
+- ✅ 开发脚本（dev.sh, schema.sh, test_all.sh, lint.sh）
 
 ### 🎯 当前范围
-本 Starter 专注于 **Chat 领域**，展示 Vibe-Coding-Friendly DDD 架构的最佳实践。
 
-所有扩展点（LLM 集成、真实数据库、事件总线等）都已明确标注，方便根据实际需求集成。
+本 Starter 专注于 **Task 领域**，展示 Vibe-Coding-Friendly DDD 架构的最佳实践。
 
-### 🔌 扩展点（标注为 "Extension point"）
-- LLM 集成（OpenAI, Claude, etc.）
-- 数据库持久化（当前为演示 mock）
-- 事件总线（内存/Redis/Kafka）
-- JWT 认证
-- OpenTelemetry 追踪
-- 监控和告警
+**Task 领域作为模板**：
+- ✅ 可以直接使用（如果你需要任务管理功能）
+- ✅ 可以作为参考（学习如何实现一个完整的领域）
+- ✅ 可以映射到你的业务（Product、Order、Article、Customer 等）
+
+所有扩展点都已明确标注，方便根据实际需求集成。
+
+### 🔌 扩展点
+
+代码中所有标注 `Extension point` 的地方都是预留的扩展位置：
+
+- **跨领域编排**：当你有多个领域时，添加 Application 层
+- **真实 LLM 集成**：集成 OpenAI、Claude 等（如果你的业务需要）
+- **事件总线**：从内存切换到 Redis/Kafka
+- **JWT 认证**：完整的 Token 验证和刷新
+- **OpenTelemetry 追踪**：分布式追踪
+- **监控和告警**：Prometheus + Grafana
 
 ---
 
