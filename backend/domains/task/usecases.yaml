@@ -1,0 +1,605 @@
+# Task Domain Use Cases
+# 用例声明文件 - AI 可读，用于自动生成 Handler 代码
+
+version: "1.0"
+domain: task
+
+usecases:
+  # ========================================
+  # 用例 1: 创建任务
+  # ========================================
+  CreateTask:
+    description: "创建一个新的任务"
+    sensitivity: low
+    http:
+      method: POST
+      path: /api/tasks
+    
+    input:
+      title:
+        type: string
+        required: true
+        validation: "max=200,min=1"
+        description: "任务标题"
+      description:
+        type: string
+        required: false
+        validation: "max=5000"
+        description: "任务描述"
+      priority:
+        type: string
+        required: false
+        default: "medium"
+        validation: "oneof=low medium high"
+        description: "优先级"
+      due_date:
+        type: string
+        required: false
+        validation: "omitempty,datetime=2006-01-02T15:04:05Z07:00"
+        description: "截止日期 (ISO 8601 格式)"
+      tags:
+        type: array
+        items: string
+        required: false
+        validation: "max=10,dive,max=50"
+        description: "标签列表（最多 10 个）"
+    
+    output:
+      task_id:
+        type: string
+        description: "任务 ID"
+      title:
+        type: string
+        description: "任务标题"
+      status:
+        type: string
+        description: "任务状态 (pending)"
+      created_at:
+        type: string
+        description: "创建时间 (ISO 8601)"
+    
+    steps:
+      - name: ValidateInput
+        type: sync
+        description: "验证输入参数"
+        on_fail: abort
+        
+      - name: GenerateTaskID
+        type: sync
+        description: "生成唯一的任务 ID"
+        
+      - name: CreateTaskEntity
+        type: sync
+        description: "创建任务实体"
+        
+      - name: SaveTask
+        type: sync
+        description: "保存任务到数据库"
+        on_fail: abort
+        
+      - name: PublishTaskCreatedEvent
+        type: event
+        event_type: TaskCreated
+        description: "发布任务创建事件"
+        on_fail: log
+    
+    errors:
+      - code: TASK_TITLE_EMPTY
+        message: "任务标题不能为空"
+        http_status: 400
+      - code: TASK_DESCRIPTION_TOO_LONG
+        message: "任务描述过长，最大 5000 字符"
+        http_status: 400
+      - code: INVALID_PRIORITY
+        message: "优先级无效，必须是 low, medium 或 high"
+        http_status: 400
+      - code: INVALID_DUE_DATE
+        message: "截止日期格式无效或早于当前时间"
+        http_status: 400
+      - code: TOO_MANY_TAGS
+        message: "标签过多，最多 10 个"
+        http_status: 400
+      - code: CREATION_FAILED
+        message: "创建任务失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 2: 更新任务
+  # ========================================
+  UpdateTask:
+    description: "更新任务的属性"
+    sensitivity: low
+    http:
+      method: PUT
+      path: /api/tasks/:id
+    
+    input:
+      task_id:
+        type: string
+        required: true
+        source: path
+        description: "任务 ID"
+      title:
+        type: string
+        required: false
+        validation: "omitempty,max=200,min=1"
+        description: "任务标题"
+      description:
+        type: string
+        required: false
+        validation: "max=5000"
+        description: "任务描述"
+      priority:
+        type: string
+        required: false
+        validation: "omitempty,oneof=low medium high"
+        description: "优先级"
+      due_date:
+        type: string
+        required: false
+        validation: "omitempty,datetime=2006-01-02T15:04:05Z07:00"
+        description: "截止日期"
+      tags:
+        type: array
+        items: string
+        required: false
+        validation: "omitempty,max=10,dive,max=50"
+        description: "标签列表"
+    
+    output:
+      task_id:
+        type: string
+      title:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    
+    steps:
+      - name: ValidateInput
+        type: sync
+        on_fail: abort
+        
+      - name: GetTask
+        type: sync
+        description: "获取任务"
+        on_fail: abort
+        error: TASK_NOT_FOUND
+        
+      - name: CheckIfCompleted
+        type: sync
+        description: "检查任务是否已完成"
+        on_fail: abort
+        error: TASK_ALREADY_COMPLETED
+        
+      - name: UpdateTaskFields
+        type: sync
+        description: "更新任务字段"
+        
+      - name: SaveTask
+        type: sync
+        description: "保存任务"
+        on_fail: abort
+        
+      - name: PublishTaskUpdatedEvent
+        type: event
+        event_type: TaskUpdated
+        on_fail: log
+    
+    errors:
+      - code: TASK_NOT_FOUND
+        message: "任务不存在"
+        http_status: 404
+      - code: TASK_ALREADY_COMPLETED
+        message: "已完成的任务不能更新"
+        http_status: 400
+      - code: INVALID_PRIORITY
+        message: "优先级无效"
+        http_status: 400
+      - code: UPDATE_FAILED
+        message: "更新任务失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 3: 完成任务
+  # ========================================
+  CompleteTask:
+    description: "将任务标记为已完成"
+    sensitivity: low
+    http:
+      method: POST
+      path: /api/tasks/:id/complete
+    
+    input:
+      task_id:
+        type: string
+        required: true
+        source: path
+        description: "任务 ID"
+    
+    output:
+      task_id:
+        type: string
+      status:
+        type: string
+        description: "任务状态 (completed)"
+      completed_at:
+        type: string
+        description: "完成时间"
+    
+    steps:
+      - name: GetTask
+        type: sync
+        description: "获取任务"
+        on_fail: abort
+        error: TASK_NOT_FOUND
+        
+      - name: CheckStatus
+        type: sync
+        description: "检查任务状态"
+        on_fail: abort
+        error: TASK_ALREADY_COMPLETED
+        
+      - name: MarkAsCompleted
+        type: sync
+        description: "标记为已完成"
+        
+      - name: RecordCompletionTime
+        type: sync
+        description: "记录完成时间"
+        
+      - name: SaveTask
+        type: sync
+        description: "保存任务"
+        on_fail: abort
+        
+      - name: PublishTaskCompletedEvent
+        type: event
+        event_type: TaskCompleted
+        on_fail: log
+    
+    errors:
+      - code: TASK_NOT_FOUND
+        message: "任务不存在"
+        http_status: 404
+      - code: TASK_ALREADY_COMPLETED
+        message: "任务已完成，不能再次完成"
+        http_status: 400
+      - code: COMPLETION_FAILED
+        message: "完成任务失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 4: 删除任务
+  # ========================================
+  DeleteTask:
+    description: "删除任务"
+    sensitivity: medium
+    http:
+      method: DELETE
+      path: /api/tasks/:id
+    
+    input:
+      task_id:
+        type: string
+        required: true
+        source: path
+        description: "任务 ID"
+    
+    output:
+      success:
+        type: bool
+        description: "是否删除成功"
+      deleted_at:
+        type: string
+        description: "删除时间"
+    
+    steps:
+      - name: GetTask
+        type: sync
+        description: "获取任务"
+        on_fail: abort
+        error: TASK_NOT_FOUND
+        
+      - name: DeleteTaskRecord
+        type: sync
+        description: "删除任务记录"
+        on_fail: abort
+        
+      - name: PublishTaskDeletedEvent
+        type: event
+        event_type: TaskDeleted
+        on_fail: log
+    
+    errors:
+      - code: TASK_NOT_FOUND
+        message: "任务不存在"
+        http_status: 404
+      - code: DELETION_FAILED
+        message: "删除任务失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 5: 获取任务详情
+  # ========================================
+  GetTask:
+    description: "获取任务的详细信息"
+    sensitivity: low
+    http:
+      method: GET
+      path: /api/tasks/:id
+    
+    input:
+      task_id:
+        type: string
+        required: true
+        source: path
+        description: "任务 ID"
+    
+    output:
+      task_id:
+        type: string
+      title:
+        type: string
+      description:
+        type: string
+      status:
+        type: string
+      priority:
+        type: string
+      due_date:
+        type: string
+      tags:
+        type: array
+        items: string
+      created_at:
+        type: string
+      updated_at:
+        type: string
+      completed_at:
+        type: string
+    
+    steps:
+      - name: GetTask
+        type: sync
+        description: "从数据库获取任务"
+        on_fail: abort
+        error: TASK_NOT_FOUND
+        
+      - name: FormatResponse
+        type: sync
+        description: "格式化响应数据"
+    
+    errors:
+      - code: TASK_NOT_FOUND
+        message: "任务不存在"
+        http_status: 404
+
+  # ========================================
+  # 用例 6: 列出任务
+  # ========================================
+  ListTasks:
+    description: "获取任务列表，支持筛选、排序和分页"
+    sensitivity: low
+    http:
+      method: GET
+      path: /api/tasks
+    
+    input:
+      # 筛选参数
+      status:
+        type: string
+        required: false
+        validation: "omitempty,oneof=pending in_progress completed"
+        source: query
+        description: "按状态筛选"
+      priority:
+        type: string
+        required: false
+        validation: "omitempty,oneof=low medium high"
+        source: query
+        description: "按优先级筛选"
+      tag:
+        type: string
+        required: false
+        source: query
+        description: "按标签筛选"
+      due_date_from:
+        type: string
+        required: false
+        validation: "omitempty,datetime=2006-01-02"
+        source: query
+        description: "截止日期开始"
+      due_date_to:
+        type: string
+        required: false
+        validation: "omitempty,datetime=2006-01-02"
+        source: query
+        description: "截止日期结束"
+      keyword:
+        type: string
+        required: false
+        validation: "omitempty,max=100"
+        source: query
+        description: "关键词搜索（标题/描述）"
+      
+      # 排序参数
+      sort_by:
+        type: string
+        required: false
+        default: "created_at"
+        validation: "omitempty,oneof=created_at due_date priority"
+        source: query
+        description: "排序字段"
+      sort_order:
+        type: string
+        required: false
+        default: "desc"
+        validation: "omitempty,oneof=asc desc"
+        source: query
+        description: "排序方向"
+      
+      # 分页参数
+      page:
+        type: int
+        required: false
+        default: 1
+        validation: "omitempty,min=1"
+        source: query
+        description: "页码"
+      limit:
+        type: int
+        required: false
+        default: 20
+        validation: "omitempty,min=1,max=100"
+        source: query
+        description: "每页数量"
+    
+    output:
+      tasks:
+        type: array
+        items:
+          task_id: string
+          title: string
+          status: string
+          priority: string
+          due_date: string
+          tags: array
+          created_at: string
+      total_count:
+        type: int
+        description: "总任务数"
+      page:
+        type: int
+        description: "当前页码"
+      limit:
+        type: int
+        description: "每页数量"
+      has_more:
+        type: bool
+        description: "是否还有更多"
+    
+    steps:
+      - name: ValidateQueryParams
+        type: sync
+        description: "验证查询参数"
+        on_fail: abort
+        
+      - name: BuildQuery
+        type: sync
+        description: "构建查询条件"
+        
+      - name: QueryTasks
+        type: sync
+        description: "查询任务列表"
+        on_fail: abort
+        
+      - name: CountTotalTasks
+        type: sync
+        description: "统计总数"
+        on_fail: log
+        
+      - name: FormatResponse
+        type: sync
+        description: "格式化响应"
+    
+    errors:
+      - code: INVALID_FILTER
+        message: "筛选参数无效"
+        http_status: 400
+      - code: INVALID_PAGINATION
+        message: "分页参数无效"
+        http_status: 400
+      - code: QUERY_FAILED
+        message: "查询失败"
+        http_status: 500
+
+# ========================================
+# 全局配置
+# ========================================
+config:
+  default_timeout: 30s
+  max_retries: 3
+  enable_tracing: true
+  enable_metrics: true
+
+# ========================================
+# 依赖关系
+# ========================================
+dependencies:
+  external: []  # 当前无外部依赖
+  
+  infrastructure:
+    - name: database
+      type: PostgreSQL
+      description: "任务存储"
+    - name: cache
+      type: Redis
+      description: "缓存和限流（可选）"
+      required: false
+    - name: eventBus
+      type: InMemory
+      description: "事件总线（可扩展到 Kafka/Redis）"
+
+# ========================================
+# 扩展点
+# ========================================
+extensions:
+  - name: User Authentication
+    description: "添加用户认证，限制用户只能访问自己的任务"
+    status: not_implemented
+    
+  - name: Task Sharing
+    description: "任务分享功能，允许多用户协作"
+    status: not_implemented
+    
+  - name: Recurring Tasks
+    description: "周期性任务（每日、每周、每月重复）"
+    status: not_implemented
+    
+  - name: Subtasks
+    description: "子任务支持，任务可以分解为多个子任务"
+    status: not_implemented
+    
+  - name: Task Comments
+    description: "任务评论和讨论"
+    status: not_implemented
+    
+  - name: File Attachments
+    description: "任务附件功能"
+    status: not_implemented
+
+# ========================================
+# 映射指南
+# ========================================
+mapping_guide:
+  description: "如何将 Task 领域映射到你的业务"
+  examples:
+    - from: Task
+      to: Product (商品)
+      notes: |
+        - Task → Product
+        - Status (pending/completed) → ProductStatus (draft/published)
+        - Priority → Category
+        - CreateTask → CreateProduct
+        - CompleteTask → PublishProduct
+    
+    - from: Task
+      to: Order (订单)
+      notes: |
+        - Task → Order
+        - Status (pending/in_progress/completed) → OrderStatus (created/processing/shipped)
+        - Priority → ShippingPriority
+        - CreateTask → CreateOrder
+        - CompleteTask → ShipOrder
+    
+    - from: Task
+      to: Article (文章)
+      notes: |
+        - Task → Article
+        - Status (pending/completed) → ArticleStatus (draft/published)
+        - Priority → Featured
+        - CreateTask → CreateArticle
+        - CompleteTask → PublishArticle
+

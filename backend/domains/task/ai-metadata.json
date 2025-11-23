@@ -1,0 +1,258 @@
+{
+  "domain": "task",
+  "version": "1.0.0",
+  "lastUpdated": "2025-11-23",
+  "status": "stable",
+  "description": "任务管理领域 - 展示 Vibe-Coding-Friendly DDD 架构的示例实现",
+  
+  "purpose": {
+    "primary": "作为 Starter 的示例领域，展示如何实现一个完整的 DDD 领域",
+    "secondary": [
+      "展示用例驱动开发",
+      "展示 Repository 模式",
+      "展示领域事件",
+      "提供可映射的参考实现"
+    ]
+  },
+  
+  "complexity": {
+    "overall": "low",
+    "business_logic": "simple",
+    "technical": "moderate",
+    "data_model": "simple"
+  },
+  
+  "coverage": {
+    "usecases": 6,
+    "models": 4,
+    "repositories": 1,
+    "handlers": 6,
+    "events": 6,
+    "rules": 15
+  },
+  
+  "keywords": [
+    "todo",
+    "task",
+    "crud",
+    "ddd",
+    "example",
+    "starter",
+    "vibe-coding-friendly",
+    "repository-pattern",
+    "domain-events"
+  ],
+  
+  "vector_tags": [
+    "task_management",
+    "todo_list",
+    "simple_crud",
+    "ddd_example",
+    "golang_backend",
+    "hertz_framework",
+    "postgres_database"
+  ],
+  
+  "ai_hints": {
+    "understanding": {
+      "entry_points": [
+        "README.md - 领域概览",
+        "usecases.yaml - 用例声明",
+        "glossary.md - 术语表"
+      ],
+      "key_concepts": [
+        "Task - 任务聚合根",
+        "TaskStatus - 任务状态（Pending/InProgress/Completed）",
+        "Priority - 优先级（Low/Medium/High）"
+      ],
+      "data_flow": "HTTP Request → Handler → Model → Repository → Database"
+    },
+    
+    "code_generation": {
+      "templates": {
+        "handler": "参考 CreateTaskHandler 的实现模式",
+        "repository": "使用 database/sql，不使用 ORM",
+        "model": "简单的 struct，包含业务方法",
+        "dto": "使用 binding tags 进行验证"
+      },
+      "patterns": [
+        "Repository 模式",
+        "依赖注入",
+        "错误处理（返回错误码）",
+        "事件发布（Extension point）"
+      ]
+    },
+    
+    "extension_points": [
+      {
+        "name": "Event Publishing",
+        "location": "handlers/*",
+        "description": "当前只记录日志，可扩展到真实事件总线"
+      },
+      {
+        "name": "User Authentication",
+        "location": "handlers/*",
+        "description": "当前无用户认证，可添加 JWT 验证"
+      },
+      {
+        "name": "Caching",
+        "location": "repository/*",
+        "description": "可添加 Redis 缓存层"
+      }
+    ],
+    
+    "mapping": {
+      "description": "如何将 Task 映射到其他业务实体",
+      "steps": [
+        "1. 复制 domains/task/ 到新目录",
+        "2. 全局替换：Task → YourEntity",
+        "3. 修改字段以匹配业务",
+        "4. 更新 usecases.yaml",
+        "5. 更新 rules.md 和 glossary.md"
+      ],
+      "examples": [
+        "Task → Product (商品)",
+        "Task → Order (订单)",
+        "Task → Article (文章)",
+        "Task → Customer (客户)"
+      ]
+    }
+  },
+  
+  "testing": {
+    "unit_tests": true,
+    "integration_tests": true,
+    "e2e_tests": false,
+    "coverage_target": "80%",
+    "test_location": "tests/"
+  },
+  
+  "documentation": {
+    "required_files": [
+      "README.md",
+      "glossary.md",
+      "rules.md",
+      "events.md",
+      "usecases.yaml",
+      "ai-metadata.json"
+    ],
+    "completeness": "100%",
+    "quality": "high"
+  },
+  
+  "dependencies": {
+    "domains": [],
+    "infrastructure": [
+      "database (PostgreSQL)",
+      "cache (Redis, optional)"
+    ],
+    "external_services": []
+  },
+  
+  "api_endpoints": {
+    "base_path": "/api/tasks",
+    "count": 6,
+    "methods": ["GET", "POST", "PUT", "DELETE"],
+    "authentication": "none (可扩展)",
+    "rate_limiting": "可选"
+  },
+  
+  "database": {
+    "tables": ["tasks"],
+    "schema_location": "infrastructure/database/schema/schema.sql",
+    "migrations": true,
+    "indexes": [
+      "idx_tasks_status",
+      "idx_tasks_priority",
+      "idx_tasks_due_date"
+    ]
+  },
+  
+  "events": {
+    "published": [
+      "TaskCreated",
+      "TaskUpdated",
+      "TaskCompleted",
+      "TaskDeleted",
+      "TaskStatusChanged",
+      "TaskPriorityChanged"
+    ],
+    "consumed": [],
+    "event_bus": "InMemory (可扩展到 Kafka/Redis)"
+  },
+  
+  "performance": {
+    "expected_load": "low to medium",
+    "response_time_target": "< 100ms",
+    "throughput_target": "1000 req/s",
+    "scalability": "horizontal"
+  },
+  
+  "security": {
+    "authentication": "not_implemented",
+    "authorization": "not_implemented",
+    "data_encryption": "not_implemented",
+    "input_validation": "implemented",
+    "sql_injection_prevention": "implemented (parameterized queries)"
+  },
+  
+  "best_practices": [
+    "使用 usecases.yaml 声明用例",
+    "Repository 模式隔离数据访问",
+    "领域事件记录业务事实",
+    "业务规则显式化（rules.md）",
+    "术语统一（glossary.md）",
+    "错误码标准化",
+    "测试覆盖完整"
+  ],
+  
+  "anti_patterns": [
+    "不要在 model 中访问 database",
+    "不要在 handler 中写业务逻辑（应在 model 或 service）",
+    "不要使用 ORM（使用 database/sql）",
+    "不要跨领域直接调用（使用事件或应用层）",
+    "不要在 DTO 中包含业务逻辑"
+  ],
+  
+  "related_resources": {
+    "documentation": [
+      "docs/backend-code-organization.md",
+      "docs/vibe-coding-ddd-structure.md",
+      "docs/Vibe-Coding-Friendly.md"
+    ],
+    "examples": [
+      "本领域本身就是示例"
+    ],
+    "tutorials": []
+  },
+  
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2025-11-23",
+      "changes": [
+        "初始版本",
+        "实现 6 个核心用例",
+        "完整的 6 个必需文件",
+        "符合 Vibe-Coding-Friendly 规范"
+      ]
+    }
+  ],
+  
+  "future_enhancements": [
+    "用户认证和授权",
+    "任务分享和协作",
+    "周期性任务",
+    "子任务支持",
+    "任务评论",
+    "文件附件",
+    "任务模板",
+    "任务依赖关系"
+  ],
+  
+  "license": "MIT",
+  "maintainers": [
+    "Go-GenAI-Stack Team"
+  ]
+}
+
