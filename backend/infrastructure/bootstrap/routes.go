@@ -41,7 +41,7 @@ func registerMonitoringRoutes(h *server.Hertz, container *AppContainer) {
 
 			// 适配 Hertz 和标准 HTTP
 			w := &responseWriter{c: c}
-			
+
 			// 创建标准 HTTP 请求（简化版）
 			r := &http.Request{
 				Method: string(c.Method()),
@@ -94,4 +94,3 @@ func (w *responseWriter) Write(data []byte) (int, error) {
 func (w *responseWriter) WriteHeader(statusCode int) {
 	w.c.Response.SetStatusCode(statusCode)
 }
-

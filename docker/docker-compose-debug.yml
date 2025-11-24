@@ -50,6 +50,31 @@ services:
     networks:
       - genai-debug-network
 
+  # 数据库初始化服务（自动执行 Schema 迁移和种子数据）
+  db-init:
+    image: postgres:16-alpine
+    container_name: go-genai-db-init
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-genai}
+      DB_PASSWORD: ${DB_PASSWORD:-genai_password}
+      DB_NAME: ${DB_NAME:-go_genai_stack}
+      SKIP_SEED: ${SKIP_SEED:-false}  # 设置为 true 可跳过种子数据
+    volumes:
+      - ./init-db.sh:/init-db.sh:ro
+      - ../backend/infrastructure/database/schema:/schema:ro
+      - ../backend/migrations/seed:/seed:ro
+    command: /bin/sh /init-db.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - genai-debug-network
+    restart: "no"  # 只运行一次
+
   # 后端服务（用于调试）
   backend:
     build:
