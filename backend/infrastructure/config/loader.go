@@ -222,19 +222,79 @@ func loadLLMConfig(cfg *LLMConfig) error {
 
 // loadLoggingConfig 加载日志配置
 func loadLoggingConfig(cfg *LoggingConfig) error {
+	// 是否启用结构化日志
+	if enabled, err := getEnvBool("APP_LOGGING_ENABLED", cfg.Enabled); err != nil {
+		return fmt.Errorf("invalid APP_LOGGING_ENABLED: %w", err)
+	} else {
+		cfg.Enabled = enabled
+	}
+
+	// 日志级别和格式
 	cfg.Level = getEnvString("APP_LOGGING_LEVEL", cfg.Level)
 	cfg.Format = getEnvString("APP_LOGGING_FORMAT", cfg.Format)
 	cfg.Output = getEnvString("APP_LOGGING_OUTPUT", cfg.Output)
 	cfg.OutputPath = getEnvString("APP_LOGGING_OUTPUT_PATH", cfg.OutputPath)
+
+	// 日志轮转配置
+	if maxSize, err := getEnvInt("APP_LOGGING_MAX_SIZE", cfg.MaxSize); err != nil {
+		return fmt.Errorf("invalid APP_LOGGING_MAX_SIZE: %w", err)
+	} else {
+		cfg.MaxSize = maxSize
+	}
+
+	if maxBackups, err := getEnvInt("APP_LOGGING_MAX_BACKUPS", cfg.MaxBackups); err != nil {
+		return fmt.Errorf("invalid APP_LOGGING_MAX_BACKUPS: %w", err)
+	} else {
+		cfg.MaxBackups = maxBackups
+	}
+
+	if maxAge, err := getEnvInt("APP_LOGGING_MAX_AGE", cfg.MaxAge); err != nil {
+		return fmt.Errorf("invalid APP_LOGGING_MAX_AGE: %w", err)
+	} else {
+		cfg.MaxAge = maxAge
+	}
+
+	if compress, err := getEnvBool("APP_LOGGING_COMPRESS", cfg.Compress); err != nil {
+		return fmt.Errorf("invalid APP_LOGGING_COMPRESS: %w", err)
+	} else {
+		cfg.Compress = compress
+	}
+
 	return nil
 }
 
 // loadMonitoringConfig 加载监控配置
 func loadMonitoringConfig(cfg *MonitoringConfig) error {
-	if enabled, err := getEnvBool("APP_MONITORING_ENABLED", cfg.Enabled); err != nil {
-		return fmt.Errorf("invalid APP_MONITORING_ENABLED: %w", err)
+	// Metrics 配置
+	if enabled, err := getEnvBool("APP_MONITORING_METRICS_ENABLED", cfg.MetricsEnabled); err != nil {
+		return fmt.Errorf("invalid APP_MONITORING_METRICS_ENABLED: %w", err)
 	} else {
-		cfg.Enabled = enabled
+		cfg.MetricsEnabled = enabled
+	}
+
+	if path := os.Getenv("APP_MONITORING_METRICS_PATH"); path != "" {
+		cfg.MetricsPath = path
+	}
+
+	if port, err := getEnvInt("APP_MONITORING_METRICS_PORT", cfg.MetricsPort); err != nil {
+		return fmt.Errorf("invalid APP_MONITORING_METRICS_PORT: %w", err)
+	} else {
+		cfg.MetricsPort = port
+	}
+
+	// Tracing 配置
+	if enabled, err := getEnvBool("APP_MONITORING_TRACING_ENABLED", cfg.TracingEnabled); err != nil {
+		return fmt.Errorf("invalid APP_MONITORING_TRACING_ENABLED: %w", err)
+	} else {
+		cfg.TracingEnabled = enabled
+	}
+
+	if endpoint := os.Getenv("APP_MONITORING_TRACING_ENDPOINT"); endpoint != "" {
+		cfg.TracingEndpoint = endpoint
+	}
+
+	if tracingType := os.Getenv("APP_MONITORING_TRACING_TYPE"); tracingType != "" {
+		cfg.TracingType = tracingType
 	}
 
 	if rate, err := getEnvFloat64("APP_MONITORING_SAMPLE_RATE", cfg.SampleRate); err != nil {
@@ -243,16 +303,15 @@ func loadMonitoringConfig(cfg *MonitoringConfig) error {
 		cfg.SampleRate = rate
 	}
 
-	if retention, err := getEnvDuration("APP_MONITORING_TRACE_RETENTION", cfg.TraceRetention); err != nil {
-		return fmt.Errorf("invalid APP_MONITORING_TRACE_RETENTION: %w", err)
+	// Health 配置
+	if enabled, err := getEnvBool("APP_MONITORING_HEALTH_ENABLED", cfg.HealthEnabled); err != nil {
+		return fmt.Errorf("invalid APP_MONITORING_HEALTH_ENABLED: %w", err)
 	} else {
-		cfg.TraceRetention = retention
+		cfg.HealthEnabled = enabled
 	}
 
-	if interval, err := getEnvDuration("APP_MONITORING_METRIC_INTERVAL", cfg.MetricInterval); err != nil {
-		return fmt.Errorf("invalid APP_MONITORING_METRIC_INTERVAL: %w", err)
-	} else {
-		cfg.MetricInterval = interval
+	if path := os.Getenv("APP_MONITORING_HEALTH_PATH"); path != "" {
+		cfg.HealthPath = path
 	}
 
 	return nil

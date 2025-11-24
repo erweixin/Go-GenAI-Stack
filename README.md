@@ -76,6 +76,17 @@ Go-GenAI-Stack/
 - **测试**：`./backend/scripts/test_all.sh` 运行测试
 - **代码质量**：`./backend/scripts/lint.sh` 代码检查
 
+### 📊 可观测性（Observability）
+
+完整的生产级可观测性方案，**所有功能支持开关控制**：
+
+- **结构化日志**：基于 uber-go/zap，支持 JSON/Console 格式、日志轮转
+- **Prometheus Metrics**：QPS、延迟、错误率、系统指标，访问 `/metrics` 查看
+- **OpenTelemetry Tracing**：分布式追踪，支持 Jaeger、Tempo、OTLP Collector
+- **Health Check**：数据库、Redis 健康检查，访问 `/health` 查看
+
+详细文档：[可观测性指南](backend/infrastructure/monitoring/README.md)
+
 ---
 
 ## 🚀 快速开始
@@ -204,6 +215,12 @@ git push
 - [数据库管理指南](docs/Guides/database.md)
 - [数据库详细指南](backend/infrastructure/database/README.md)
 
+### 可观测性
+- [可观测性总览](backend/infrastructure/monitoring/README.md)
+- [结构化日志](backend/infrastructure/monitoring/logger/README.md)
+- [Prometheus Metrics](backend/infrastructure/monitoring/metrics/README.md)
+- [OpenTelemetry Tracing](backend/infrastructure/monitoring/tracing/README.md)
+
 ---
 
 ## 🏗️ 技术栈
@@ -214,6 +231,7 @@ git push
 - **LLM**：Eino (字节跳动 LLM 框架)
 - **数据库**：PostgreSQL, Redis
 - **消息队列**：Asynq (Redis-based)
+- **可观测性**：uber-go/zap (日志), Prometheus (指标), OpenTelemetry (追踪)
 - **工具**：Atlas (Schema 管理), staticcheck (代码分析)
 
 ### 前端
@@ -225,7 +243,7 @@ git push
 ### DevOps
 - **CI/CD**：GitHub Actions
 - **容器**：Docker, Docker Compose
-- **监控**：（规划中：Prometheus, OpenTelemetry）
+- **监控**：Prometheus, Grafana, Jaeger（可选）
 
 ---
 
@@ -244,6 +262,7 @@ git push
   - 中间件（认证、CORS、错误处理、日志、限流、恢复、追踪）
   - 数据库（Postgres + Redis）
   - 配置管理（原生标准库，零第三方依赖）
+  - **可观测性**（结构化日志、Prometheus Metrics、OpenTelemetry Tracing、健康检查）
 - ✅ 可复用工具包（Validator）
 - ✅ 数据库 Schema 管理（Atlas）
 - ✅ 前端 Monorepo 设置（Web + Mobile + Shared）
@@ -269,8 +288,8 @@ git push
 - **真实 LLM 集成**：集成 OpenAI、Claude 等（如果你的业务需要）
 - **事件总线**：从内存切换到 Redis/Kafka
 - **JWT 认证**：完整的 Token 验证和刷新
-- **OpenTelemetry 追踪**：分布式追踪
-- **监控和告警**：Prometheus + Grafana
+- ~~**OpenTelemetry 追踪**：分布式追踪~~ ✅ **已完成**
+- ~~**监控和告警**：Prometheus + Grafana~~ ✅ **已完成**
 
 ---
 

@@ -8,6 +8,8 @@ import (
 
 	"github.com/erweixin/go-genai-stack/domains/task/model"
 	"github.com/erweixin/go-genai-stack/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/logger"
+	"go.uber.org/zap"
 )
 
 // TaskService 任务领域服务
@@ -318,6 +320,7 @@ func (s *TaskService) ListTasks(ctx context.Context, input ListTasksInput) (*Lis
 	// Repository.List 返回任务列表和总数
 	tasks, totalCount, err := s.taskRepo.List(ctx, &input.Filter)
 	if err != nil {
+		logger.Error("ListTasks failed", zap.Error(err))
 		return nil, fmt.Errorf("QUERY_FAILED: 查询失败")
 	}
 

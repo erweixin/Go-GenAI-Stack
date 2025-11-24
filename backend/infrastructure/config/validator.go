@@ -179,20 +179,62 @@ func (v *Validator) validateLogging(config *LoggingConfig) {
 	if config.Output == "file" && config.OutputPath == "" {
 		v.addError("logging.output_path is required when output is 'file'")
 	}
+
+	// 验证日志轮转参数
+	if config.MaxSize <= 0 {
+		v.addError("logging.max_size must be positive")
+	}
+
+	if config.MaxBackups < 0 {
+		v.addError("logging.max_backups must be non-negative")
+	}
+
+	if config.MaxAge < 0 {
+		v.addError("logging.max_age must be non-negative")
+	}
 }
 
 // validateMonitoring 验证监控配置
 func (v *Validator) validateMonitoring(config *MonitoringConfig) {
+	// 验证采样率
 	if config.SampleRate < 0 || config.SampleRate > 1 {
 		v.addError("monitoring.sample_rate must be between 0 and 1")
 	}
 
-	if config.TraceRetention <= 0 {
-		v.addError("monitoring.trace_retention must be positive")
+	// 验证 Tracing 配置
+	if config.TracingEnabled {
+		if config.TracingEndpoint == "" {
+			v.addError("monitoring.tracing_endpoint is required when tracing is enabled")
+		}
+
+		validTracingTypes := []string{"otlp", "jaeger", "stdout"}
+		isValidType := false
+		for _, t := range validTracingTypes {
+			if config.TracingType == t {
+				isValidType = true
+				break
+			}
+		}
+		if !isValidType {
+			v.addError("monitoring.tracing_type must be one of: otlp, jaeger, stdout")
+		}
 	}
 
-	if config.MetricInterval <= 0 {
-		v.addError("monitoring.metric_interval must be positive")
+	// 验证 Metrics 配置
+	if config.MetricsEnabled {
+		if config.MetricsPath == "" {
+			v.addError("monitoring.metrics_path cannot be empty when metrics is enabled")
+		}
+
+		// 验证 MetricsPort（0 表示与服务端口相同，1-65535 为有效端口）
+		if config.MetricsPort < 0 || config.MetricsPort > 65535 {
+			v.addError("monitoring.metrics_port must be between 0 and 65535")
+		}
+	}
+
+	// 验证 Health 路径
+	if config.HealthEnabled && config.HealthPath == "" {
+		v.addError("monitoring.health_path cannot be empty when health is enabled")
 	}
 }
 

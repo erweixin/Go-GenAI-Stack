@@ -70,18 +70,33 @@ type LLMConfig struct {
 
 // LoggingConfig 日志配置
 type LoggingConfig struct {
+	Enabled    bool   // 是否启用结构化日志（false 时使用标准 log）
 	Level      string // debug, info, warn, error
 	Format     string // json, console
 	Output     string // stdout, stderr, file
 	OutputPath string // 日志文件路径（当 output=file 时）
+	MaxSize    int    // 日志文件最大大小（MB）
+	MaxBackups int    // 保留的旧日志文件数量
+	MaxAge     int    // 保留旧日志文件的最大天数
+	Compress   bool   // 是否压缩旧日志
 }
 
 // MonitoringConfig 监控配置
 type MonitoringConfig struct {
-	Enabled        bool
-	SampleRate     float64       // 采样率 (0.0-1.0)
-	TraceRetention time.Duration // Trace 保留时间
-	MetricInterval time.Duration // 指标聚合间隔
+	// Metrics 配置
+	MetricsEnabled bool   // 是否启用 Prometheus Metrics
+	MetricsPath    string // Metrics 暴露路径（默认 /metrics）
+	MetricsPort    int    // Metrics 端口（默认与 Server.Port 相同）
+
+	// Tracing 配置
+	TracingEnabled  bool    // 是否启用 OpenTelemetry Tracing
+	TracingEndpoint string  // OTLP Exporter 端点（如 localhost:4317）
+	TracingType     string  // 导出器类型：otlp, jaeger, stdout
+	SampleRate      float64 // 采样率 (0.0-1.0)
+
+	// Health Check 配置
+	HealthEnabled bool   // 是否启用健康检查端点
+	HealthPath    string // 健康检查路径（默认 /health）
 }
 
 // DefaultConfig 返回默认配置
@@ -131,15 +146,31 @@ func DefaultConfig() *Config {
 			Providers:       make(map[string]string),
 		},
 		Logging: LoggingConfig{
-			Level:  "info",
-			Format: "json",
-			Output: "stdout",
+			Enabled:    true,
+			Level:      "info",
+			Format:     "json",
+			Output:     "stdout",
+			OutputPath: "./logs/app.log",
+			MaxSize:    100, // 100MB
+			MaxBackups: 3,
+			MaxAge:     7, // 7 days
+			Compress:   true,
 		},
 		Monitoring: MonitoringConfig{
-			Enabled:        true,
-			SampleRate:     0.1,
-			TraceRetention: 7 * 24 * time.Hour,
-			MetricInterval: time.Minute,
+			// Metrics
+			MetricsEnabled: true,
+			MetricsPath:    "/metrics",
+			MetricsPort:    0, // 0 表示与 Server.Port 相同
+
+			// Tracing
+			TracingEnabled:  false, // 默认关闭，避免强依赖外部服务
+			TracingEndpoint: "localhost:4317",
+			TracingType:     "otlp", // otlp, jaeger, stdout
+			SampleRate:      0.1,
+
+			// Health
+			HealthEnabled: true,
+			HealthPath:    "/health",
 		},
 	}
 }

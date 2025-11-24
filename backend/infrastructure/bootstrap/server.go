@@ -26,13 +26,23 @@ func CreateServer(cfg *config.Config) *server.Hertz {
 //
 // 按照特定顺序注册中间件，确保正确的请求处理流程
 func RegisterMiddleware(h *server.Hertz) {
+	// 1. Tracing（需要最先执行，生成 TraceID 和 RequestID）
+	tracingMW := middleware.NewTracingMiddleware()
+	h.Use(tracingMW.Handle())
+
+	// 2. CORS（跨域处理）
 	h.Use(middleware.CORS())
+
+	// 3. Logger（记录请求日志和 Metrics）
 	h.Use(middleware.Logger())
+
+	// 4. Recovery（捕获 panic）
 	h.Use(middleware.Recovery())
+
+	// 5. ErrorHandler（统一错误处理）
 	h.Use(middleware.ErrorHandler())
 
 	// Extension point: 添加更多中间件
 	// h.Use(middleware.Auth())
 	// h.Use(middleware.RateLimit())
-	// h.Use(middleware.Tracing())
 }

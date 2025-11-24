@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/joho/godotenv"
 
@@ -45,6 +44,14 @@ func main() {
 	log.Printf("   Database: %s@%s:%d/%s", cfg.Database.User, cfg.Database.Host, cfg.Database.Port, cfg.Database.Database)
 	log.Printf("   Redis: %s:%d (DB: %d)", cfg.Redis.Host, cfg.Redis.Port, cfg.Redis.DB)
 
+	// 1.5. 初始化可观测性组件（Logger, Metrics, Tracing）
+	log.Println("📊 Initializing observability...")
+	if err := bootstrap.InitObservability(ctx, cfg); err != nil {
+		log.Fatalf("❌ Failed to initialize observability: %v", err)
+	}
+	defer bootstrap.ShutdownObservability(ctx)
+	log.Println("✅ Observability initialized")
+
 	// 2. 初始化数据库连接
 	log.Println("🗄️  Connecting to database...")
 	dbConn, err := bootstrap.InitDatabase(ctx, cfg)
@@ -67,7 +74,7 @@ func main() {
 
 	// 4. 初始化应用依赖（依赖注入容器）
 	log.Println("🏗️  Initializing domain services...")
-	container := bootstrap.InitDependencies(dbConn, redisConn)
+	container := bootstrap.InitDependencies(cfg, dbConn, redisConn)
 	log.Println("✅ Domain services initialized")
 
 	// 5. 创建 HTTP 服务器
@@ -77,21 +84,21 @@ func main() {
 	// 6. 注册中间件
 	bootstrap.RegisterMiddleware(h)
 
-	// 7. 注册路由
+	// 7. 注册路由（包括 /metrics 和 /health）
 	bootstrap.RegisterRoutes(h, container)
 
-	// 8. 注册健康检查端点
-	registerHealthCheck(h, dbConn, redisConn)
-
-	// 9. 启动优雅关闭处理
+	// 8. 启动优雅关闭处理
 	go handleShutdown(cancel, h)
 
-	// 10. 启动服务器
+	// 9. 启动服务器
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 	log.Printf("🚀 Server started on http://%s", addr)
 	log.Printf("📚 API Base: http://%s/api", addr)
 	log.Printf("💚 Health Check: http://%s/health", addr)
+	if cfg.Monitoring.MetricsEnabled {
+		log.Printf("📊 Metrics: http://%s/metrics", addr)
+	}
 	log.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	h.Spin()
@@ -104,41 +111,6 @@ func loadConfig() (*config.Config, error) {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 	return cfg, nil
-}
-
-// registerHealthCheck 注册健康检查端点
-//
-// 健康检查端点在 main.go 中定义，因为它需要访问连接实例
-func registerHealthCheck(h *server.Hertz, dbConn interface{ HealthCheck(context.Context) error }, redisConn interface{ HealthCheck(context.Context) error }) {
-	h.GET("/health", func(ctx context.Context, c *app.RequestContext) {
-		// 检查数据库健康
-		dbHealthy := true
-		if err := dbConn.HealthCheck(ctx); err != nil {
-			dbHealthy = false
-		}
-
-		// 检查 Redis 健康
-		redisHealthy := true
-		if redisConn != nil {
-			if err := redisConn.HealthCheck(ctx); err != nil {
-				redisHealthy = false
-			}
-		}
-
-		// 确定整体状态
-		status := "healthy"
-		if !dbHealthy || !redisHealthy {
-			status = "degraded"
-		}
-
-		c.JSON(200, map[string]interface{}{
-			"status":   status,
-			"service":  "go-genai-stack",
-			"database": dbHealthy,
-			"redis":    redisHealthy,
-			"version":  "0.1.0",
-		})
-	})
 }
 
 // handleShutdown 处理优雅关闭

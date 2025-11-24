@@ -6,8 +6,11 @@ import (
 	taskhandlers "github.com/erweixin/go-genai-stack/domains/task/handlers"
 	taskrepo "github.com/erweixin/go-genai-stack/domains/task/repository"
 	taskservice "github.com/erweixin/go-genai-stack/domains/task/service"
+	"github.com/erweixin/go-genai-stack/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/health"
 	"github.com/erweixin/go-genai-stack/infrastructure/persistence"
 	"github.com/erweixin/go-genai-stack/infrastructure/persistence/redis"
+	redisv9 "github.com/redis/go-redis/v9"
 
 	// 导入数据库提供者（自动注册）
 	_ "github.com/erweixin/go-genai-stack/infrastructure/persistence/mysql"
@@ -41,11 +44,22 @@ type AppContainer struct {
 //
 // 遵循依赖注入原则：外层依赖内层，内层不依赖外层
 func InitDependencies(
+	cfg *config.Config,
 	dbProvider persistence.DatabaseProvider,
 	redisConn *redis.Connection,
 ) *AppContainer {
 	// 获取底层数据库实例
 	db := dbProvider.DB()
+
+	// 初始化健康检查器
+	var redisClient *redisv9.Client
+	if redisConn != nil {
+		// UniversalClient 可能是 *Client 或 *ClusterClient，尝试类型断言
+		if client, ok := redisConn.Client().(*redisv9.Client); ok {
+			redisClient = client
+		}
+	}
+	health.InitGlobalChecker(cfg.Monitoring, db, redisClient)
 
 	// ============================================
 	// Task 领域依赖注入（三层架构）

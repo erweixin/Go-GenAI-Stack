@@ -57,11 +57,41 @@ docker compose -f docker/docker-compose-debug.yml --profile debug down
 ### 启动管理工具（可选）
 
 ```bash
-# 启动 pgAdmin
+# 启动 pgAdmin（数据库管理）
 docker compose -f docker/docker-compose.yml --profile tools up -d pgadmin
 
 # 访问 pgAdmin: http://localhost:5050
 # 默认登录信息见 docker/.env 文件
+```
+
+### 场景 3: 启动完整可观测性栈（可选）
+
+适用于需要完整监控的场景（开发/测试/生产模拟）。
+
+```bash
+# 1. 启动基础服务 + 可观测性服务
+docker compose -f docker/docker-compose.yml --profile observability up -d
+
+# 2. 配置应用启用 Tracing
+vim docker/.env
+# 设置：
+# APP_MONITORING_TRACING_ENABLED=true
+# APP_MONITORING_TRACING_ENDPOINT=localhost:4317
+
+# 3. 启动后端应用
+cd backend
+go run cmd/server/main.go
+
+# 4. 访问监控工具
+# - Jaeger UI: http://localhost:16686  (分布式追踪)
+# - Prometheus: http://localhost:9090  (指标查询)
+# - Grafana:    http://localhost:3000  (可视化，admin/admin)
+
+# 5. 查看应用指标
+curl http://localhost:8080/metrics
+
+# 6. 停止所有服务
+docker compose -f docker/docker-compose.yml --profile observability down
 ```
 
 ### 停止服务
@@ -155,6 +185,7 @@ docker compose -f docker/docker-compose-debug.yml --profile debug up -d
 - **镜像**: `dpage/pgadmin4:latest`
 - **端口**: `5050` (可通过 `PGADMIN_PORT` 环境变量修改)
 - **用途**: Web 界面管理 PostgreSQL
+- **Profile**: `tools`
 
 **默认配置**:
 - 邮箱: `admin@genai.local`
@@ -168,6 +199,96 @@ docker compose -f docker/docker-compose-debug.yml --profile debug up -d
    - Port: `5432`
    - Username: `genai`
    - Password: `genai_password`
+
+### 可观测性服务（可选）
+
+#### Jaeger - 分布式追踪
+
+- **镜像**: `jaegertracing/all-in-one:latest`
+- **端口**:
+  - `4317` - OTLP gRPC (应用发送 traces)
+  - `4318` - OTLP HTTP
+  - `16686` - Jaeger UI (查看 traces)
+- **用途**: 分布式链路追踪，查看请求在系统中的完整路径
+- **Profile**: `observability`
+
+**使用方式**:
+1. 启动 Jaeger: `docker compose --profile observability up -d jaeger`
+2. 配置应用: `APP_MONITORING_TRACING_ENABLED=true`
+3. 访问 UI: http://localhost:16686
+4. 选择 Service: `go-genai-stack`，点击 "Find Traces"
+
+**查看示例**:
+- 搜索最近的 traces
+- 查看 Span 详情（耗时、标签、错误）
+- 分析性能瓶颈
+
+#### Prometheus - 指标收集
+
+- **镜像**: `prom/prometheus:latest`
+- **端口**: `9090` - Web UI
+- **配置文件**: `docker/prometheus.yml`
+- **用途**: 时序数据库，收集和查询指标
+- **Profile**: `observability`
+
+**使用方式**:
+1. 启动 Prometheus: `docker compose --profile observability up -d prometheus`
+2. 访问 UI: http://localhost:9090
+3. 执行 PromQL 查询：
+   ```promql
+   # QPS（每秒请求数）
+   rate(http_requests_total[1m])
+   
+   # P99 延迟
+   histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))
+   
+   # 错误率
+   sum(rate(http_requests_total{status=~"5.."}[1m])) / sum(rate(http_requests_total[1m]))
+   ```
+
+**配置文件说明**:
+- `docker/prometheus.yml` - Prometheus 主配置
+- 应用指标端点: `host.docker.internal:8080/metrics` (Mac/Windows)
+
+#### Grafana - 可视化
+
+- **镜像**: `grafana/grafana:latest`
+- **端口**: `3000` - Web UI
+- **用途**: 可视化 Dashboard，展示监控数据
+- **Profile**: `observability`
+
+**默认配置**:
+- 用户名: `admin`
+- 密码: `admin` (首次登录需修改)
+
+**使用方式**:
+1. 启动 Grafana: `docker compose --profile observability up -d grafana`
+2. 访问 UI: http://localhost:3000
+3. 添加 Prometheus 数据源：
+   - Configuration → Data Sources → Add data source
+   - 选择 Prometheus
+   - URL: `http://prometheus:9090`
+   - Save & Test
+4. 导入 Dashboard：
+   - Create → Import
+   - 输入 Dashboard ID: `6671` (Go Processes)
+   - 或使用自定义 Dashboard
+
+**推荐 Dashboard**:
+- **Go Processes** (ID: 6671) - Go 运行时指标
+- **HTTP Metrics** - 自定义 HTTP 请求监控
+- **System Metrics** - 系统资源监控
+
+**快速启动**:
+```bash
+# 启动完整可观测性栈
+docker compose --profile observability up -d
+
+# 访问工具
+open http://localhost:16686  # Jaeger
+open http://localhost:9090   # Prometheus
+open http://localhost:3000   # Grafana (admin/admin)
+```
 
 ## 💡 使用技巧
 
@@ -334,8 +455,9 @@ WHERE state = 'idle' AND state_change < now() - interval '5 minutes';
 
 ## 📖 相关文档
 
+- [可观测性快速启动](../docs/Guides/observability-quickstart.md) - 监控和追踪配置
+- [可观测性总览](../backend/infrastructure/monitoring/README.md) - 完整文档
 - [数据库设置指南](../docs/database-setup.md) - 完整的数据库配置教程
-- [数据库架构评审](../docs/database-architecture-review.md) - 数据库设计评审
 - [主 README](../README.md) - 项目总览
 
 ## 🤝 贡献
