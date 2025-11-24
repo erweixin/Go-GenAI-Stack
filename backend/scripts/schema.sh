@@ -105,6 +105,7 @@ schema_diff() {
     cd "${BACKEND_DIR}"
     
     atlas migrate diff "$name" \
+        --config "file://${MIGRATIONS_DIR}/atlas.hcl" \
         --env "$ENV" \
         --to "file://${SCHEMA_DIR}" \
         --dev-url "docker://postgres/15/dev?search_path=public"
@@ -121,6 +122,7 @@ schema_apply() {
     
     # 显示将要应用的迁移
     atlas migrate status \
+        --config "file://${MIGRATIONS_DIR}/atlas.hcl" \
         --env "$ENV" \
         --url "$DATABASE_URL"
     
@@ -130,6 +132,7 @@ schema_apply() {
     
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         atlas migrate apply \
+            --config "file://${MIGRATIONS_DIR}/atlas.hcl" \
             --env "$ENV" \
             --url "$DATABASE_URL"
         
@@ -171,6 +174,7 @@ schema_status() {
     cd "${BACKEND_DIR}"
     
     atlas migrate status \
+        --config "file://${MIGRATIONS_DIR}/atlas.hcl" \
         --env "$ENV" \
         --url "$DATABASE_URL"
 }
@@ -182,6 +186,7 @@ schema_inspect() {
     cd "${BACKEND_DIR}"
     
     atlas schema inspect \
+        --config "file://${MIGRATIONS_DIR}/atlas.hcl" \
         --env "$ENV" \
         --url "$DATABASE_URL" \
         --format "{{ sql . }}"
@@ -194,6 +199,7 @@ schema_lint() {
     cd "${BACKEND_DIR}"
     
     atlas migrate lint \
+        --config "file://${MIGRATIONS_DIR}/atlas.hcl" \
         --env "$ENV" \
         --dev-url "docker://postgres/15/dev?search_path=public" \
         --latest 1
@@ -208,6 +214,7 @@ schema_validate() {
     cd "${BACKEND_DIR}"
     
     atlas migrate validate \
+        --config "file://${MIGRATIONS_DIR}/atlas.hcl" \
         --env "$ENV" \
         --dev-url "docker://postgres/15/dev?search_path=public"
     

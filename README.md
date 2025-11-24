@@ -14,8 +14,14 @@
 ```
 Go-GenAI-Stack/
 ├── backend/              # 后端（Go + Hertz + DDD）
+│   ├── cmd/              # 程序入口
+│   │   └── server/       # HTTP Server 入口
 │   ├── domains/          # 领域层（Domain-First）
 │   │   ├── task/         # Task 领域（示例实现）★
+│   │   │   ├── handlers/ # HTTP 适配层
+│   │   │   ├── service/  # 业务逻辑层
+│   │   │   ├── model/    # 领域模型
+│   │   │   └── ...       # 其他组件
 │   │   └── shared/       # 共享组件
 │   ├── infrastructure/   # 基础设施层
 │   │   ├── bootstrap/    # 启动引导
@@ -26,7 +32,7 @@ Go-GenAI-Stack/
 │   ├── pkg/              # 可复用工具包
 │   │   └── validator/    # 验证器
 │   ├── migrations/       # 数据库迁移
-│   │   ├── atlas/        # Atlas 迁移文件
+│   │   ├── atlas/        # Atlas 迁移文件 & 配置
 │   │   └── seed/         # 种子数据
 │   ├── shared/           # 共享代码
 │   │   └── errors/       # 错误定义
@@ -50,7 +56,7 @@ Go-GenAI-Stack/
 ### 🎯 Vibe-Coding-Friendly DDD
 
 - **领域优先**：按业务领域垂直切分（内置 Task 领域作为示例）
-- **自包含**：每个领域包含 model + handlers + http + repository + tests
+- **自包含**：每个领域包含 model + handlers + service + http + repository + tests
 - **显式知识**：6 个必需文件（README, glossary, rules, events, usecases.yaml, ai-metadata.json）
 - **声明式用例**：在 `usecases.yaml` 中定义业务流程，AI 可直接生成代码
 - **AI 友好**：结构化知识 + 语义化命名 + 完整注释
@@ -122,13 +128,13 @@ pnpm start
 
 ### 数据库 Schema 管理（Atlas）
 
-```bash
-# 修改 schema
-vim backend/infrastructure/database/schema/schema.sql
+详细文档请参考：[数据库管理指南](docs/Guides/database.md)
 
+常用命令：
+
+```bash
 # 生成迁移
-cd backend
-./scripts/schema.sh diff my_change
+./scripts/schema.sh diff <name>
 
 # 应用迁移
 ./scripts/schema.sh apply
@@ -136,11 +142,6 @@ cd backend
 # 查看状态
 ./scripts/schema.sh status
 ```
-
-详细文档：
-- [Atlas 快速参考](docs/atlas-quickstart.md)
-- [Atlas 详细指南](backend/infrastructure/database/README.md)
-- [迁移完成报告](docs/atlas-migration-guide.md)
 
 ### 添加新用例
 
@@ -193,20 +194,14 @@ git push
 
 ## 📖 文档
 
-### 🔥 项目整改（重要）
-- **[Starter 整改计划](docs/STARTER-REFACTORING-PLAN.md)** ⭐ 详细的整改方案
-- **[整改检查清单](docs/REFACTORING-CHECKLIST.md)** - 跟踪整改进度
-
 ### 架构和开发
-- [架构设计](docs/optimal-architecture.md)
-- [Vibe-Coding-Friendly 理念](docs/Vibe-Coding-Friendly.md)
-- [目录结构说明](docs/vibe-coding-ddd-structure.md)
-- [快速参考](docs/quick-reference.md)
-- [Monorepo 设置](docs/monorepo-setup.md)
-- [类型同步指南](docs/type-sync.md)
+- [架构设计](docs/Core/architecture-overview.md)
+- [Vibe-Coding-Friendly 理念](docs/Core/vibe-coding-friendly.md)
+- [快速参考](docs/Guides/quick-reference.md)
+- [类型同步指南](docs/Guides/type-sync.md)
 
 ### 数据库
-- [Atlas 快速开始](docs/atlas-quickstart.md)
+- [数据库管理指南](docs/Guides/database.md)
 - [数据库详细指南](backend/infrastructure/database/README.md)
 
 ---

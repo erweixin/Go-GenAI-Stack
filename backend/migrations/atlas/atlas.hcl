@@ -3,12 +3,12 @@
 // 文档: https://atlasgo.io/
 
 env "local" {
-  src = "file://infrastructure/database/schema"
+  src = "file://../../infrastructure/database/schema"
   dev = "docker://postgres/15/dev?search_path=public"
   url = env("DATABASE_URL")
   
   migration {
-    dir = "file://migrations/atlas"
+    dir = "file://."
     format = atlas
   }
   
@@ -33,12 +33,12 @@ env "local" {
 }
 
 env "dev" {
-  src = "file://infrastructure/database/schema"
+  src = "file://../../infrastructure/database/schema"
   dev = "docker://postgres/15/dev?search_path=public"
   url = getenv("DATABASE_URL")
   
   migration {
-    dir = "file://migrations/atlas"
+    dir = "file://."
     format = atlas
   }
   
@@ -51,22 +51,22 @@ env "dev" {
 }
 
 env "test" {
-  src = "file://infrastructure/database/schema"
+  src = "file://../../infrastructure/database/schema"
   dev = "docker://postgres/15/dev?search_path=public"
   url = "postgresql://postgres:postgres@localhost:5432/go_genai_stack_test?sslmode=disable"
   
   migration {
-    dir = "file://migrations/atlas"
+    dir = "file://."
     format = atlas
   }
 }
 
 env "prod" {
-  src = "file://infrastructure/database/schema"
+  src = "file://../../infrastructure/database/schema"
   url = getenv("DATABASE_URL")
   
   migration {
-    dir = "file://migrations/atlas"
+    dir = "file://."
     format = atlas
     baseline = getenv("MIGRATION_BASELINE")
   }
