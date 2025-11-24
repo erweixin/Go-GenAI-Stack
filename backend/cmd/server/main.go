@@ -12,8 +12,8 @@ import (
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/joho/godotenv"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/bootstrap"
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/bootstrap"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
 )
 
 // DeleteTaskHandler 删除任务（HTTP 适配层）

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
-	"github.com/erweixin/go-genai-stack/infrastructure/persistence"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/persistence"
 
 	// 导入数据库提供者（自动注册）
-	_ "github.com/erweixin/go-genai-stack/infrastructure/persistence/mysql"
-	_ "github.com/erweixin/go-genai-stack/infrastructure/persistence/postgres"
+	_ "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/mysql"
+	_ "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/postgres"
 )
 
 // InitDatabase 初始化数据库连接

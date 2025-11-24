@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/logger"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/metrics"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/tracing"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/logger"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/metrics"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/tracing"
 )
 
 // InitObservability 初始化可观测性组件

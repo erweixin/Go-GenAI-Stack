@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"

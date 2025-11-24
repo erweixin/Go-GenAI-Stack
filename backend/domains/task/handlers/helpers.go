@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
 )
 
 // handleDomainError 统一处理领域错误，转换为 HTTP 响应

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/erweixin/go-genai-stack/domains/task/model"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

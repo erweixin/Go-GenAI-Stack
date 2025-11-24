@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/erweixin/go-genai-stack/domains/task/model"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
 )
 
 // TaskRepository 定义任务仓储接口

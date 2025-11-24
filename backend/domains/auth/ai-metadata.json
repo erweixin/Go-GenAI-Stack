@@ -1,0 +1,243 @@
+{
+  "domain": "auth",
+  "version": "1.0.0",
+  "description": "Auth Domain - 认证领域，负责用户注册、登录、JWT Token 管理",
+  "status": "active",
+  "complexity": "high",
+  "ai_friendly": {
+    "has_usecases_yaml": true,
+    "has_glossary": true,
+    "has_rules": true,
+    "has_events": true,
+    "has_tests": true,
+    "code_comments": "extensive"
+  },
+  "architecture": {
+    "pattern": "DDD + Hexagonal",
+    "layers": [
+      {
+        "name": "service",
+        "description": "领域服务层：JWT Service、Auth Service"
+      },
+      {
+        "name": "handlers",
+        "description": "HTTP 适配层：Register、Login、RefreshToken 请求处理"
+      },
+      {
+        "name": "http/dto",
+        "description": "数据传输对象：HTTP 接口定义"
+      },
+      {
+        "name": "tests",
+        "description": "测试层：单元测试和集成测试"
+      }
+    ]
+  },
+  "core_services": [
+    {
+      "name": "JWTService",
+      "description": "JWT Token 生成和验证服务",
+      "methods": [
+        "GenerateAccessToken",
+        "GenerateRefreshToken",
+        "VerifyToken",
+        "ExtractClaims"
+      ]
+    },
+    {
+      "name": "AuthService",
+      "description": "认证业务逻辑服务",
+      "methods": [
+        "Register",
+        "Login",
+        "RefreshToken"
+      ]
+    }
+  },
+  "use_cases": [
+    {
+      "name": "Register",
+      "method": "POST",
+      "path": "/api/auth/register",
+      "auth_required": false,
+      "description": "用户注册"
+    },
+    {
+      "name": "Login",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "auth_required": false,
+      "description": "用户登录"
+    },
+    {
+      "name": "RefreshToken",
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "auth_required": false,
+      "description": "刷新访问令牌"
+    },
+    {
+      "name": "Logout",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "auth_required": true,
+      "description": "用户登出（扩展点）"
+    }
+  ],
+  "domain_events": [
+    "UserRegistered",
+    "LoginSucceeded",
+    "LoginFailed",
+    "TokenGenerated",
+    "TokenRefreshed",
+    "TokenRevoked",
+    "UserLogout",
+    "PasswordResetRequested",
+    "AuthenticationMethodChanged"
+  ],
+  "dependencies": {
+    "internal": [
+      "domains/user/model",
+      "domains/user/repository",
+      "infrastructure/persistence/postgres"
+    ],
+    "external": [
+      "github.com/golang-jwt/jwt/v5",
+      "golang.org/x/crypto/bcrypt",
+      "github.com/google/uuid",
+      "github.com/cloudwego/hertz"
+    ],
+    "domain_dependencies": [
+      {
+        "domain": "user",
+        "relationship": "依赖关系：Auth 领域调用 User 领域创建和验证用户"
+      }
+    ]
+  },
+  "jwt_configuration": {
+    "algorithm": "HS256",
+    "access_token_expiry": "1h",
+    "refresh_token_expiry": "7d",
+    "issuer": "go-genai-stack",
+    "claims": {
+      "access_token": [
+        "user_id",
+        "email",
+        "type",
+        "iss",
+        "exp",
+        "iat"
+      ],
+      "refresh_token": [
+        "user_id",
+        "type",
+        "iss",
+        "exp",
+        "iat"
+      ]
+    }
+  },
+  "security": {
+    "password_hashing": "bcrypt (cost: 10)",
+    "token_signing": "HS256 with JWT_SECRET",
+    "sensitive_fields": [
+      "jwt_secret",
+      "password"
+    ],
+    "error_messages": "统一返回「邮箱或密码错误」，不泄露具体原因"
+  },
+  "business_rules": {
+    "register": {
+      "email_unique": true,
+      "auto_login": true,
+      "password_min_length": 8
+    },
+    "login": {
+      "check_user_status": true,
+      "record_login_time": true,
+      "unified_error_message": true
+    },
+    "token": {
+      "access_token_expiry": "1h",
+      "refresh_token_expiry": "7d",
+      "type_validation": true,
+      "issuer_validation": true
+    }
+  },
+  "extension_points": [
+    {
+      "name": "OAuth2 Integration",
+      "status": "not_implemented",
+      "description": "集成 Google、GitHub 等第三方登录"
+    },
+    {
+      "name": "Email Verification",
+      "status": "not_implemented",
+      "description": "注册后发送邮箱验证链接"
+    },
+    {
+      "name": "Password Reset",
+      "status": "not_implemented",
+      "description": "忘记密码流程"
+    },
+    {
+      "name": "Token Blacklist",
+      "status": "not_implemented",
+      "description": "使用 Redis 存储撤销的 Token（登出功能）"
+    },
+    {
+      "name": "Rate Limiting",
+      "status": "not_implemented",
+      "description": "登录失败次数限制（防止暴力破解）"
+    },
+    {
+      "name": "Multi-Factor Authentication",
+      "status": "not_implemented",
+      "description": "多因素认证（TOTP、SMS）"
+    }
+  ],
+  "testing": {
+    "unit_tests": true,
+    "integration_tests": true,
+    "test_coverage_target": 80,
+    "test_files": [
+      "service/jwt_service_test.go",
+      "service/auth_service_test.go",
+      "tests/register_test.go",
+      "tests/login_test.go",
+      "tests/refresh_token_test.go"
+    ]
+  },
+  "ai_hints": {
+    "when_adding_use_case": [
+      "1. 更新 usecases.yaml 添加用例定义",
+      "2. 在 service/ 层实现业务逻辑",
+      "3. 在 handlers/ 层实现 HTTP 适配",
+      "4. 在 http/dto/ 定义请求/响应结构",
+      "5. 在 tests/ 编写测试用例",
+      "6. 更新 README.md 添加用例说明"
+    ],
+    "security_considerations": [
+      "永远不返回 JWT_SECRET",
+      "登录失败时统一返回「邮箱或密码错误」",
+      "Token 必须通过 HTTPS 传输",
+      "验证 Token 的签名、过期时间、Issuer、Type"
+    ],
+    "jwt_best_practices": [
+      "Access Token 短期有效（1h）",
+      "Refresh Token 长期有效（7d）",
+      "Claims 中不包含敏感信息",
+      "使用 type 字段区分 Token 类型"
+    ]
+  },
+  "related_docs": [
+    "README.md",
+    "usecases.yaml",
+    "glossary.md",
+    "rules.md",
+    "events.md",
+    "../user/README.md",
+    "../../infrastructure/middleware/auth.go"
+  ]
+}
+

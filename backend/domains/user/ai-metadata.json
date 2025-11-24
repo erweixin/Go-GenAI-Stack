@@ -1,0 +1,261 @@
+{
+  "domain": "user",
+  "version": "1.0.0",
+  "description": "User Domain - 用户领域，负责用户基本信息管理、个人资料和密码管理",
+  "status": "active",
+  "complexity": "medium",
+  "ai_friendly": {
+    "has_usecases_yaml": true,
+    "has_glossary": true,
+    "has_rules": true,
+    "has_events": true,
+    "has_tests": true,
+    "code_comments": "extensive"
+  },
+  "architecture": {
+    "pattern": "DDD + Hexagonal",
+    "layers": [
+      {
+        "name": "model",
+        "description": "领域模型层：User 实体和值对象"
+      },
+      {
+        "name": "repository",
+        "description": "仓储层：用户数据访问抽象和实现"
+      },
+      {
+        "name": "service",
+        "description": "领域服务层：业务逻辑实现"
+      },
+      {
+        "name": "handlers",
+        "description": "HTTP 适配层：请求处理（薄层）"
+      },
+      {
+        "name": "http/dto",
+        "description": "数据传输对象：HTTP 接口定义"
+      },
+      {
+        "name": "tests",
+        "description": "测试层：单元测试和集成测试"
+      }
+    ]
+  },
+  "core_entities": [
+    {
+      "name": "User",
+      "type": "AggregateRoot",
+      "fields": [
+        "ID (UUID)",
+        "Email (unique)",
+        "Username (unique, optional)",
+        "PasswordHash",
+        "FullName",
+        "AvatarURL",
+        "Status (Active/Inactive/Banned)",
+        "EmailVerified",
+        "CreatedAt",
+        "UpdatedAt",
+        "LastLoginAt"
+      ],
+      "business_methods": [
+        "NewUser",
+        "VerifyPassword",
+        "UpdatePassword",
+        "Activate",
+        "Deactivate"
+      ]
+    }
+  ],
+  "value_objects": [
+    {
+      "name": "Email",
+      "description": "邮箱地址（RFC 5322）"
+    },
+    {
+      "name": "PasswordHash",
+      "description": "密码哈希（bcrypt）"
+    },
+    {
+      "name": "Username",
+      "description": "用户名（3-30 字符，字母数字）"
+    },
+    {
+      "name": "UserStatus",
+      "description": "用户状态枚举（Active/Inactive/Banned）"
+    }
+  ],
+  "use_cases": [
+    {
+      "name": "GetUserProfile",
+      "method": "GET",
+      "path": "/api/users/me",
+      "auth_required": true,
+      "description": "获取当前用户资料"
+    },
+    {
+      "name": "UpdateUserProfile",
+      "method": "PUT",
+      "path": "/api/users/me",
+      "auth_required": true,
+      "description": "更新用户资料"
+    },
+    {
+      "name": "ChangePassword",
+      "method": "POST",
+      "path": "/api/users/me/change-password",
+      "auth_required": true,
+      "description": "修改密码"
+    }
+  ],
+  "domain_events": [
+    "UserCreated",
+    "UserUpdated",
+    "PasswordChanged",
+    "UserActivated",
+    "UserDeactivated",
+    "UserDeleted",
+    "EmailVerificationRequested",
+    "PasswordResetRequested",
+    "LoginSucceeded",
+    "LoginFailed"
+  ],
+  "dependencies": {
+    "internal": [
+      "domains/shared/events",
+      "domains/shared/types",
+      "infrastructure/persistence/postgres"
+    ],
+    "external": [
+      "golang.org/x/crypto/bcrypt",
+      "github.com/google/uuid",
+      "github.com/cloudwego/hertz"
+    ],
+    "domain_dependencies": [
+      {
+        "domain": "auth",
+        "relationship": "协作关系：Auth 领域调用 User 领域进行用户验证"
+      }
+    ]
+  },
+  "database": {
+    "tables": [
+      {
+        "name": "users",
+        "primary_key": "id (UUID)",
+        "unique_indexes": [
+          "email",
+          "username"
+        ],
+        "indexes": [
+          "status",
+          "created_at",
+          "email_verified"
+        ]
+      }
+    ]
+  },
+  "security": {
+    "password_hashing": "bcrypt (cost: 10)",
+    "sensitive_fields": [
+      "password_hash",
+      "email"
+    ],
+    "access_control": "用户只能访问/修改自己的资料"
+  },
+  "business_rules": {
+    "email": {
+      "format": "RFC 5322",
+      "unique": true,
+      "case_insensitive": true
+    },
+    "password": {
+      "min_length": 8,
+      "max_length": 128,
+      "hashing": "bcrypt"
+    },
+    "username": {
+      "min_length": 3,
+      "max_length": 30,
+      "pattern": "^[a-zA-Z0-9_]+$",
+      "unique": true,
+      "optional": true
+    },
+    "user_status": {
+      "default": "inactive",
+      "allowed_transitions": {
+        "inactive": ["active"],
+        "active": ["banned"],
+        "banned": ["active"]
+      }
+    }
+  },
+  "extension_points": [
+    {
+      "name": "Email Verification",
+      "status": "to_be_implemented",
+      "description": "发送邮箱验证链接，验证后激活用户"
+    },
+    {
+      "name": "Password Reset",
+      "status": "to_be_implemented",
+      "description": "忘记密码流程（邮件重置）"
+    },
+    {
+      "name": "Social Account Binding",
+      "status": "to_be_implemented",
+      "description": "绑定 Google、GitHub 等社交账号"
+    },
+    {
+      "name": "User Preferences",
+      "status": "to_be_implemented",
+      "description": "用户偏好设置（主题、语言等）"
+    },
+    {
+      "name": "Multi-Factor Authentication",
+      "status": "to_be_implemented",
+      "description": "多因素认证（TOTP、SMS）"
+    }
+  ],
+  "testing": {
+    "unit_tests": true,
+    "integration_tests": true,
+    "test_coverage_target": 80,
+    "test_files": [
+      "model/user_test.go",
+      "repository/user_repo_test.go",
+      "tests/get_user_profile_test.go",
+      "tests/update_user_profile_test.go",
+      "tests/change_password_test.go"
+    ]
+  },
+  "ai_hints": {
+    "when_adding_use_case": [
+      "1. 更新 usecases.yaml 添加用例定义",
+      "2. 在 service/ 层实现业务逻辑",
+      "3. 在 handlers/ 层实现 HTTP 适配",
+      "4. 在 http/dto/ 定义请求/响应结构",
+      "5. 在 tests/ 编写测试用例",
+      "6. 更新 README.md 添加用例说明"
+    ],
+    "password_security": [
+      "永远不返回 password_hash 字段",
+      "登录失败时不泄露是邮箱还是密码错误",
+      "密码修改后撤销所有 Token"
+    ],
+    "error_handling": [
+      "使用显式错误码（如 USER_NOT_FOUND）",
+      "错误消息包含错误码和描述",
+      "Handler 层将领域错误转换为 HTTP 状态码"
+    ]
+  },
+  "related_docs": [
+    "README.md",
+    "usecases.yaml",
+    "glossary.md",
+    "rules.md",
+    "events.md",
+    "../../infrastructure/database/schema/schema.sql"
+  ]
+}
+

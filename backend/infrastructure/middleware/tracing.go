@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/tracing"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/tracing"
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"

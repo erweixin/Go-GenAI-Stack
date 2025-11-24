@@ -11,7 +11,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 	"github.com/cloudwego/hertz/pkg/route/param"
-	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
 	"github.com/stretchr/testify/assert"
 )
 

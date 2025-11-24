@@ -47,6 +47,11 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("failed to load llm config: %w", err)
 	}
 
+	// 加载 JWT 配置
+	if err := loadJWTConfig(&cfg.JWT); err != nil {
+		return nil, fmt.Errorf("failed to load jwt config: %w", err)
+	}
+
 	// 加载 Logging 配置
 	if err := loadLoggingConfig(&cfg.Logging); err != nil {
 		return nil, fmt.Errorf("failed to load logging config: %w", err)
@@ -215,6 +220,26 @@ func loadLLMConfig(cfg *LLMConfig) error {
 		return fmt.Errorf("invalid APP_LLM_MAX_RETRIES: %w", err)
 	} else {
 		cfg.MaxRetries = retries
+	}
+
+	return nil
+}
+
+// loadJWTConfig 加载 JWT 配置
+func loadJWTConfig(cfg *JWTConfig) error {
+	cfg.Secret = getEnvString("JWT_SECRET", cfg.Secret)
+	cfg.Issuer = getEnvString("JWT_ISSUER", cfg.Issuer)
+
+	if expiry, err := getEnvDuration("JWT_ACCESS_TOKEN_EXPIRY", cfg.AccessTokenExpiry); err != nil {
+		return fmt.Errorf("invalid JWT_ACCESS_TOKEN_EXPIRY: %w", err)
+	} else {
+		cfg.AccessTokenExpiry = expiry
+	}
+
+	if expiry, err := getEnvDuration("JWT_REFRESH_TOKEN_EXPIRY", cfg.RefreshTokenExpiry); err != nil {
+		return fmt.Errorf("invalid JWT_REFRESH_TOKEN_EXPIRY: %w", err)
+	} else {
+		cfg.RefreshTokenExpiry = expiry
 	}
 
 	return nil

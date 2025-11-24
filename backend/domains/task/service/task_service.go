@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/erweixin/go-genai-stack/domains/task/model"
-	"github.com/erweixin/go-genai-stack/domains/task/repository"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/logger"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/logger"
 	"go.uber.org/zap"
 )
 

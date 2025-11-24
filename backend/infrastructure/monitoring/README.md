@@ -76,7 +76,7 @@ go run cmd/server/main.go
 
 **示例**:
 ```go
-import "github.com/erweixin/go-genai-stack/infrastructure/monitoring/logger"
+import "github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/logger"
 
 logger.Info("User logged in", zap.String("user_id", userID))
 logger.Error("Failed to save", zap.Error(err))
@@ -90,7 +90,7 @@ logger.Error("Failed to save", zap.Error(err))
 
 **示例**:
 ```go
-import "github.com/erweixin/go-genai-stack/infrastructure/monitoring/metrics"
+import "github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/metrics"
 
 metrics.RecordRequest("GET", "/api/tasks", 200, 0.5)
 ```
@@ -108,7 +108,7 @@ curl http://localhost:8080/metrics
 
 **示例**:
 ```go
-import "github.com/erweixin/go-genai-stack/infrastructure/monitoring/tracing"
+import "github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/tracing"
 
 ctx, span := tracing.StartSpan(ctx, "CreateTask")
 defer span.End()

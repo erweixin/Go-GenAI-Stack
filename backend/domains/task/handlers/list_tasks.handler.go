@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
-	"github.com/erweixin/go-genai-stack/domains/task/model"
-	"github.com/erweixin/go-genai-stack/domains/task/repository"
-	"github.com/erweixin/go-genai-stack/domains/task/service"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/service"
 )
 
 // ListTasksHandler 列出任务（HTTP 适配层）

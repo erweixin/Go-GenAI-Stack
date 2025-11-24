@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
 	"github.com/redis/go-redis/v9"
 )
 

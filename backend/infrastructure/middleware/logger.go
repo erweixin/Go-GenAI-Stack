@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/logger"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/metrics"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/logger"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/metrics"
 	"go.uber.org/zap"
 )
 

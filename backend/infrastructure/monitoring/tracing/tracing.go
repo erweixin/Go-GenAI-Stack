@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"

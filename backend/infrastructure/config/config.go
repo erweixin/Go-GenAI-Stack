@@ -15,6 +15,7 @@ type Config struct {
 	Database   DatabaseConfig
 	Redis      RedisConfig
 	LLM        LLMConfig
+	JWT        JWTConfig
 	Logging    LoggingConfig
 	Monitoring MonitoringConfig
 }
@@ -66,6 +67,14 @@ type LLMConfig struct {
 	Timeout         time.Duration
 	MaxRetries      int
 	Providers       map[string]string // provider -> API key
+}
+
+// JWTConfig JWT 配置
+type JWTConfig struct {
+	Secret             string        // JWT 密钥
+	AccessTokenExpiry  time.Duration // Access Token 过期时间
+	RefreshTokenExpiry time.Duration // Refresh Token 过期时间
+	Issuer             string        // 签发者
 }
 
 // LoggingConfig 日志配置
@@ -144,6 +153,12 @@ func DefaultConfig() *Config {
 			Timeout:         30 * time.Second,
 			MaxRetries:      3,
 			Providers:       make(map[string]string),
+		},
+		JWT: JWTConfig{
+			Secret:             "change-this-secret-in-production",
+			AccessTokenExpiry:  time.Hour,          // 1 小时
+			RefreshTokenExpiry: 7 * 24 * time.Hour, // 7 天
+			Issuer:             "go-genai-stack",
 		},
 		Logging: LoggingConfig{
 			Enabled:    true,

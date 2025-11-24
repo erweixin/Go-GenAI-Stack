@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/erweixin/go-genai-stack/domains/task/service"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/service"
 )
 
 // HandlerDependencies Handler 依赖容器

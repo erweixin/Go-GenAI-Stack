@@ -13,10 +13,10 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/ut"
-	"github.com/erweixin/go-genai-stack/domains/task/handlers"
-	"github.com/erweixin/go-genai-stack/domains/task/model"
-	"github.com/erweixin/go-genai-stack/domains/task/repository"
-	"github.com/erweixin/go-genai-stack/domains/task/service"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/handlers"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/repository"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/service"
 )
 
 // ========== 测试常量 ==========

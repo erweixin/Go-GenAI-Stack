@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/persistence"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/persistence"
 	_ "github.com/lib/pq"
 )
 

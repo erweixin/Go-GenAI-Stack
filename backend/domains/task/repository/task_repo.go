@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/erweixin/go-genai-stack/domains/task/model"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
 )
 
 // TaskRepositoryImpl 任务仓储实现

@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/erweixin/go-genai-stack/domains/task/model"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
 )
 
 // TaskFilter 任务筛选条件

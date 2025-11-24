@@ -3,8 +3,8 @@ package bootstrap
 import (
 	"context"
 
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
-	"github.com/erweixin/go-genai-stack/infrastructure/persistence/redis"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/redis"
 )
 
 // InitRedis 初始化 Redis 连接

@@ -6,7 +6,7 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
-	"github.com/erweixin/go-genai-stack/shared/errors"
+	"github.com/erweixin/go-genai-stack/backend/shared/errors"
 )
 
 // ErrorResponse 统一错误响应格式

@@ -3,18 +3,24 @@ package bootstrap
 import (
 	"database/sql"
 
-	taskhandlers "github.com/erweixin/go-genai-stack/domains/task/handlers"
-	taskrepo "github.com/erweixin/go-genai-stack/domains/task/repository"
-	taskservice "github.com/erweixin/go-genai-stack/domains/task/service"
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
-	"github.com/erweixin/go-genai-stack/infrastructure/monitoring/health"
-	"github.com/erweixin/go-genai-stack/infrastructure/persistence"
-	"github.com/erweixin/go-genai-stack/infrastructure/persistence/redis"
+	authhandlers "github.com/erweixin/go-genai-stack/backend/domains/auth/handlers"
+	authservice "github.com/erweixin/go-genai-stack/backend/domains/auth/service"
+	taskhandlers "github.com/erweixin/go-genai-stack/backend/domains/task/handlers"
+	taskrepo "github.com/erweixin/go-genai-stack/backend/domains/task/repository"
+	taskservice "github.com/erweixin/go-genai-stack/backend/domains/task/service"
+	userhandlers "github.com/erweixin/go-genai-stack/backend/domains/user/handlers"
+	userrepo "github.com/erweixin/go-genai-stack/backend/domains/user/repository"
+	userservice "github.com/erweixin/go-genai-stack/backend/domains/user/service"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/middleware"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/health"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/persistence"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/redis"
 	redisv9 "github.com/redis/go-redis/v9"
 
 	// 导入数据库提供者（自动注册）
-	_ "github.com/erweixin/go-genai-stack/infrastructure/persistence/mysql"
-	_ "github.com/erweixin/go-genai-stack/infrastructure/persistence/postgres"
+	_ "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/mysql"
+	_ "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/postgres"
 )
 
 // AppContainer 应用依赖容器
@@ -26,11 +32,17 @@ import (
 // - Service     → 业务逻辑层（领域层）
 // - Dependencies → HTTP 适配器依赖容器（Handler 层）
 type AppContainer struct {
+	// Auth 领域
+	AuthHandlerDeps *authhandlers.HandlerDependencies
+	AuthMiddleware  *middleware.AuthMiddleware
+
+	// User 领域
+	UserHandlerDeps *userhandlers.HandlerDependencies
+
 	// Task 领域
 	TaskHandlerDeps *taskhandlers.HandlerDependencies
 
 	// Extension points: 添加更多领域
-	// UserHandlerDeps *userhandlers.HandlerDependencies
 	// LLMHandlerDeps  *llmhandlers.HandlerDependencies
 	// MonitoringDeps  *monitoring.HandlerDependencies
 }
@@ -62,32 +74,55 @@ func InitDependencies(
 	health.InitGlobalChecker(cfg.Monitoring, db, redisClient)
 
 	// ============================================
+	// Auth 领域依赖注入
+	// ============================================
+
+	// 1. JWT Service（用于 Token 生成和验证）
+	jwtService := authservice.NewJWTService(
+		cfg.JWT.Secret,
+		cfg.JWT.AccessTokenExpiry,
+		cfg.JWT.RefreshTokenExpiry,
+		cfg.JWT.Issuer,
+	)
+
+	// 2. User Repository（Auth 依赖 User Repository）
+	userRepo := userrepo.NewUserRepository(db)
+
+	// 3. Auth Service
+	authService := authservice.NewAuthService(userRepo, jwtService)
+
+	// 4. Auth Handler Dependencies
+	authHandlerDeps := authhandlers.NewHandlerDependencies(authService)
+
+	// 5. Auth Middleware
+	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+
+	// ============================================
+	// User 领域依赖注入（三层架构）
+	// ============================================
+
+	// 1. User Service
+	userService := userservice.NewUserService(userRepo)
+
+	// 2. User Handler Dependencies
+	userHandlerDeps := userhandlers.NewHandlerDependencies(userService)
+
+	// ============================================
 	// Task 领域依赖注入（三层架构）
 	// ============================================
 
 	// 1. Repository Layer（基础设施层）
-	//    职责：数据访问
 	taskRepo := taskrepo.NewTaskRepository(db)
 
 	// 2. Domain Service Layer（领域层）
-	//    职责：业务逻辑实现
-	//    依赖：Repository
 	taskService := taskservice.NewTaskService(taskRepo)
 
 	// 3. Handler Dependencies（Handler 层）
-	//    职责：HTTP 适配（请求/响应转换）
-	//    依赖：Domain Service
 	taskHandlerDeps := taskhandlers.NewHandlerDependencies(taskService)
 
 	// ============================================
 	// Extension point: 其他领域依赖注入
 	// ============================================
-	// 示例：添加 User 领域
-	//
-	// userRepo := userrepo.NewUserRepository(db)
-	// userService := userservice.NewUserService(userRepo)
-	// userHandlerDeps := userhandlers.NewHandlerDependencies(userService)
-	//
 	// 示例：添加 LLM 领域
 	//
 	// llmRepo := llmrepo.NewModelRepository(db)
@@ -95,6 +130,9 @@ func InitDependencies(
 	// llmHandlerDeps := llmhandlers.NewHandlerDependencies(llmService)
 
 	return &AppContainer{
+		AuthHandlerDeps: authHandlerDeps,
+		AuthMiddleware:  authMiddleware,
+		UserHandlerDeps: userHandlerDeps,
 		TaskHandlerDeps: taskHandlerDeps,
 	}
 }
@@ -103,13 +141,34 @@ func InitDependencies(
 //
 // 这个变体接受 *sql.DB 而不是 DatabaseProvider，方便在测试中使用。
 // 保持与 InitDependencies 相同的三层架构。
-func InitDependenciesFromDB(db *sql.DB, redisConn *redis.Connection) *AppContainer {
+func InitDependenciesFromDB(db *sql.DB, redisConn *redis.Connection, cfg *config.Config) *AppContainer {
+	// JWT Service
+	jwtService := authservice.NewJWTService(
+		cfg.JWT.Secret,
+		cfg.JWT.AccessTokenExpiry,
+		cfg.JWT.RefreshTokenExpiry,
+		cfg.JWT.Issuer,
+	)
+
+	// User 领域
+	userRepo := userrepo.NewUserRepository(db)
+	userService := userservice.NewUserService(userRepo)
+	userHandlerDeps := userhandlers.NewHandlerDependencies(userService)
+
+	// Auth 领域
+	authService := authservice.NewAuthService(userRepo, jwtService)
+	authHandlerDeps := authhandlers.NewHandlerDependencies(authService)
+	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+
 	// Task 领域（三层架构）
 	taskRepo := taskrepo.NewTaskRepository(db)
 	taskService := taskservice.NewTaskService(taskRepo)
 	taskHandlerDeps := taskhandlers.NewHandlerDependencies(taskService)
 
 	return &AppContainer{
+		AuthHandlerDeps: authHandlerDeps,
+		AuthMiddleware:  authMiddleware,
+		UserHandlerDeps: userHandlerDeps,
 		TaskHandlerDeps: taskHandlerDeps,
 	}
 }

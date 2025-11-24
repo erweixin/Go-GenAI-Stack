@@ -6,71 +6,79 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/utils"
+	"github.com/erweixin/go-genai-stack/backend/domains/auth/service"
 )
 
 // AuthMiddleware 认证中间件
 //
 // 验证请求中的 Bearer Token
 //
-// Extension point: 集成 JWT 验证
-// 示例：使用 github.com/golang-jwt/jwt 库
-//
-//	type AuthMiddleware struct {
-//	    jwtSecret string
-//	    issuer    string
-//	}
+// 使用 JWT Service 验证 Token 的有效性
 type AuthMiddleware struct {
-	// jwtSecret string // JWT 密钥（可选）
+	jwtService *service.JWTService
 }
 
 // NewAuthMiddleware 创建认证中间件
-func NewAuthMiddleware() *AuthMiddleware {
-	return &AuthMiddleware{}
+//
+// 参数：
+//   - jwtService: JWT 服务（用于验证 Token）
+//
+// 返回：
+//   - *AuthMiddleware: 认证中间件实例
+func NewAuthMiddleware(jwtService *service.JWTService) *AuthMiddleware {
+	return &AuthMiddleware{
+		jwtService: jwtService,
+	}
 }
 
 // Handle 处理认证
 //
+// 验证 JWT Token 并提取用户 ID
+//
 // Example:
 //
-//	authMW := NewAuthMiddleware()
+//	authMW := NewAuthMiddleware(jwtService)
 //	router.Use(authMW.Handle())
 func (m *AuthMiddleware) Handle() app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
-		// 从 Header 中获取 Token
+		// 1. 从 Header 中获取 Token
 		authHeader := string(c.GetHeader("Authorization"))
 
 		if authHeader == "" {
 			c.JSON(401, utils.H{
-				"error": "missing authorization header",
+				"error":   "UNAUTHORIZED",
+				"message": "缺少 Authorization 请求头",
 			})
 			c.Abort()
 			return
 		}
 
-		// 解析 Bearer Token
+		// 2. 解析 Bearer Token
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if token == authHeader {
 			c.JSON(401, utils.H{
-				"error": "invalid authorization format",
+				"error":   "UNAUTHORIZED",
+				"message": "Authorization 格式无效（应为 Bearer <token>）",
 			})
 			c.Abort()
 			return
 		}
 
-		// Extension point: JWT Token 验证
-		// 示例实现：
-		//   claims, err := jwt.ParseWithClaims(token, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		//       return []byte(m.jwtSecret), nil
-		//   })
-		//   if err != nil || !claims.Valid {
-		//       c.JSON(401, utils.H{"error": "invalid token"})
-		//       c.Abort()
-		//       return
-		//   }
-		//   c.Set("user_id", claims.UserID)
-		//
-		// 当前简化实现：直接将 token 作为 user_id（仅用于演示）
-		c.Set("user_id", token)
+		// 3. 验证 JWT Token
+		claims, err := m.jwtService.VerifyAccessToken(token)
+		if err != nil {
+			c.JSON(401, utils.H{
+				"error":   "INVALID_TOKEN",
+				"message": "Token 无效或已过期",
+				"details": err.Error(),
+			})
+			c.Abort()
+			return
+		}
+
+		// 4. 提取用户 ID 并存储到上下文
+		c.Set("user_id", claims.UserID)
+		c.Set("email", claims.Email)
 
 		c.Next(ctx)
 	}
@@ -79,6 +87,8 @@ func (m *AuthMiddleware) Handle() app.HandlerFunc {
 // OptionalAuth 可选认证中间件
 //
 // 如果有 Token 则验证，没有 Token 则放行
+//
+// 用途：支持匿名访问的接口，但可以识别已登录用户
 func (m *AuthMiddleware) OptionalAuth() app.HandlerFunc {
 	return func(ctx context.Context, c *app.RequestContext) {
 		authHeader := string(c.GetHeader("Authorization"))
@@ -86,8 +96,14 @@ func (m *AuthMiddleware) OptionalAuth() app.HandlerFunc {
 		if authHeader != "" {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 			if token != authHeader {
-				// Extension point: JWT Token 验证（同上）
-				c.Set("user_id", token)
+				// 验证 JWT Token
+				claims, err := m.jwtService.VerifyAccessToken(token)
+				if err == nil {
+					// Token 有效，提取用户信息
+					c.Set("user_id", claims.UserID)
+					c.Set("email", claims.Email)
+				}
+				// Token 无效时，不阻止请求，继续放行
 			}
 		}
 

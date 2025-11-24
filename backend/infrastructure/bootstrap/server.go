@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
-	"github.com/erweixin/go-genai-stack/infrastructure/config"
-	"github.com/erweixin/go-genai-stack/infrastructure/middleware"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/config"
+	"github.com/erweixin/go-genai-stack/backend/infrastructure/middleware"
 )
 
 // CreateServer 创建并配置 Hertz 服务器

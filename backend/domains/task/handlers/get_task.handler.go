@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/erweixin/go-genai-stack/domains/task/http/dto"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
 )
 
 // GetTaskHandler 获取任务详情（HTTP 适配层）

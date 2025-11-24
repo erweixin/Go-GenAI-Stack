@@ -2,7 +2,7 @@ package http
 
 import (
 	"github.com/cloudwego/hertz/pkg/route"
-	"github.com/erweixin/go-genai-stack/domains/task/handlers"
+	"github.com/erweixin/go-genai-stack/backend/domains/task/handlers"
 )
 
 // RegisterRoutes 注册任务领域的路由
