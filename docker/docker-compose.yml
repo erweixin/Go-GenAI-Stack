@@ -4,6 +4,64 @@
 version: '3.8'
 
 services:
+  # ============================================
+  # Go 后端服务
+  # ============================================
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: go-genai-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${APP_SERVER_PORT:-8080}:8080"
+    environment:
+      # Server 配置
+      APP_SERVER_HOST: 0.0.0.0
+      APP_SERVER_PORT: 8080
+      
+      # Database 配置（使用容器名称作为 host）
+      APP_DATABASE_HOST: postgres
+      APP_DATABASE_PORT: 5432
+      APP_DATABASE_USER: ${POSTGRES_USER:-genai}
+      APP_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-genai_password}
+      APP_DATABASE_DATABASE: ${POSTGRES_DB:-go_genai_stack}
+      APP_DATABASE_SSL_MODE: disable
+      
+      # Redis 配置（使用容器名称作为 host）
+      APP_REDIS_HOST: redis
+      APP_REDIS_PORT: 6379
+      APP_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_password}
+      
+      # 日志配置
+      APP_LOGGING_ENABLED: "true"
+      APP_LOGGING_LEVEL: info
+      APP_LOGGING_FORMAT: json
+      APP_LOGGING_OUTPUT: stdout
+      
+      # Monitoring 配置
+      APP_MONITORING_METRICS_ENABLED: "true"
+      APP_MONITORING_HEALTH_ENABLED: "true"
+      APP_MONITORING_TRACING_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - genai-network
+    # 可选：挂载日志目录（用于持久化日志）
+    # volumes:
+    #   - ./logs:/app/logs
+
   # PostgreSQL 数据库
   postgres:
     image: postgres:16-alpine

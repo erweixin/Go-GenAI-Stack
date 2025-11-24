@@ -91,29 +91,82 @@ Go-GenAI-Stack/
 
 ## 🚀 快速开始
 
-### 1. 克隆项目
+### 方式 1: Docker 一键启动（推荐）✨
+
+最简单的启动方式，一键启动完整环境（Backend + DB + Redis）：
 
 ```bash
+# 1. 克隆项目
 git clone https://github.com/erweixin/Go-GenAI-Stack.git
 cd Go-GenAI-Stack
+
+# 2. 一键启动所有服务
+./docker/docker-up.sh
+
+# 3. 访问服务
+# - 后端 API:      http://localhost:8080/api
+# - 健康检查:      http://localhost:8080/health
+# - Prometheus:    http://localhost:8080/metrics
 ```
 
-### 2. 启动后端
+**特点**：
+- ✅ 无需手动安装 Go、PostgreSQL、Redis
+- ✅ 自动配置和健康检查
+- ✅ 适合快速体验和开发
+
+**其他选项**：
+```bash
+# 启动完整服务（包含 Jaeger、Prometheus、Grafana）
+./docker/docker-up.sh --full
+
+# 重新构建镜像
+./docker/docker-up.sh --rebuild
+
+# 使用 Make 命令（在 docker 目录下）
+cd docker
+make up          # 启动所有服务
+make logs        # 查看日志
+make down        # 停止服务
+make help        # 查看所有命令
+```
+
+📖 详细文档：[Docker 部署指南](docs/Guides/docker-deployment.md)
+
+---
+
+### 方式 2: 本地开发（手动安装）
+
+适合需要自定义配置或不使用 Docker 的场景。
+
+#### 前置要求
+
+- **Go 1.23+**
+- **PostgreSQL 16+**
+- **Redis 7+**
+- **Atlas**（数据库 Schema 管理工具）
 
 ```bash
-cd backend
+# 安装 Atlas
+curl -sSf https://atlasgo.sh | sh
+```
 
-# 安装依赖
-go mod download
+#### 启动步骤
 
-# 启动数据库（使用 Docker Compose）
-docker-compose up -d
+```bash
+# 1. 克隆项目
+git clone https://github.com/erweixin/Go-GenAI-Stack.git
+cd Go-GenAI-Stack
 
-# 运行数据库迁移
-./scripts/migrate.sh up
+# 2. 启动基础设施（仅 PostgreSQL + Redis）
+cd docker
+docker-compose up -d --scale backend=0
 
-# 启动开发服务器
-./scripts/dev.sh
+# 3. 应用数据库迁移
+cd ../backend
+./scripts/schema.sh apply
+
+# 4. 启动后端服务
+go run cmd/server/main.go
 ```
 
 ### 3. 启动前端
@@ -210,6 +263,10 @@ git push
 - [Vibe-Coding-Friendly 理念](docs/Core/vibe-coding-friendly.md)
 - [快速参考](docs/Guides/quick-reference.md)
 - [类型同步指南](docs/Guides/type-sync.md)
+
+### 部署
+- [Docker 部署指南](docs/Guides/docker-deployment.md)
+- [Docker 环境配置](docker/README.md)
 
 ### 数据库
 - [数据库管理指南](docs/Guides/database.md)

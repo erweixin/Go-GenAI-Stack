@@ -140,6 +140,17 @@ docs/
 
 **适合**：前后端协作开发
 
+### Docker 部署
+
+**[docker-deployment.md](Guides/docker-deployment.md)**
+
+- Docker 一键启动指南
+- 多阶段构建 Dockerfile
+- 生产环境部署
+- 常见问题排查
+
+**适合**：需要部署项目的开发者
+
 ---
 
 ## 🔌 扩展指南
@@ -216,11 +227,12 @@ docs/
 | 主题 | 推荐文档 |
 |------|----------|
 | **项目是什么？** | [主 README](../README.md) |
-| **如何启动项目？** | [Backend README](../backend/README.md) + `./scripts/quickstart.sh` |
+| **如何启动项目？** | [Docker 部署指南](Guides/docker-deployment.md) + `./docker/docker-up.sh` |
 | **架构是什么样的？** | [架构概览](Core/architecture-overview.md) |
 | **如何添加新功能？** | [Task 领域示例](../backend/domains/task/README.md) |
 | **如何管理数据库？** | [数据库指南](Guides/database.md) |
 | **如何同步前后端类型？** | [类型同步指南](Guides/type-sync.md) |
+| **如何部署到生产环境？** | [Docker 部署指南](Guides/docker-deployment.md) |
 | **如何实现跨领域功能？** | [Application 层指南](Extensions/APPLICATION-LAYER-GUIDE.md) |
 | **常用命令是什么？** | [快速参考](Guides/quick-reference.md) |
 

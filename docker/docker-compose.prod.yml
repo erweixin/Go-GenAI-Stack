@@ -1,0 +1,325 @@
+# ============================================
+# Go-GenAI-Stack 生产环境配置
+# ============================================
+# 用于生产环境的 Docker Compose 配置
+#
+# 使用方式：
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 说明：
+#   - 此文件会覆盖 docker-compose.yml 的配置
+#   - 专注于生产环境的安全性、性能和可靠性
+# ============================================
+
+version: '3.8'
+
+services:
+  # ============================================
+  # 后端服务（生产配置）
+  # ============================================
+  backend:
+    # 生产环境配置
+    restart: always
+    
+    environment:
+      # 环境标识
+      APP_ENV: production
+      
+      # 日志配置（生产环境使用 JSON 格式）
+      APP_LOGGING_FORMAT: json
+      APP_LOGGING_LEVEL: info
+      APP_LOGGING_OUTPUT: file
+      APP_LOGGING_OUTPUT_PATH: /app/logs/app.log
+      
+      # 启用分布式追踪
+      APP_MONITORING_TRACING_ENABLED: "true"
+      APP_MONITORING_SAMPLE_RATE: "0.1"  # 10% 采样率
+    
+    # 资源限制
+    deploy:
+      replicas: 2  # 运行 2 个副本（需要 Docker Swarm 或 Kubernetes）
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      
+      # 更新策略
+      update_config:
+        parallelism: 1  # 一次更新一个容器
+        delay: 10s      # 更新间隔
+        failure_action: rollback
+      
+      # 重启策略
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    
+    # 日志管理（限制日志文件大小）
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # 持久化日志
+    volumes:
+      - backend_logs:/app/logs
+    
+    # 健康检查（更严格的配置）
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================
+  # PostgreSQL（生产配置）
+  # ============================================
+  postgres:
+    restart: always
+    
+    # 安全：不暴露端口到宿主机（仅容器内访问）
+    ports: []
+    
+    # 性能优化配置
+    command: 
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - max_connections=100
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - default_statistics_target=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - max_worker_processes=4
+      - -c
+      - max_parallel_workers_per_gather=2
+      - -c
+      - max_parallel_workers=4
+      - -c
+      - max_parallel_maintenance_workers=2
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # 日志管理
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Redis（生产配置）
+  # ============================================
+  redis:
+    restart: always
+    
+    # 安全：不暴露端口到宿主机
+    ports: []
+    
+    # 生产环境配置
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redis_password}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+      --appendfsync everysec
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    # 日志管理
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ============================================
+  # Jaeger（生产配置）
+  # ============================================
+  jaeger:
+    restart: always
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    # 日志管理
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Prometheus（生产配置）
+  # ============================================
+  prometheus:
+    restart: always
+    
+    # 数据持久化
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_prod_data:/prometheus
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    
+    # 日志管理
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Grafana（生产配置）
+  # ============================================
+  grafana:
+    restart: always
+    
+    # 数据持久化
+    volumes:
+      - grafana_prod_data:/var/lib/grafana
+    
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    # 日志管理
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================
+# 数据卷（生产环境）
+# ============================================
+volumes:
+  backend_logs:
+    driver: local
+  prometheus_prod_data:
+    driver: local
+  grafana_prod_data:
+    driver: local
+
+# ============================================
+# 使用说明
+# ============================================
+#
+# 1. 启动生产环境：
+#    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 2. 查看服务状态：
+#    docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+#
+# 3. 查看日志：
+#    docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs -f backend
+#
+# 4. 扩展后端服务（需要负载均衡器）：
+#    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --scale backend=3
+#
+# 5. 更新服务（零停机）：
+#    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-deps backend
+#
+# 6. 停止服务：
+#    docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+#
+# ============================================
+# 生产环境检查清单
+# ============================================
+#
+# ✅ 安全性
+# - [ ] 修改所有默认密码（DB_PASSWORD, REDIS_PASSWORD）
+# - [ ] 启用 SSL/TLS（APP_DATABASE_SSL_MODE=require）
+# - [ ] 不暴露数据库端口到公网
+# - [ ] 使用 Docker Secrets 管理敏感信息
+# - [ ] 定期更新镜像和依赖
+#
+# ✅ 性能
+# - [ ] 配置合理的资源限制
+# - [ ] 启用数据库连接池
+# - [ ] 配置 Redis 持久化
+# - [ ] 优化日志级别（info 或 warn）
+#
+# ✅ 可靠性
+# - [ ] 配置健康检查
+# - [ ] 设置自动重启策略
+# - [ ] 配置数据备份
+# - [ ] 配置监控和告警
+#
+# ✅ 可观测性
+# - [ ] 启用结构化日志（JSON 格式）
+# - [ ] 启用分布式追踪
+# - [ ] 配置 Metrics 收集
+# - [ ] 设置日志聚合
+#
+# ✅ 数据持久化
+# - [ ] 确保所有数据卷持久化
+# - [ ] 配置定期备份
+# - [ ] 测试恢复流程
+#
+# ============================================
+

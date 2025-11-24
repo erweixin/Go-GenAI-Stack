@@ -4,107 +4,155 @@
 
 ## 📁 文件说明
 
-- **`docker-compose.yml`**: Docker Compose 配置文件，定义 PostgreSQL、Redis 和 pgAdmin 服务（仅基础设施）
-- **`docker-compose-debug.yml`**: Debug 环境配置，包含后端服务，支持热重载和 Delve 调试
+- **`docker-compose.yml`**: 完整的 Docker Compose 配置文件，包含后端服务、PostgreSQL、Redis 和可观测性组件
+- **`docker-compose-debug.yml`**: Debug 环境配置，支持热重载和 Delve 调试
+- **`docker-up.sh`**: 一键启动脚本（推荐使用）
 - **`env.example`**: 环境变量配置示例文件
 - **`.env`**: 实际环境变量配置（从 env.example 复制，不提交到 Git）
 
 ## 🚀 快速开始
 
-### 场景 1: 仅启动基础设施（推荐）
+### 方式 1: 一键启动（最简单）✨
 
-适用于本地开发，后端服务在宿主机运行。
+使用 `docker-up.sh` 脚本自动配置和启动所有服务：
+
+```bash
+# 启动完整环境（Backend + DB + Redis）
+./docker/docker-up.sh
+
+# 启动完整服务（包含可观测性组件）
+./docker/docker-up.sh --full
+
+# 重新构建镜像
+./docker/docker-up.sh --rebuild
+```
+
+**特点**：
+- ✅ 自动检查依赖（Docker、Docker Compose）
+- ✅ 自动创建 .env 文件（如果不存在）
+- ✅ 自动等待服务健康检查
+- ✅ 显示所有访问地址和常用命令
+
+---
+
+### 方式 2: 使用 Docker Compose
+
+手动启动服务（适合高级用户）：
 
 ```bash
 # 1. 配置环境变量
-cp docker/env.example docker/.env
-vim docker/.env  # 修改密码等配置
+cd docker
+cp env.example .env
+vim .env  # 修改密码等配置
 
-# 2. 启动核心服务（PostgreSQL + Redis）
-docker compose -f docker/docker-compose.yml up -d
+# 2. 启动所有服务（Backend + DB + Redis）
+docker-compose up -d
 
 # 3. 查看服务状态
-docker compose -f docker/docker-compose.yml ps
+docker-compose ps
 
-# 4. 在宿主机运行后端
-cd backend
-go run cmd/server/main.go
+# 4. 查看日志
+docker-compose logs -f backend
+
+# 5. 停止服务
+docker-compose down
 ```
 
-### 场景 2: 启动完整调试环境
+---
+
+### 方式 3: 仅启动基础设施（不含后端）
+
+适用于本地开发，后端服务在宿主机运行（不使用 Docker 运行后端）。
+
+```bash
+# 1. 配置环境变量
+cd docker
+cp env.example .env
+vim .env  # 修改密码等配置
+
+# 2. 仅启动基础设施服务（PostgreSQL + Redis）
+# 注意：使用 --scale backend=0 跳过后端服务
+docker-compose up -d --scale backend=0
+
+# 3. 在宿主机运行后端
+cd ../backend
+go run cmd/server/main.go
+
+# 4. 停止基础设施
+cd ../docker
+docker-compose down
+```
+
+---
+
+### 方式 4: 调试环境（热重载 + Delve）
 
 适用于容器内调试，支持热重载和 Delve 调试器。
 
 ```bash
-# 1. 配置环境变量（同上）
-cp docker/env.example docker/.env
-vim docker/.env
+cd docker
 
-# 2. 启动基础服务 + 后端服务
-docker compose -f docker/docker-compose-debug.yml --profile debug up -d
+# 1. 启动调试环境（基础服务 + 后端服务）
+docker-compose -f docker-compose-debug.yml --profile debug up -d
 
-# 3. 查看日志（实时查看后端输出）
-docker compose -f docker/docker-compose-debug.yml logs -f backend
+# 2. 查看日志（实时查看后端输出）
+docker-compose -f docker-compose-debug.yml logs -f backend
 
-# 4. 访问应用
-# API: http://localhost:8080
-# Delve 调试端口: localhost:2345
+# 3. 访问应用
+# - API: http://localhost:8080
+# - Delve 调试端口: localhost:2345
 
-# 5. 停止服务
-docker compose -f docker/docker-compose-debug.yml --profile debug down
+# 4. 停止服务
+docker-compose -f docker-compose-debug.yml --profile debug down
 ```
 
-### 启动管理工具（可选）
+---
+
+### 可选服务
+
+#### 启动管理工具
 
 ```bash
 # 启动 pgAdmin（数据库管理）
-docker compose -f docker/docker-compose.yml --profile tools up -d pgadmin
+docker-compose --profile tools up -d pgadmin
 
 # 访问 pgAdmin: http://localhost:5050
-# 默认登录信息见 docker/.env 文件
+# 默认登录信息见 .env 文件
 ```
 
-### 场景 3: 启动完整可观测性栈（可选）
+#### 启动可观测性组件
 
 适用于需要完整监控的场景（开发/测试/生产模拟）。
 
 ```bash
-# 1. 启动基础服务 + 可观测性服务
-docker compose -f docker/docker-compose.yml --profile observability up -d
+# 启动可观测性服务（Jaeger + Prometheus + Grafana）
+docker-compose --profile observability up -d
 
-# 2. 配置应用启用 Tracing
-vim docker/.env
-# 设置：
-# APP_MONITORING_TRACING_ENABLED=true
-# APP_MONITORING_TRACING_ENDPOINT=localhost:4317
-
-# 3. 启动后端应用
-cd backend
-go run cmd/server/main.go
-
-# 4. 访问监控工具
+# 访问监控工具
 # - Jaeger UI: http://localhost:16686  (分布式追踪)
 # - Prometheus: http://localhost:9090  (指标查询)
 # - Grafana:    http://localhost:3000  (可视化，admin/admin)
 
-# 5. 查看应用指标
+# 查看应用指标
 curl http://localhost:8080/metrics
 
-# 6. 停止所有服务
-docker compose -f docker/docker-compose.yml --profile observability down
+# 停止可观测性服务
+docker-compose --profile observability down
 ```
 
-### 停止服务
+---
+
+### 停止和清理
 
 ```bash
-# 停止基础设施
-docker compose -f docker/docker-compose.yml down
+# 停止所有服务（保留数据）
+docker-compose down
 
-# 停止调试环境
-docker compose -f docker/docker-compose-debug.yml --profile debug down
+# 停止特定服务
+docker-compose stop backend
 
 # 停止并删除数据卷（⚠️ 会删除所有数据）
-docker compose -f docker/docker-compose.yml down -v
+docker-compose down -v
 ```
 
 ## 🔧 服务说明
