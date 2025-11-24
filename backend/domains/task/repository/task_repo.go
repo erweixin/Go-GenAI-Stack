@@ -32,9 +32,9 @@ func (r *TaskRepositoryImpl) Create(ctx context.Context, task *model.Task) error
 	// SQL 语句
 	query := `
 		INSERT INTO tasks (
-			id, title, description, status, priority, 
+			id, user_id, title, description, status, priority, 
 			due_date, created_at, updated_at, completed_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 
 	// 执行插入
@@ -42,6 +42,7 @@ func (r *TaskRepositoryImpl) Create(ctx context.Context, task *model.Task) error
 		ctx,
 		query,
 		task.ID,
+		task.UserID,
 		task.Title,
 		task.Description,
 		task.Status,
@@ -123,7 +124,7 @@ func (r *TaskRepositoryImpl) Update(ctx context.Context, task *model.Task) error
 func (r *TaskRepositoryImpl) FindByID(ctx context.Context, id string) (*model.Task, error) {
 	// SQL 语句
 	query := `
-		SELECT id, title, description, status, priority, 
+		SELECT id, user_id, title, description, status, priority, 
 		       due_date, created_at, updated_at, completed_at
 		FROM tasks
 		WHERE id = $1
@@ -133,6 +134,7 @@ func (r *TaskRepositoryImpl) FindByID(ctx context.Context, id string) (*model.Ta
 	task := &model.Task{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&task.ID,
+		&task.UserID,
 		&task.Title,
 		&task.Description,
 		&task.Status,
@@ -197,7 +199,7 @@ func (r *TaskRepositoryImpl) List(ctx context.Context, filter *TaskFilter) ([]*m
 
 	// 构建查询语句
 	query := fmt.Sprintf(`
-		SELECT id, title, description, status, priority, 
+		SELECT id, user_id, title, description, status, priority, 
 		       due_date, created_at, updated_at, completed_at
 		FROM tasks
 		%s
@@ -222,6 +224,7 @@ func (r *TaskRepositoryImpl) List(ctx context.Context, filter *TaskFilter) ([]*m
 		task := &model.Task{}
 		err := rows.Scan(
 			&task.ID,
+			&task.UserID,
 			&task.Title,
 			&task.Description,
 			&task.Status,
@@ -323,6 +326,13 @@ func (r *TaskRepositoryImpl) buildWhereClause(filter *TaskFilter) (string, []int
 	args := make([]interface{}, 0)
 	argIndex := 1
 
+	// 按用户 ID 筛选（必需）
+	if filter.UserID != nil {
+		conditions = append(conditions, fmt.Sprintf("user_id = $%d", argIndex))
+		args = append(args, *filter.UserID)
+		argIndex++
+	}
+
 	// 按状态筛选
 	if filter.Status != nil {
 		conditions = append(conditions, fmt.Sprintf("status = $%d", argIndex))
@@ -409,7 +419,7 @@ func (r *TaskRepositoryImpl) CountByStatus(ctx context.Context) (map[model.TaskS
 // FindOverdueTasks 查找逾期任务
 func (r *TaskRepositoryImpl) FindOverdueTasks(ctx context.Context) ([]*model.Task, error) {
 	query := `
-		SELECT id, title, description, status, priority, 
+		SELECT id, user_id, title, description, status, priority, 
 		       due_date, created_at, updated_at, completed_at
 		FROM tasks
 		WHERE status != 'completed' 
@@ -429,6 +439,7 @@ func (r *TaskRepositoryImpl) FindOverdueTasks(ctx context.Context) ([]*model.Tas
 		task := &model.Task{}
 		err := rows.Scan(
 			&task.ID,
+			&task.UserID,
 			&task.Title,
 			&task.Description,
 			&task.Status,

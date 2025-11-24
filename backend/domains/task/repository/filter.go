@@ -7,6 +7,7 @@ import (
 // TaskFilter 任务筛选条件
 type TaskFilter struct {
 	// 筛选条件
+	UserID      *string // 用户 ID（必需）
 	Status      *model.TaskStatus
 	Priority    *model.Priority
 	Tag         *string

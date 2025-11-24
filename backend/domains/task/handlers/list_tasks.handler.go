@@ -26,7 +26,25 @@ import (
 //
 // 业务逻辑在 service.TaskService.ListTasks() 中实现
 func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.RequestContext) {
-	// 1. 解析查询参数
+	// 1. 获取用户 ID（从 JWT 中间件注入）
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, dto.ErrorResponse{
+			Error:   "UNAUTHORIZED",
+			Message: "未授权访问",
+		})
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(500, dto.ErrorResponse{
+			Error:   "INTERNAL_ERROR",
+			Message: "用户 ID 类型错误",
+		})
+		return
+	}
+
+	// 2. 解析查询参数
 	var req dto.ListTasksRequest
 	if err := c.BindQuery(&req); err != nil {
 		c.JSON(400, dto.ErrorResponse{
@@ -37,7 +55,7 @@ func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.Re
 		return
 	}
 
-	// 2. 设置默认值
+	// 3. 设置默认值
 	if req.Page == 0 {
 		req.Page = 1
 	}
@@ -51,8 +69,9 @@ func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.Re
 		req.SortOrder = "desc"
 	}
 
-	// 3. 构建 Domain Input（Filter）
+	// 4. 构建 Domain Input（Filter）
 	filter := repository.NewTaskFilter()
+	filter.UserID = &userIDStr // 设置用户 ID 过滤
 	filter.Page = req.Page
 	filter.Limit = req.Limit
 	filter.SortBy = req.SortBy
@@ -79,7 +98,7 @@ func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.Re
 		filter.Keyword = &req.Keyword
 	}
 
-	// 4. 调用 Domain Service
+	// 5. 调用 Domain Service
 	output, err := deps.taskService.ListTasks(ctx, service.ListTasksInput{
 		Filter: *filter, // 解引用指针
 	})
@@ -88,7 +107,7 @@ func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.Re
 		return
 	}
 
-	// 5. 转换为 HTTP 响应
+	// 6. 转换为 HTTP 响应
 	taskItems := make([]dto.TaskItem, 0, len(output.Tasks))
 	for _, task := range output.Tasks {
 		item := dto.TaskItem{
@@ -115,7 +134,7 @@ func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.Re
 		taskItems = append(taskItems, item)
 	}
 
-	// 6. 返回响应
+	// 7. 返回响应
 	c.JSON(200, dto.ListTasksResponse{
 		Tasks:      taskItems,
 		TotalCount: output.TotalCount,

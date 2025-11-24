@@ -23,7 +23,25 @@ import (
 //
 // 业务逻辑在 service.TaskService.CompleteTask() 中实现
 func (deps *HandlerDependencies) CompleteTaskHandler(ctx context.Context, c *app.RequestContext) {
-	// 1. 获取路径参数
+	// 1. 获取用户 ID（从 JWT 中间件注入）
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, dto.ErrorResponse{
+			Error:   "UNAUTHORIZED",
+			Message: "未授权访问",
+		})
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(500, dto.ErrorResponse{
+			Error:   "INTERNAL_ERROR",
+			Message: "用户 ID 类型错误",
+		})
+		return
+	}
+
+	// 2. 获取路径参数
 	taskID := c.Param("id")
 	if taskID == "" {
 		c.JSON(400, dto.ErrorResponse{
@@ -33,14 +51,14 @@ func (deps *HandlerDependencies) CompleteTaskHandler(ctx context.Context, c *app
 		return
 	}
 
-	// 2. 调用 Domain Service
-	task, err := deps.taskService.CompleteTask(ctx, taskID)
+	// 3. 调用 Domain Service
+	task, err := deps.taskService.CompleteTask(ctx, userIDStr, taskID)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 3. 转换为 HTTP 响应
+	// 4. 转换为 HTTP 响应
 	c.JSON(200, dto.CompleteTaskResponse{
 		TaskID:      task.ID,
 		Status:      string(task.Status),

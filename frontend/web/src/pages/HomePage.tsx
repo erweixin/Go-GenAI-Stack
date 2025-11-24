@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { LogOut, User } from 'lucide-react'
+import { LogOut, User, ListTodo } from 'lucide-react'
 
 export default function HomePage() {
   const navigate = useNavigate()
@@ -115,6 +115,16 @@ export default function HomePage() {
               <p className="text-sm text-muted-foreground mb-2">
                 欢迎使用 Go-GenAI-Stack！这是一个基于 DDD 架构的现代 Web 应用框架。
               </p>
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate('/tasks')}
+                >
+                  <ListTodo className="mr-2 h-4 w-4" />
+                  任务管理
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

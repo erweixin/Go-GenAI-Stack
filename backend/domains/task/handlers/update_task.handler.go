@@ -25,7 +25,25 @@ import (
 //
 // 业务逻辑在 service.TaskService.UpdateTask() 中实现
 func (deps *HandlerDependencies) UpdateTaskHandler(ctx context.Context, c *app.RequestContext) {
-	// 1. 获取路径参数
+	// 1. 获取用户 ID（从 JWT 中间件注入）
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, dto.ErrorResponse{
+			Error:   "UNAUTHORIZED",
+			Message: "未授权访问",
+		})
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(500, dto.ErrorResponse{
+			Error:   "INTERNAL_ERROR",
+			Message: "用户 ID 类型错误",
+		})
+		return
+	}
+
+	// 2. 获取路径参数
 	taskID := c.Param("id")
 	if taskID == "" {
 		c.JSON(400, dto.ErrorResponse{
@@ -35,7 +53,7 @@ func (deps *HandlerDependencies) UpdateTaskHandler(ctx context.Context, c *app.R
 		return
 	}
 
-	// 2. 解析请求体
+	// 3. 解析请求体
 	var req dto.UpdateTaskRequest
 	if err := c.BindAndValidate(&req); err != nil {
 		c.JSON(400, dto.ErrorResponse{
@@ -46,8 +64,9 @@ func (deps *HandlerDependencies) UpdateTaskHandler(ctx context.Context, c *app.R
 		return
 	}
 
-	// 3. 转换为 Domain Input
+	// 4. 转换为 Domain Input
 	input := service.UpdateTaskInput{
+		UserID:      userIDStr,
 		TaskID:      taskID,
 		Title:       stringPtr(req.Title),
 		Description: stringPtr(req.Description),
@@ -74,14 +93,14 @@ func (deps *HandlerDependencies) UpdateTaskHandler(ctx context.Context, c *app.R
 		input.DueDate = &dueDate
 	}
 
-	// 4. 调用 Domain Service
+	// 5. 调用 Domain Service
 	output, err := deps.taskService.UpdateTask(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 5. 转换为 HTTP 响应
+	// 6. 转换为 HTTP 响应
 	task := output.Task
 	c.JSON(200, dto.UpdateTaskResponse{
 		TaskID:    task.ID,

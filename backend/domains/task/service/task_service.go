@@ -49,6 +49,7 @@ func NewTaskService(taskRepo repository.TaskRepository) *TaskService {
 // - HTTP DTO：贴近 API 规范，包含 json tag、validation tag
 // - Domain Input：纯业务概念，不包含技术细节
 type CreateTaskInput struct {
+	UserID      string // 用户 ID（从 JWT 获取）
 	Title       string
 	Description string
 	Priority    model.Priority
@@ -79,6 +80,9 @@ type CreateTaskOutput struct {
 // - 标签最多 10 个
 func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput) (*CreateTaskOutput, error) {
 	// Step 1: ValidateInput - 业务规则验证
+	if input.UserID == "" {
+		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
+	}
 	if input.Title == "" {
 		return nil, fmt.Errorf("TASK_TITLE_EMPTY: 任务标题不能为空")
 	}
@@ -89,7 +93,7 @@ func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput) (*C
 		priority = model.PriorityMedium // 默认优先级
 	}
 
-	task, err := model.NewTask(input.Title, input.Description, priority)
+	task, err := model.NewTask(input.UserID, input.Title, input.Description, priority)
 	if err != nil {
 		return nil, err // 直接返回 Model 层的错误（已经包含错误码）
 	}
@@ -136,6 +140,7 @@ func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput) (*C
 
 // UpdateTaskInput 更新任务输入
 type UpdateTaskInput struct {
+	UserID      string // 用户 ID（从 JWT 获取，用于权限验证）
 	TaskID      string
 	Title       *string
 	Description *string
@@ -165,10 +170,20 @@ type UpdateTaskOutput struct {
 // - 任务必须存在
 // - 已完成的任务不能更新
 func (s *TaskService) UpdateTask(ctx context.Context, input UpdateTaskInput) (*UpdateTaskOutput, error) {
+	// Step 1: ValidateUserID
+	if input.UserID == "" {
+		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
+	}
+
 	// Step 2: GetTask
 	task, err := s.taskRepo.FindByID(ctx, input.TaskID)
 	if err != nil {
 		return nil, fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
+	}
+
+	// Step 2.1: CheckOwnership - 验证任务所有权
+	if task.UserID != input.UserID {
+		return nil, fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
 	}
 
 	// Step 3: CheckIfCompleted
@@ -231,20 +246,32 @@ func (s *TaskService) UpdateTask(ctx context.Context, input UpdateTaskInput) (*U
 // 对应 usecases.yaml 中的 CompleteTask
 //
 // 步骤：
-//  1. GetTask
-//  2. CheckStatus
-//  3. MarkAsCompleted
-//  4. RecordCompletionTime
-//  5. SaveTask
-//  6. PublishTaskCompletedEvent
-func (s *TaskService) CompleteTask(ctx context.Context, taskID string) (*model.Task, error) {
-	// Step 1: GetTask
+//  1. ValidateUserID
+//  2. GetTask
+//  3. CheckOwnership
+//  4. CheckStatus
+//  5. MarkAsCompleted
+//  6. RecordCompletionTime
+//  7. SaveTask
+//  8. PublishTaskCompletedEvent
+func (s *TaskService) CompleteTask(ctx context.Context, userID, taskID string) (*model.Task, error) {
+	// Step 1: ValidateUserID
+	if userID == "" {
+		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
+	}
+
+	// Step 2: GetTask
 	task, err := s.taskRepo.FindByID(ctx, taskID)
 	if err != nil {
 		return nil, fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
 	}
 
-	// Step 2 & 3: CheckStatus & MarkAsCompleted
+	// Step 3: CheckOwnership
+	if task.UserID != userID {
+		return nil, fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
+	}
+
+	// Step 4 & 5: CheckStatus & MarkAsCompleted
 	if err := task.Complete(); err != nil {
 		return nil, err
 	}
@@ -266,14 +293,24 @@ func (s *TaskService) CompleteTask(ctx context.Context, taskID string) (*model.T
 // DeleteTask 删除任务（用例实现）
 //
 // 对应 usecases.yaml 中的 DeleteTask
-func (s *TaskService) DeleteTask(ctx context.Context, taskID string) error {
-	// Step 1: GetTask - 确认任务存在
-	_, err := s.taskRepo.FindByID(ctx, taskID)
+func (s *TaskService) DeleteTask(ctx context.Context, userID, taskID string) error {
+	// Step 1: ValidateUserID
+	if userID == "" {
+		return fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
+	}
+
+	// Step 2: GetTask - 确认任务存在
+	task, err := s.taskRepo.FindByID(ctx, taskID)
 	if err != nil {
 		return fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
 	}
 
-	// Step 2: DeleteTaskRecord
+	// Step 3: CheckOwnership
+	if task.UserID != userID {
+		return fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
+	}
+
+	// Step 4: DeleteTaskRecord
 	if err := s.taskRepo.Delete(ctx, taskID); err != nil {
 		return fmt.Errorf("DELETION_FAILED: 删除任务失败")
 	}
@@ -288,11 +325,23 @@ func (s *TaskService) DeleteTask(ctx context.Context, taskID string) error {
 // GetTask 获取任务详情（用例实现）
 //
 // 对应 usecases.yaml 中的 GetTask
-func (s *TaskService) GetTask(ctx context.Context, taskID string) (*model.Task, error) {
+func (s *TaskService) GetTask(ctx context.Context, userID, taskID string) (*model.Task, error) {
+	// Step 1: ValidateUserID
+	if userID == "" {
+		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
+	}
+
+	// Step 2: GetTask
 	task, err := s.taskRepo.FindByID(ctx, taskID)
 	if err != nil {
 		return nil, fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
 	}
+
+	// Step 3: CheckOwnership
+	if task.UserID != userID {
+		return nil, fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
+	}
+
 	return task, nil
 }
 

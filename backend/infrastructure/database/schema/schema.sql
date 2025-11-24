@@ -17,6 +17,7 @@
 -- tasks 表：存储任务
 CREATE TABLE tasks (
     id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed')),
@@ -36,15 +37,18 @@ CREATE TABLE tasks (
 );
 
 -- 索引
+CREATE INDEX idx_tasks_user_id ON tasks(user_id);
 CREATE INDEX idx_tasks_status ON tasks(status);
 CREATE INDEX idx_tasks_priority ON tasks(priority);
 CREATE INDEX idx_tasks_due_date ON tasks(due_date) WHERE due_date IS NOT NULL;
 CREATE INDEX idx_tasks_created_at ON tasks(created_at DESC);
 CREATE INDEX idx_tasks_completed_at ON tasks(completed_at DESC) WHERE completed_at IS NOT NULL;
+CREATE INDEX idx_tasks_user_status ON tasks(user_id, status);
 
 -- 注释
 COMMENT ON TABLE tasks IS 'Task domain - stores todo/task items';
 COMMENT ON COLUMN tasks.id IS 'Task ID (UUID)';
+COMMENT ON COLUMN tasks.user_id IS 'User ID (foreign key to users table)';
 COMMENT ON COLUMN tasks.title IS 'Task title (required, max 200 chars)';
 COMMENT ON COLUMN tasks.description IS 'Task description (optional, text)';
 COMMENT ON COLUMN tasks.status IS 'Task status: pending, in_progress, completed';
@@ -176,6 +180,7 @@ CREATE TRIGGER update_tasks_updated_at
 CREATE VIEW overdue_tasks AS
 SELECT 
     id,
+    user_id,
     title,
     priority,
     due_date,

@@ -13,6 +13,8 @@
     "@go-genai-stack/constants": "workspace:*",
     "@go-genai-stack/types": "workspace:*",
     "@go-genai-stack/utils": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

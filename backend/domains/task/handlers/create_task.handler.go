@@ -26,7 +26,25 @@ import (
 //
 // 业务逻辑在 service.TaskService.CreateTask() 中实现
 func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.RequestContext) {
-	// 1. 解析 HTTP 请求
+	// 1. 获取用户 ID（从 JWT 中间件注入）
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(401, dto.ErrorResponse{
+			Error:   "UNAUTHORIZED",
+			Message: "未授权访问",
+		})
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		c.JSON(500, dto.ErrorResponse{
+			Error:   "INTERNAL_ERROR",
+			Message: "用户 ID 类型错误",
+		})
+		return
+	}
+
+	// 2. 解析 HTTP 请求
 	var req dto.CreateTaskRequest
 	if err := c.BindAndValidate(&req); err != nil {
 		c.JSON(400, dto.ErrorResponse{
@@ -37,8 +55,9 @@ func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.R
 		return
 	}
 
-	// 2. 转换为 Domain Input
+	// 3. 转换为 Domain Input
 	input := service.CreateTaskInput{
+		UserID:      userIDStr,
 		Title:       req.Title,
 		Description: req.Description,
 		Priority:    model.Priority(req.Priority),
@@ -59,7 +78,7 @@ func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.R
 		input.DueDate = &dueDate
 	}
 
-	// 3. 调用 Domain Service
+	// 4. 调用 Domain Service
 	output, err := deps.taskService.CreateTask(ctx, input)
 	if err != nil {
 		// 错误处理：转换领域错误为 HTTP 响应
@@ -67,7 +86,7 @@ func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.R
 		return
 	}
 
-	// 4. 转换为 HTTP 响应
+	// 5. 转换为 HTTP 响应
 	task := output.Task
 	c.JSON(200, dto.CreateTaskResponse{
 		TaskID:    task.ID,

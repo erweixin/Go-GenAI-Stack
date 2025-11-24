@@ -15,4 +15,5 @@
 export * from './domains/chat';
 export * from './domains/llm';
 export * from './domains/monitoring';
+export * from './domains/task';
 

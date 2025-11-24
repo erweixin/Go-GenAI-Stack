@@ -53,6 +53,7 @@ type Tag struct {
 // 包含任务的所有核心属性和业务行为
 type Task struct {
 	ID          string
+	UserID      string // 所属用户 ID
 	Title       string
 	Description string
 	Status      TaskStatus
@@ -76,7 +77,10 @@ var (
 )
 
 // NewTask 创建一个新的任务
-func NewTask(title, description string, priority Priority) (*Task, error) {
+func NewTask(userID, title, description string, priority Priority) (*Task, error) {
+	if userID == "" {
+		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
+	}
 	if title == "" {
 		return nil, ErrTaskTitleEmpty
 	}
@@ -93,6 +97,7 @@ func NewTask(title, description string, priority Priority) (*Task, error) {
 	now := time.Now()
 	return &Task{
 		ID:          uuid.New().String(),
+		UserID:      userID,
 		Title:       title,
 		Description: description,
 		Status:      StatusPending,

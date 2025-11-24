@@ -30,8 +30,8 @@ func RegisterRoutes(h *server.Hertz, container *AppContainer) {
 		// 注册 User 领域路由（需要认证）
 		userhttp.RegisterRoutes(api, container.UserHandlerDeps, container.AuthMiddleware)
 
-		// 注册 Task 领域路由
-		taskhttp.RegisterRoutes(api, container.TaskHandlerDeps)
+		// 注册 Task 领域路由（需要认证）
+		taskhttp.RegisterRoutes(api, container.TaskHandlerDeps, container.AuthMiddleware)
 
 		// Extension point: 注册其他领域路由
 		// llmhttp.RegisterRoutes(api, container.LLMHandlerDeps)
