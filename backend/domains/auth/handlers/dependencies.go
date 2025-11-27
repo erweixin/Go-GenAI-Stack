@@ -23,4 +23,3 @@ func NewHandlerDependencies(authService *service.AuthService) *HandlerDependenci
 		authService: authService,
 	}
 }
-

@@ -33,7 +33,7 @@ func handleValidationError(c *app.RequestContext, err error) {
 // parseError 解析领域错误，提取错误码和消息
 func parseError(err error) (string, string) {
 	errMsg := err.Error()
-	
+
 	// 错误格式：ERROR_CODE: message
 	parts := strings.SplitN(errMsg, ":", 2)
 	if len(parts) == 2 {
@@ -41,7 +41,7 @@ func parseError(err error) (string, string) {
 		message := strings.TrimSpace(parts[1])
 		return errorCode, message
 	}
-	
+
 	// 如果不是标准格式，返回通用错误
 	return "INTERNAL_ERROR", errMsg
 }
@@ -74,4 +74,3 @@ func getHTTPStatusCode(errorCode string) int {
 		return 500
 	}
 }
-

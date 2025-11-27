@@ -96,4 +96,3 @@ type UserRepository interface {
 	//   - error: 错误信息
 	ExistsByUsername(ctx context.Context, username string) (bool, error)
 }
-

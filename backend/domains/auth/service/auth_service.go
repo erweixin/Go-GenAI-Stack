@@ -288,4 +288,3 @@ func (s *AuthService) RefreshToken(ctx context.Context, input RefreshTokenInput)
 		ExpiresIn:    int(expiresAt.Sub(expiresAt.Add(-s.jwtService.accessTokenExpiry)).Seconds()),
 	}, nil
 }
-

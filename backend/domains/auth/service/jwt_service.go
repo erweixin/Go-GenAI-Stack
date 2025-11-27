@@ -30,10 +30,10 @@ type Claims struct {
 //   - 验证 Token 有效性
 //   - 解析 Token 中的 Claims
 type JWTService struct {
-	secret              []byte
-	accessTokenExpiry   time.Duration
-	refreshTokenExpiry  time.Duration
-	issuer              string
+	secret             []byte
+	accessTokenExpiry  time.Duration
+	refreshTokenExpiry time.Duration
+	issuer             string
 }
 
 // NewJWTService 创建 JWT 服务
@@ -53,10 +53,10 @@ func NewJWTService(
 	issuer string,
 ) *JWTService {
 	return &JWTService{
-		secret:              []byte(secret),
-		accessTokenExpiry:   accessTokenExpiry,
-		refreshTokenExpiry:  refreshTokenExpiry,
-		issuer:              issuer,
+		secret:             []byte(secret),
+		accessTokenExpiry:  accessTokenExpiry,
+		refreshTokenExpiry: refreshTokenExpiry,
+		issuer:             issuer,
 	}
 }
 
@@ -231,4 +231,3 @@ func (s *JWTService) ExtractUserID(tokenString string) (string, error) {
 
 	return claims.UserID, nil
 }
-

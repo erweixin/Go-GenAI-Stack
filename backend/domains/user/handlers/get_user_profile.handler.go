@@ -25,7 +25,7 @@ func (deps *HandlerDependencies) GetUserProfileHandler(ctx context.Context, c *a
 	userID, err := middleware.RequireUserID(c)
 	if err != nil {
 		c.JSON(401, utils.H{
-			"error": "UNAUTHORIZED",
+			"error":   "UNAUTHORIZED",
 			"message": "未授权访问",
 		})
 		return
@@ -44,4 +44,3 @@ func (deps *HandlerDependencies) GetUserProfileHandler(ctx context.Context, c *a
 	// 4. 转换为 HTTP 响应（使用转换层）
 	c.JSON(200, toGetUserProfileResponse(output))
 }
-

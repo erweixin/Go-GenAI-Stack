@@ -436,4 +436,3 @@ func TestToListTasksResponse(t *testing.T) {
 	assert.Nil(t, task2.DueDate)
 	assert.Empty(t, task2.Tags)
 }
-

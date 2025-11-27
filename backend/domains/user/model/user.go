@@ -46,18 +46,18 @@ type User struct {
 
 // 领域错误定义
 var (
-	ErrInvalidEmail         = fmt.Errorf("INVALID_EMAIL: 邮箱格式无效")
-	ErrEmailAlreadyExists   = fmt.Errorf("EMAIL_ALREADY_EXISTS: 邮箱已被占用")
+	ErrInvalidEmail          = fmt.Errorf("INVALID_EMAIL: 邮箱格式无效")
+	ErrEmailAlreadyExists    = fmt.Errorf("EMAIL_ALREADY_EXISTS: 邮箱已被占用")
 	ErrUsernameAlreadyExists = fmt.Errorf("USERNAME_ALREADY_EXISTS: 用户名已被占用")
-	ErrInvalidUsername      = fmt.Errorf("INVALID_USERNAME: 用户名格式无效（3-30 字符，仅字母数字下划线）")
-	ErrWeakPassword         = fmt.Errorf("WEAK_PASSWORD: 密码强度不足（至少 8 字符）")
-	ErrPasswordTooLong      = fmt.Errorf("PASSWORD_TOO_LONG: 密码过长（最多 128 字符）")
-	ErrInvalidPassword      = fmt.Errorf("INVALID_PASSWORD: 密码错误")
-	ErrUserNotFound         = fmt.Errorf("USER_NOT_FOUND: 用户不存在")
-	ErrUserBanned           = fmt.Errorf("USER_BANNED: 用户已被禁用")
-	ErrUserInactive         = fmt.Errorf("USER_INACTIVE: 用户未激活")
-	ErrFullNameTooLong      = fmt.Errorf("FULL_NAME_TOO_LONG: 全名过长（最多 100 字符）")
-	ErrInvalidAvatarURL     = fmt.Errorf("INVALID_AVATAR_URL: 头像 URL 格式无效")
+	ErrInvalidUsername       = fmt.Errorf("INVALID_USERNAME: 用户名格式无效（3-30 字符，仅字母数字下划线）")
+	ErrWeakPassword          = fmt.Errorf("WEAK_PASSWORD: 密码强度不足（至少 8 字符）")
+	ErrPasswordTooLong       = fmt.Errorf("PASSWORD_TOO_LONG: 密码过长（最多 128 字符）")
+	ErrInvalidPassword       = fmt.Errorf("INVALID_PASSWORD: 密码错误")
+	ErrUserNotFound          = fmt.Errorf("USER_NOT_FOUND: 用户不存在")
+	ErrUserBanned            = fmt.Errorf("USER_BANNED: 用户已被禁用")
+	ErrUserInactive          = fmt.Errorf("USER_INACTIVE: 用户未激活")
+	ErrFullNameTooLong       = fmt.Errorf("FULL_NAME_TOO_LONG: 全名过长（最多 100 字符）")
+	ErrInvalidAvatarURL      = fmt.Errorf("INVALID_AVATAR_URL: 头像 URL 格式无效")
 )
 
 // 正则表达式
@@ -272,4 +272,3 @@ func hashPassword(password string) (string, error) {
 	}
 	return string(hash), nil
 }
-

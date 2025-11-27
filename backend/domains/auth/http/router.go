@@ -32,4 +32,3 @@ func RegisterRoutes(
 		authGroup.POST("/refresh", deps.RefreshTokenHandler)
 	}
 }
-

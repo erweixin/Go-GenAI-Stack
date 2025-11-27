@@ -100,4 +100,3 @@ func toChangePasswordResponse(output *service.ChangePasswordOutput) dto.ChangePa
 		Message: output.Message,
 	}
 }
-

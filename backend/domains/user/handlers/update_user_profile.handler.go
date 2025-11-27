@@ -48,4 +48,3 @@ func (deps *HandlerDependencies) UpdateUserProfileHandler(ctx context.Context, c
 	// 5. 转换为 HTTP 响应（使用转换层）
 	c.JSON(200, toUpdateUserProfileResponse(output))
 }
-

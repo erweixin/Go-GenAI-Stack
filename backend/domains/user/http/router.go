@@ -36,4 +36,3 @@ func RegisterRoutes(
 		userGroup.POST("/me/change-password", deps.ChangePasswordHandler)
 	}
 }
-

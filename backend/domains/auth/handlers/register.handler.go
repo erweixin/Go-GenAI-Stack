@@ -40,4 +40,3 @@ func (deps *HandlerDependencies) RegisterHandler(ctx context.Context, c *app.Req
 	// 4. 转换为 HTTP 响应（使用转换层）
 	c.JSON(201, toRegisterResponse(output))
 }
-

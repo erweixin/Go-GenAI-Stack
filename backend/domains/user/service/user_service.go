@@ -207,4 +207,3 @@ func (s *UserService) ChangePassword(ctx context.Context, input ChangePasswordIn
 		Message: "密码修改成功",
 	}, nil
 }
-
