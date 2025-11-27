@@ -86,10 +86,15 @@ jobs:
           echo "🐳 Starting E2E environment..."
           docker compose -f docker-compose-e2e.yml up -d
           
-          echo "⏳ Waiting for services to be healthy..."
-          timeout 90s bash -c 'until docker compose -f docker-compose-e2e.yml ps | grep -q "healthy.*healthy"; do sleep 2; done'
+          echo "⏳ Waiting for Postgres to be healthy..."
+          timeout 60s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-postgres-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
+          echo " ✅"
           
-          echo "✅ Services are ready"
+          echo "⏳ Waiting for Backend to be healthy..."
+          timeout 90s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-backend-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
+          echo " ✅"
+          
+          echo "✅ All services are ready"
           docker compose -f docker-compose-e2e.yml ps
       
       - name: Verify backend health
@@ -140,8 +145,18 @@ jobs:
         if: failure()
         working-directory: docker
         run: |
-          echo "📋 Docker Compose Logs:"
-          docker compose -f docker-compose-e2e.yml logs --tail=100
+          echo "📊 Container Status:"
+          docker compose -f docker-compose-e2e.yml ps
+          echo ""
+          echo "🔍 Health Status:"
+          docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-postgres-e2e || echo "postgres-e2e: not found"
+          docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-backend-e2e || echo "backend-e2e: not found"
+          echo ""
+          echo "📋 Postgres Logs:"
+          docker compose -f docker-compose-e2e.yml logs --tail=50 postgres-e2e
+          echo ""
+          echo "📋 Backend Logs:"
+          docker compose -f docker-compose-e2e.yml logs --tail=100 backend-e2e
       
       - name: Stop E2E environment
         if: always()

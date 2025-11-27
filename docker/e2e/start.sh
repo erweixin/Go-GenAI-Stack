@@ -61,7 +61,8 @@ echo -n "  - Postgres: "
 TIMEOUT=60
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    if $DOCKER_COMPOSE -f docker-compose-e2e.yml ps postgres-e2e | grep -q "healthy"; then
+    HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' go-genai-stack-postgres-e2e 2>/dev/null || echo "starting")
+    if [ "$HEALTH_STATUS" = "healthy" ]; then
         echo -e "${GREEN}✓ Ready${NC}"
         break
     fi
@@ -79,9 +80,11 @@ fi
 
 # 等待 Backend
 echo -n "  - Backend:  "
+TIMEOUT=90
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    if $DOCKER_COMPOSE -f docker-compose-e2e.yml ps backend-e2e | grep -q "healthy"; then
+    HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' go-genai-stack-backend-e2e 2>/dev/null || echo "starting")
+    if [ "$HEALTH_STATUS" = "healthy" ]; then
         echo -e "${GREEN}✓ Ready${NC}"
         break
     fi
