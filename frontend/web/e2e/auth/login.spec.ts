@@ -20,7 +20,7 @@ test.describe('登录流程', () => {
     await expect(page).toHaveURL(/\/(tasks|)$/)
     
     // 验证页面标题存在
-    await expect(page.locator('h1:has-text("Go GenAI Stack")')).toBeVisible()
+    await expect(page.locator('button:has-text("新建任务")')).toBeVisible()
   })
 
   test('错误的密码应该显示错误提示', async ({ page }) => {

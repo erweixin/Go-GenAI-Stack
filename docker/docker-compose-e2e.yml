@@ -1,0 +1,79 @@
+# E2E 测试环境
+# 用途：为端到端测试提供隔离的后端和数据库环境
+# 使用：docker-compose -f docker/docker-compose-e2e.yml up -d
+
+services:
+  # PostgreSQL 测试数据库
+  postgres-e2e:
+    image: postgres:15-alpine
+    container_name: go-genai-stack-postgres-e2e
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: go_genai_stack_e2e
+    ports:
+      - "5433:5432"  # 使用不同端口避免与开发环境冲突
+    volumes:
+      # 测试数据种子（自动执行）
+      - ./e2e/seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+      # 数据持久化（可选，用于调试）
+      - postgres-e2e-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d go_genai_stack_e2e"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - e2e-network
+
+  # 后端服务器
+  backend-e2e:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: go-genai-stack-backend-e2e
+    environment:
+      # 数据库配置（使用 APP_ 前缀）
+      APP_DATABASE_TYPE: postgres
+      APP_DATABASE_HOST: postgres-e2e
+      APP_DATABASE_PORT: 5432
+      APP_DATABASE_USER: postgres
+      APP_DATABASE_PASSWORD: postgres
+      APP_DATABASE_DATABASE: go_genai_stack_e2e
+      APP_DATABASE_SSL_MODE: disable
+      
+      # JWT 配置
+      APP_JWT_SECRET: e2e-test-secret-key-for-testing-only
+      
+      # 服务器配置
+      APP_SERVER_PORT: 8080
+      
+      # Redis 配置（可选，如果不需要可以注释掉）
+      APP_REDIS_HOST: localhost
+      APP_REDIS_PORT: 6379
+    ports:
+      - "8081:8080"  # 映射到 8081 避免与开发环境冲突
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+    networks:
+      - e2e-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  postgres-e2e-data:
+    driver: local
+    name: go-genai-stack-postgres-e2e-data
+
+networks:
+  e2e-network:
+    driver: bridge
+    name: go-genai-stack-e2e-network
+

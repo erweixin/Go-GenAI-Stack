@@ -830,9 +830,14 @@ E2E 测试在 GitHub Actions 中自动运行：
 
 - [后端架构](../../backend/README.md) - 后端领域划分
 - [类型定义](../shared/types/README.md) - 共享类型说明
-- [单元测试](../../docs/FRONTEND_TESTING_PLAN.md) - 详细单元测试方案
-- [E2E 测试](./e2e/README.md) - 端到端测试文档
+
+### 测试文档
+- **[测试文档目录](./doc/README.md)** - 测试文档索引
+- **[单元测试指南](./doc/unit-testing.md)** - 单元测试使用文档 ⭐
+- **[E2E 测试指南](./doc/e2e-testing.md)** - E2E 测试使用文档 ⭐
+- [单元测试方案](../../docs/FRONTEND_TESTING_PLAN.md) - 详细单元测试方案
 - [E2E 测试方案](../../docs/FRONTEND_E2E_PLAN.md) - 详细 E2E 测试方案
+- [CI 优化报告](../../docs/CI_OPTIMIZATION.md) - CI 优化说明
 
 ---
 

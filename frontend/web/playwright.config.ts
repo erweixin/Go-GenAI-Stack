@@ -30,7 +30,7 @@ export default defineConfig({
   ],
   
   use: {
-    // Base URL
+    // Base URL（前端开发服务器）
     baseURL: process.env.E2E_BASE_URL || 'http://localhost:5173',
     
     // 截图设置（仅失败时）
@@ -72,11 +72,16 @@ export default defineConfig({
   ],
   
   // 开发服务器配置
+  // 注意：后端服务由 Docker 提供（http://localhost:8081）
   webServer: {
     command: 'pnpm dev',
     port: 5173,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
+    env: {
+      // 指向 Docker 中的后端服务
+      VITE_API_BASE_URL: 'http://localhost:8081',
+    },
   },
 })
 

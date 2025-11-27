@@ -6,28 +6,56 @@
 
 ## 🚀 快速开始
 
-### 1. 安装 Playwright 浏览器
+### 方式 1：一键运行（推荐）⭐
+
+```bash
+# 在 frontend/web 目录
+pnpm e2e:all
+```
+
+一条命令完成：启动 Docker 环境 → 运行测试 → 清理环境
+
+### 方式 2：手动控制
+
+#### 1. 安装 Playwright 浏览器（首次）
 
 ```bash
 pnpm playwright:install
 ```
 
-### 2. 启动后端服务器
+#### 2. 启动 E2E 环境（Docker）
 
 ```bash
-# 在项目根目录
-cd backend
-go run ./cmd/server
+# 在 frontend/web 目录
+pnpm e2e:setup
+
+# 或在项目根目录
+./docker/e2e/start.sh
 ```
 
-### 3. 运行 E2E 测试
+这会启动：
+- ✅ Postgres 数据库（localhost:5433）
+- ✅ 后端服务器（http://localhost:8081）
+- ✅ 预置测试用户和数据
+
+#### 3. 运行 E2E 测试
 
 ```bash
 # 在 frontend/web 目录
 pnpm e2e              # 运行所有测试
-pnpm e2e:ui           # UI 模式（推荐，可视化调试）
+pnpm e2e:ui           # UI 模式（推荐，可视化调试）⭐
 pnpm e2e:headed       # 有头模式（显示浏览器）
 pnpm e2e:debug        # 调试模式
+```
+
+#### 4. 停止 E2E 环境
+
+```bash
+# 停止但保留数据
+pnpm e2e:teardown
+
+# 停止并清理所有数据
+pnpm e2e:clean
 ```
 
 ---
@@ -183,11 +211,11 @@ pnpm exec playwright show-report
 
 ### 测试数据
 
-E2E 测试需要真实的后端服务器和数据库：
+E2E 测试使用 Docker 隔离环境：
 
-1. **测试用户**：需要预先创建 `e2e-test@example.com`
-2. **测试数据库**：使用独立的测试数据库
-3. **数据清理**：测试后可能需要手动清理
+1. **测试用户**：自动创建 `e2e-test@example.com`（密码：`Test123456!`）
+2. **测试数据库**：独立的 Postgres 实例（端口 5433）
+3. **数据清理**：使用 `pnpm e2e:clean` 完全清理
 
 ### 并发问题
 

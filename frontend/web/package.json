@@ -19,6 +19,10 @@
     "e2e:ci": "playwright test",
     "e2e:debug": "playwright test --debug",
     "e2e:headed": "playwright test --headed",
+    "e2e:setup": "../../docker/e2e/start.sh",
+    "e2e:teardown": "../../docker/e2e/stop.sh",
+    "e2e:clean": "../../docker/e2e/stop.sh --clean",
+    "e2e:all": "pnpm e2e:setup && pnpm e2e && pnpm e2e:teardown",
     "playwright:install": "playwright install --with-deps"
   },
   "dependencies": {

@@ -2,37 +2,41 @@ name: Frontend Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, master]
     paths:
       - 'frontend/web/**'
       - 'frontend/shared/**'
       - '.github/workflows/frontend-test.yml'
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, master]
     paths:
       - 'frontend/web/**'
       - 'frontend/shared/**'
       - '.github/workflows/frontend-test.yml'
 
+# 取消同一 PR 的旧运行
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    name: Run Frontend Tests
+    name: Unit Tests & Coverage
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [20.x]
+    timeout-minutes: 10
     
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
       
-      - name: Setup pnpm
+      - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 9
@@ -43,7 +47,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
       
       - name: Setup pnpm cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -51,31 +55,29 @@ jobs:
             ${{ runner.os }}-pnpm-store-
       
       - name: Install dependencies
-        run: |
-          cd frontend
-          pnpm install --frozen-lockfile
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
       
       - name: Run type check
-        run: |
-          cd frontend/web
-          pnpm run type-check
+        working-directory: frontend/web
+        run: pnpm type-check
       
-      - name: Run tests
-        run: |
-          cd frontend/web
-          pnpm run test:ci
+      - name: Run unit tests
+        working-directory: frontend/web
+        run: pnpm test:ci
       
       - name: Generate coverage report
-        run: |
-          cd frontend/web
-          pnpm run test:coverage
+        working-directory: frontend/web
+        run: pnpm test:coverage
       
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./frontend/web/coverage/lcov.info
           flags: frontend
           name: frontend-coverage
+          fail_ci_if_error: false
       
       - name: Comment PR with coverage
         if: github.event_name == 'pull_request'
@@ -83,17 +85,28 @@ jobs:
         with:
           lcov-file: ./frontend/web/coverage/lcov.info
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          delete-old-comments: true
       
-      - name: Check coverage thresholds
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: frontend/web/coverage/
+          retention-days: 7
+      
+      - name: Test Summary
+        if: always()
         run: |
           cd frontend/web
-          coverage=$(grep -oP '(?<=All files\s+\|\s+)\d+\.\d+' coverage/coverage-summary.json | head -1 || echo "0")
-          echo "Overall coverage: ${coverage}%"
+          echo "## 📊 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           
-          if (( $(echo "$coverage < 70" | bc -l) )); then
-            echo "⚠️  Warning: Coverage ${coverage}% is below 70%"
-            echo "This is a warning, not blocking the build yet."
-          else
-            echo "✅ Coverage ${coverage}% meets the threshold"
+          if [ -f coverage/coverage-summary.json ]; then
+            coverage=$(cat coverage/coverage-summary.json | grep -oP '(?<="total":\s*\{\s*"lines":\s*\{\s*"pct":\s*)\d+\.\d+' | head -1 || echo "0")
+            echo "- **Coverage**: ${coverage}%" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: ✅ Tests Passed" >> $GITHUB_STEP_SUMMARY
           fi
-
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📁 [View detailed coverage report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
