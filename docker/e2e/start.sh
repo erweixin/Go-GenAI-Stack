@@ -28,6 +28,13 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# 检测 Docker Compose 命令（兼容新旧版本）
+if docker compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    DOCKER_COMPOSE="docker-compose"
+fi
+
 # 进入 docker 目录
 cd "$DOCKER_DIR"
 
@@ -35,7 +42,7 @@ cd "$DOCKER_DIR"
 if docker ps --filter "name=postgres-e2e" --filter "status=running" | grep -q "postgres-e2e"; then
     echo -e "${YELLOW}⚠️  E2E environment is already running${NC}"
     echo ""
-    docker-compose -f docker-compose-e2e.yml ps
+    $DOCKER_COMPOSE -f docker-compose-e2e.yml ps
     echo ""
     echo "To restart, run: ./docker/e2e/stop.sh && ./docker/e2e/start.sh"
     exit 0
@@ -43,7 +50,7 @@ fi
 
 # 启动 Docker Compose
 echo -e "${BLUE}📦 Starting Docker containers...${NC}"
-docker-compose -f docker-compose-e2e.yml up -d
+$DOCKER_COMPOSE -f docker-compose-e2e.yml up -d
 
 # 等待服务健康检查
 echo ""
@@ -54,7 +61,7 @@ echo -n "  - Postgres: "
 TIMEOUT=60
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    if docker-compose -f docker-compose-e2e.yml ps postgres-e2e | grep -q "healthy"; then
+    if $DOCKER_COMPOSE -f docker-compose-e2e.yml ps postgres-e2e | grep -q "healthy"; then
         echo -e "${GREEN}✓ Ready${NC}"
         break
     fi
@@ -66,7 +73,7 @@ done
 if [ $ELAPSED -ge $TIMEOUT ]; then
     echo -e "${RED}✗ Timeout${NC}"
     echo "Postgres failed to start. Check logs:"
-    docker-compose -f docker-compose-e2e.yml logs postgres-e2e
+    $DOCKER_COMPOSE -f docker-compose-e2e.yml logs postgres-e2e
     exit 1
 fi
 
@@ -74,7 +81,7 @@ fi
 echo -n "  - Backend:  "
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    if docker-compose -f docker-compose-e2e.yml ps backend-e2e | grep -q "healthy"; then
+    if $DOCKER_COMPOSE -f docker-compose-e2e.yml ps backend-e2e | grep -q "healthy"; then
         echo -e "${GREEN}✓ Ready${NC}"
         break
     fi
@@ -86,7 +93,7 @@ done
 if [ $ELAPSED -ge $TIMEOUT ]; then
     echo -e "${RED}✗ Timeout${NC}"
     echo "Backend failed to start. Check logs:"
-    docker-compose -f docker-compose-e2e.yml logs backend-e2e
+    $DOCKER_COMPOSE -f docker-compose-e2e.yml logs backend-e2e
     exit 1
 fi
 
@@ -112,7 +119,7 @@ echo "  pnpm e2e              # Run all tests"
 echo "  pnpm e2e:ui           # UI mode (recommended)"
 echo ""
 echo -e "${BLUE}📊 View Logs:${NC}"
-echo "  docker-compose -f docker/docker-compose-e2e.yml logs -f"
+echo "  $DOCKER_COMPOSE -f docker/docker-compose-e2e.yml logs -f"
 echo ""
 echo -e "${BLUE}🛑 Stop Environment:${NC}"
 echo "  ./docker/e2e/stop.sh"

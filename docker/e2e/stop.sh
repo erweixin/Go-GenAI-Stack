@@ -18,6 +18,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 DOCKER_DIR="$PROJECT_ROOT/docker"
 
+# 检测 Docker Compose 命令（兼容新旧版本）
+if docker compose version > /dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    DOCKER_COMPOSE="docker-compose"
+fi
+
 # 检查参数
 CLEAN_VOLUMES=false
 if [ "$1" == "--clean" ]; then
@@ -31,11 +38,11 @@ echo ""
 cd "$DOCKER_DIR"
 
 # 检查是否在运行
-if ! docker-compose -f docker-compose-e2e.yml ps | grep -q "Up"; then
+if ! $DOCKER_COMPOSE -f docker-compose-e2e.yml ps | grep -q "Up"; then
     echo -e "${YELLOW}⚠️  E2E environment is not running${NC}"
     if [ "$CLEAN_VOLUMES" = true ]; then
         echo -e "${YELLOW}Cleaning up volumes anyway...${NC}"
-        docker-compose -f docker-compose-e2e.yml down -v
+        $DOCKER_COMPOSE -f docker-compose-e2e.yml down -v
         echo -e "${GREEN}✅ Volumes cleaned${NC}"
     fi
     exit 0
@@ -44,13 +51,13 @@ fi
 # 停止服务
 if [ "$CLEAN_VOLUMES" = true ]; then
     echo -e "${YELLOW}🧹 Stopping and cleaning up (including volumes)...${NC}"
-    docker-compose -f docker-compose-e2e.yml down -v
+    $DOCKER_COMPOSE -f docker-compose-e2e.yml down -v
     echo ""
     echo -e "${GREEN}✅ E2E environment stopped and cleaned${NC}"
     echo -e "${BLUE}ℹ️  All data has been removed${NC}"
 else
     echo -e "${BLUE}📦 Stopping containers (keeping volumes)...${NC}"
-    docker-compose -f docker-compose-e2e.yml down
+    $DOCKER_COMPOSE -f docker-compose-e2e.yml down
     echo ""
     echo -e "${GREEN}✅ E2E environment stopped${NC}"
     echo -e "${BLUE}ℹ️  Data volumes preserved${NC}"

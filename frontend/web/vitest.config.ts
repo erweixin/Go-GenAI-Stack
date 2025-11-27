@@ -5,6 +5,15 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   test: {
+    // 只包含 src 目录下的测试文件
+    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    // 排除 e2e 目录（E2E 测试由 Playwright 运行）
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/e2e/**',  // 排除 Playwright E2E 测试
+      '**/.{idea,git,cache,output,temp}/**',
+    ],
     globals: true,
     environment: 'happy-dom',
     setupFiles: './src/tests/setup.ts',

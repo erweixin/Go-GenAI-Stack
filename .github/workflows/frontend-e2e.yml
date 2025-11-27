@@ -84,13 +84,13 @@ jobs:
           COMPOSE_HTTP_TIMEOUT: 120
         run: |
           echo "🐳 Starting E2E environment..."
-          docker-compose -f docker-compose-e2e.yml up -d
+          docker compose -f docker-compose-e2e.yml up -d
           
           echo "⏳ Waiting for services to be healthy..."
-          timeout 90s bash -c 'until docker-compose -f docker-compose-e2e.yml ps | grep -q "healthy.*healthy"; do sleep 2; done'
+          timeout 90s bash -c 'until docker compose -f docker-compose-e2e.yml ps | grep -q "healthy.*healthy"; do sleep 2; done'
           
           echo "✅ Services are ready"
-          docker-compose -f docker-compose-e2e.yml ps
+          docker compose -f docker-compose-e2e.yml ps
       
       - name: Verify backend health
         run: |
@@ -141,12 +141,12 @@ jobs:
         working-directory: docker
         run: |
           echo "📋 Docker Compose Logs:"
-          docker-compose -f docker-compose-e2e.yml logs --tail=100
+          docker compose -f docker-compose-e2e.yml logs --tail=100
       
       - name: Stop E2E environment
         if: always()
         working-directory: docker
         run: |
           echo "🛑 Stopping E2E environment..."
-          docker-compose -f docker-compose-e2e.yml down -v
+          docker compose -f docker-compose-e2e.yml down -v
           echo "✅ Environment cleaned up"
