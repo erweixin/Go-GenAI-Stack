@@ -159,7 +159,7 @@
   
   "database": {
     "tables": ["tasks"],
-    "schema_location": "infrastructure/database/schema/schema.sql",
+    "schema_location": "database/schema.sql",
     "migrations": true,
     "indexes": [
       "idx_tasks_status",

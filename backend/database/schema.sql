@@ -9,6 +9,75 @@
 -- 2. 使用清晰的注释
 -- 3. 保持与 Go structs 同步
 -- 4. 让 Atlas 处理迁移细节
+-- 
+-- 注意：表定义顺序很重要！
+-- - 先定义函数（Functions）
+-- - 再定义被引用的表（如 users）
+-- - 最后定义引用其他表的表（如 tasks）
+
+-- ============================================
+-- Functions and Triggers
+-- ============================================
+
+-- 自动更新 updated_at 的触发器函数
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
+-- User Domain Tables
+-- ============================================
+
+-- users 表：存储用户账户信息
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(30) UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100),
+    avatar_url TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'inactive' CHECK (status IN ('active', 'inactive', 'banned')),
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    last_login_at TIMESTAMPTZ,
+    
+    -- 约束
+    CONSTRAINT users_email_not_empty CHECK (LENGTH(TRIM(email)) > 0),
+    CONSTRAINT users_password_hash_not_empty CHECK (LENGTH(TRIM(password_hash)) > 0),
+    CONSTRAINT users_username_format CHECK (username IS NULL OR (LENGTH(username) >= 3 AND LENGTH(username) <= 30))
+);
+
+-- 索引
+CREATE UNIQUE INDEX idx_users_email ON users(LOWER(email));
+CREATE UNIQUE INDEX idx_users_username ON users(username) WHERE username IS NOT NULL;
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_users_created_at ON users(created_at DESC);
+CREATE INDEX idx_users_email_verified ON users(email_verified) WHERE email_verified = FALSE;
+
+-- 注释
+COMMENT ON TABLE users IS 'User domain - stores user accounts and profiles';
+COMMENT ON COLUMN users.id IS 'User ID (UUID)';
+COMMENT ON COLUMN users.email IS 'Email address (unique, case-insensitive)';
+COMMENT ON COLUMN users.username IS 'Username (unique, optional, 3-30 chars)';
+COMMENT ON COLUMN users.password_hash IS 'Password hash (bcrypt)';
+COMMENT ON COLUMN users.full_name IS 'Full name (optional)';
+COMMENT ON COLUMN users.avatar_url IS 'Avatar URL (optional)';
+COMMENT ON COLUMN users.status IS 'User status: active, inactive, banned';
+COMMENT ON COLUMN users.email_verified IS 'Whether email is verified';
+COMMENT ON COLUMN users.created_at IS 'Account creation timestamp';
+COMMENT ON COLUMN users.updated_at IS 'Last update timestamp';
+COMMENT ON COLUMN users.last_login_at IS 'Last login timestamp';
+
+-- 触发器：自动更新 updated_at
+CREATE TRIGGER update_users_updated_at
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================
 -- Task Domain Tables
@@ -80,57 +149,6 @@ COMMENT ON COLUMN task_tags.tag_name IS 'Tag name (max 50 chars)';
 COMMENT ON COLUMN task_tags.tag_color IS 'Tag color (hex code, e.g. #FF5733)';
 
 -- ============================================
--- User Domain Tables
--- ============================================
-
--- users 表：存储用户账户信息
-CREATE TABLE users (
-    id UUID PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    username VARCHAR(30) UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(100),
-    avatar_url TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'inactive' CHECK (status IN ('active', 'inactive', 'banned')),
-    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
-    last_login_at TIMESTAMPTZ,
-    
-    -- 约束
-    CONSTRAINT users_email_not_empty CHECK (LENGTH(TRIM(email)) > 0),
-    CONSTRAINT users_password_hash_not_empty CHECK (LENGTH(TRIM(password_hash)) > 0),
-    CONSTRAINT users_username_format CHECK (username IS NULL OR (LENGTH(username) >= 3 AND LENGTH(username) <= 30))
-);
-
--- 索引
-CREATE UNIQUE INDEX idx_users_email ON users(LOWER(email));
-CREATE UNIQUE INDEX idx_users_username ON users(username) WHERE username IS NOT NULL;
-CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_users_created_at ON users(created_at DESC);
-CREATE INDEX idx_users_email_verified ON users(email_verified) WHERE email_verified = FALSE;
-
--- 注释
-COMMENT ON TABLE users IS 'User domain - stores user accounts and profiles';
-COMMENT ON COLUMN users.id IS 'User ID (UUID)';
-COMMENT ON COLUMN users.email IS 'Email address (unique, case-insensitive)';
-COMMENT ON COLUMN users.username IS 'Username (unique, optional, 3-30 chars)';
-COMMENT ON COLUMN users.password_hash IS 'Password hash (bcrypt)';
-COMMENT ON COLUMN users.full_name IS 'Full name (optional)';
-COMMENT ON COLUMN users.avatar_url IS 'Avatar URL (optional)';
-COMMENT ON COLUMN users.status IS 'User status: active, inactive, banned';
-COMMENT ON COLUMN users.email_verified IS 'Whether email is verified';
-COMMENT ON COLUMN users.created_at IS 'Account creation timestamp';
-COMMENT ON COLUMN users.updated_at IS 'Last update timestamp';
-COMMENT ON COLUMN users.last_login_at IS 'Last login timestamp';
-
--- 触发器：自动更新 updated_at
-CREATE TRIGGER update_users_updated_at
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
--- ============================================
 -- Extension Points (commented out, for reference)
 -- ============================================
 
@@ -152,19 +170,6 @@ CREATE TRIGGER update_users_updated_at
 --     tags JSONB,
 --     timestamp TIMESTAMPTZ NOT NULL
 -- );
-
--- ============================================
--- Functions and Triggers
--- ============================================
-
--- 自动更新 updated_at 的触发器函数
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
 -- 为 tasks 表添加触发器
 CREATE TRIGGER update_tasks_updated_at

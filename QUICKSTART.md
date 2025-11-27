@@ -24,8 +24,13 @@ docker-compose up -d postgres
 ### 2. 应用数据库迁移
 
 ```bash
-cd backend
-./scripts/schema.sh apply
+# 加载环境变量
+cd docker
+source .env
+
+# 应用迁移
+cd ../backend/database
+make apply
 ```
 
 ### 3. 配置环境变量

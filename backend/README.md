@@ -22,12 +22,14 @@
 cd ../docker
 docker-compose up -d
 
-# 2. 运行数据库迁移
-cd ../backend
-./scripts/schema.sh apply
+# 2. 加载环境变量并运行数据库迁移
+cd ../docker
+source .env
+cd ../backend/database
+make apply
 
-# 3. 加载种子数据（20+ 个示例 Task）
-psql -h localhost -U postgres -d go_genai_stack -f migrations/seed/01_initial_data.sql
+# 3. 加载种子数据（30+ 个示例 Task）
+make seed
 
 # 4. 启动服务器
 ./scripts/dev.sh

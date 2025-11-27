@@ -255,7 +255,7 @@
     "glossary.md",
     "rules.md",
     "events.md",
-    "../../infrastructure/database/schema/schema.sql"
+    "../../database/schema.sql"
   ]
 }
 

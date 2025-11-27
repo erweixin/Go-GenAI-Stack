@@ -20,10 +20,7 @@ docs/
 │   └── type-sync.md                         # 类型同步
 ├── Extensions/                               # 扩展指南
 │   └── APPLICATION-LAYER-GUIDE.md           # Application 层指南
-└── Archive/                                  # 归档（历史文档）
-    ├── README.md
-    ├── monorepo-setup.md
-    └── REFACTORING-COMPLETE.md
+
 ```
 
 ---
@@ -43,9 +40,10 @@ docs/
    
    # 或手动启动
    cd docker && docker-compose up -d
-   cd ../backend && ./scripts/schema.sh apply
-   cd ../backend && ./scripts/seed.sh
-   cd ../backend && go run cmd/server/main.go
+   source .env
+   cd ../backend/database && make apply
+   make seed
+   cd ../.. && go run cmd/server/main.go
    ```
 
 3. **验证安装**
@@ -291,8 +289,8 @@ docs/
 
 - [Cursor AI 规则](../.cursorrules)
 - [Docker Compose](../docker/docker-compose.yml)
-- [数据库 Schema](../backend/infrastructure/database/schema/schema.sql)
-- [种子数据](../backend/migrations/seed/01_initial_data.sql)
+- [数据库 Schema](../backend/database/schema.sql)
+- [种子数据](../backend/database/seed/01_demo_tasks.sql)
 - [类型同步配置](../tygo.yaml)
 
 ---

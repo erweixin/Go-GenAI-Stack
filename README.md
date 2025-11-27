@@ -72,7 +72,7 @@ Go-GenAI-Stack/
 ### 🛠️ 开发工具链
 
 - **pkg/ 工具包**：Validator（参数验证）
-- **数据库管理**：Atlas Schema 管理（`./backend/scripts/schema.sh`）
+- **数据库管理**：Atlas Schema 管理（`cd backend/database && make`）
 - **测试**：`./backend/scripts/test_all.sh` 运行测试
 - **代码质量**：`./backend/scripts/lint.sh` 代码检查
 
@@ -162,8 +162,9 @@ cd docker
 docker-compose up -d --scale backend=0
 
 # 3. 应用数据库迁移
-cd ../backend
-./scripts/schema.sh apply
+source docker/.env
+cd backend/database
+make apply
 
 # 4. 启动后端服务
 go run cmd/server/main.go
@@ -197,14 +198,16 @@ pnpm start
 常用命令：
 
 ```bash
+cd backend/database
+
 # 生成迁移
-./scripts/schema.sh diff <name>
+make diff NAME=<name>
 
 # 应用迁移
-./scripts/schema.sh apply
+make apply
 
 # 查看状态
-./scripts/schema.sh status
+make status
 ```
 
 ### 添加新用例
@@ -270,7 +273,7 @@ git push
 
 ### 数据库
 - [数据库管理指南](docs/Guides/database.md)
-- [数据库详细指南](backend/infrastructure/database/README.md)
+- [数据库详细指南](backend/database/README.md) ⭐ 集中的数据库文档
 
 ### 可观测性
 - [可观测性总览](backend/infrastructure/monitoring/README.md)

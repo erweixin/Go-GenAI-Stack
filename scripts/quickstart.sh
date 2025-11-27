@@ -132,10 +132,16 @@ cd "$PROJECT_ROOT/backend"
 # 检查是否安装了 Atlas
 if ! command -v atlas &> /dev/null; then
     warning "Atlas 未安装，跳过迁移步骤"
-    warning "请手动运行: cd backend && ./scripts/schema.sh apply"
+    warning "请手动运行: cd backend/database && make apply"
 else
+    # 加载环境变量
+    if [ -f "$PROJECT_ROOT/docker/.env" ]; then
+        source "$PROJECT_ROOT/docker/.env"
+    fi
+    
     info "应用数据库迁移..."
-    ./scripts/schema.sh apply || {
+    cd "$PROJECT_ROOT/backend/database"
+    make apply || {
         warning "迁移失败，请检查数据库连接"
     }
     success "数据库迁移完成"
@@ -147,27 +153,20 @@ echo ""
 info "步骤 4/5: 加载种子数据..."
 
 if [ "$PSQL_AVAILABLE" = true ]; then
-    SEED_FILE="$PROJECT_ROOT/backend/migrations/seed/01_initial_data.sql"
-    
-    if [ -f "$SEED_FILE" ]; then
-        info "加载种子数据..."
-        
-        # 读取数据库配置（与 env.example 一致）
-        DB_HOST=${APP_DATABASE_HOST:-${POSTGRES_HOST:-localhost}}
-        DB_PORT=${APP_DATABASE_PORT:-${POSTGRES_PORT:-5432}}
-        DB_USER=${APP_DATABASE_USER:-${POSTGRES_USER:-genai}}
-        DB_PASSWORD=${APP_DATABASE_PASSWORD:-${POSTGRES_PASSWORD:-genai_password}}
-        DB_NAME=${APP_DATABASE_DATABASE:-${POSTGRES_DB:-go_genai_stack}}
-        
-        PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f "$SEED_FILE" > /dev/null 2>&1 || {
-            warning "种子数据加载失败（可能已存在）"
-        }
-        success "种子数据加载完成"
-    else
-        warning "种子数据文件不存在: $SEED_FILE"
+    # 加载环境变量
+    if [ -f "$PROJECT_ROOT/docker/.env" ]; then
+        source "$PROJECT_ROOT/docker/.env"
     fi
+    
+    info "加载种子数据..."
+    cd "$PROJECT_ROOT/backend/database"
+    make seed || {
+        warning "种子数据加载失败（可能已存在）"
+    }
+    success "种子数据加载完成"
 else
     warning "跳过种子数据加载（psql 未安装）"
+    warning "请手动运行: cd backend/database && make seed"
 fi
 
 echo ""

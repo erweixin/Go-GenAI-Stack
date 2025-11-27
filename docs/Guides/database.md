@@ -28,12 +28,12 @@ docker-compose up -d
 source .env  # 或 export $(cat .env | grep -v '^#' | xargs)
 
 # 4. 应用 Schema 和种子数据
-cd ../backend
-./scripts/schema.sh apply  # 脚本会自动读取环境变量
-./scripts/seed.sh
+cd ../backend/database
+make apply  # 应用数据库迁移
+make seed   # 加载演示数据
 
 # 5. 验证
-./scripts/schema.sh status
+make status
 ```
 
 **💡 提示**：如果遇到连接问题，确保已正确加载环境变量：
@@ -76,30 +76,33 @@ curl -sSf https://atlasgo.sh | sh
 ### 常用命令
 
 ```bash
+# 进入 database 目录
+cd backend/database
+
 # 生成迁移
-./scripts/schema.sh diff <name>
+make diff NAME=<name>
 
 # 应用迁移
-./scripts/schema.sh apply
+make apply
 
 # 查看状态
-./scripts/schema.sh status
+make status
 
 # 验证 Schema
-./scripts/schema.sh validate
+make validate
 ```
 
 ### 典型工作流
 
 ```bash
 # 1. 修改 Schema
-vim backend/infrastructure/database/schema/schema.sql
+vim backend/database/schema.sql
 
 # 2. 生成迁移
-cd backend && ./scripts/schema.sh diff add_new_feature
+cd backend/database && make diff NAME=add_new_feature
 
 # 3. 应用迁移
-./scripts/schema.sh apply
+make apply
 ```
 
 ### Schema 示例
@@ -107,7 +110,7 @@ cd backend && ./scripts/schema.sh diff add_new_feature
 **添加新表**：
 
 ```sql
--- backend/infrastructure/database/schema/schema.sql
+-- backend/database/schema.sql
 CREATE TABLE products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(200) NOT NULL,
@@ -167,18 +170,19 @@ POSTGRES_DB=go_genai_stack
 REDIS_PASSWORD=redis_password
 ```
 
-**脚本使用**：
+**数据库管理使用**：
 
-`schema.sh` 和 `seed.sh` 会按以下优先级读取变量：
+Atlas 会按以下优先级读取变量：
 1. `DATABASE_URL`（完整连接字符串）
-2. `APP_DATABASE_*`（Go 后端格式）
-3. `POSTGRES_*`（Docker Compose 格式）
+2. `POSTGRES_*`（Docker Compose 格式，优先）
+3. `APP_DATABASE_*`（Go 后端格式）
 4. 默认值：`postgresql://genai:genai_password@localhost:5432/go_genai_stack?sslmode=disable`
 
 ```bash
-# 加载环境变量并执行脚本
+# 加载环境变量并执行命令
 source docker/.env
-./backend/scripts/schema.sh apply
+cd backend/database
+make apply
 ```
 
 **⚠️ 安全提示**：
@@ -208,20 +212,23 @@ db.SetConnMaxLifetime(5 * time.Minute)  // 连接生命周期
 ### 加载种子数据
 
 ```bash
-# 使用脚本
-cd backend && ./scripts/seed.sh
+# 加载种子数据
+cd backend/database
+make seed
 
-# 清空并重新加载
-./scripts/seed.sh --clear
+# 清空数据库并重新加载
+make clean
+make apply
+make seed
 ```
 
 ### 创建种子文件
 
 ```sql
--- backend/migrations/seed/02_demo_users.sql
-INSERT INTO users (id, email, name) VALUES
-('user-001', 'alice@example.com', 'Alice'),
-('user-002', 'bob@example.com', 'Bob');
+-- backend/database/seed/02_demo_users.sql
+INSERT INTO users (id, email, username, password_hash) VALUES
+('user-001', 'alice@example.com', 'alice', 'hashed_password'),
+('user-002', 'bob@example.com', 'bob', 'hashed_password');
 ```
 
 ---
@@ -245,11 +252,12 @@ psql "postgresql://genai:genai_password@localhost:5432/go_genai_stack" -c "SELEC
 
 ```bash
 # 查看状态
-./scripts/schema.sh status
+cd backend/database
+make status
 
 # 清理并重建（⚠️ 会删除数据）
-./scripts/schema.sh clean
-./scripts/schema.sh apply
+make clean
+make apply
 ```
 
 ### 连接池耗尽
@@ -311,16 +319,17 @@ cd docker && docker-compose up -d
 source docker/.env
 
 # 应用 Schema
-cd backend && ./scripts/schema.sh apply
+cd backend/database
+make apply
 
 # 加载种子数据
-./scripts/seed.sh
+make seed
 
 # 连接数据库（使用默认配置）
 psql "postgresql://genai:genai_password@localhost:5432/go_genai_stack"
 
 # 或使用环境变量
-psql "postgresql://${APP_DATABASE_USER}:${APP_DATABASE_PASSWORD}@${APP_DATABASE_HOST}:${APP_DATABASE_PORT}/${APP_DATABASE_DATABASE}"
+psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
 ```
 
 ### 常用 SQL
@@ -344,7 +353,8 @@ SELECT pg_size_pretty(pg_total_relation_size('tasks'));
 ## 📚 参考资料
 
 - [Backend README](../../backend/README.md)
-- [Schema 文件](../../backend/infrastructure/database/schema/schema.sql)
+- [Database README](../../backend/database/README.md) ⭐
+- [Schema 文件](../../backend/database/schema.sql)
 - [PostgreSQL 文档](https://www.postgresql.org/docs/)
 - [Atlas 文档](https://atlasgo.io/docs)
 

@@ -117,7 +117,7 @@
 
 ## 数据库 Schema
 
-参考 `infrastructure/database/schema/schema.sql`：
+参考 `database/schema.sql`：
 
 ```sql
 CREATE TABLE users (
@@ -174,5 +174,5 @@ CREATE TABLE users (
 - [领域术语](./glossary.md)
 - [业务规则](./rules.md)
 - [领域事件](./events.md)
-- [数据库 Schema](../../infrastructure/database/schema/schema.sql)
+- [数据库 Schema](../../database/schema.sql)
 

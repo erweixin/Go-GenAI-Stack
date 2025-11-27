@@ -1,0 +1,5 @@
+# This directory contains the centralized database management for Go-GenAI-Stack
+
+All database-related operations should be done from this directory.
+See README.md for usage instructions.
+
