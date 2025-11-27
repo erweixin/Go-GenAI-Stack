@@ -11,9 +11,8 @@
  * Run `pnpm sync` to regenerate types
  **/
 
-// 导出所有领域类型
-export * from './domains/chat';
-export * from './domains/llm';
-export * from './domains/monitoring';
+// 导出所有领域类型（对齐后端 backend/domains/）
+export * from './domains/auth';
 export * from './domains/task';
+export * from './domains/user';
 

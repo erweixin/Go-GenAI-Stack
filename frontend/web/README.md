@@ -1,16 +1,606 @@
-# React + Vite
+# Go-GenAI-Stack Frontend (Web)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**技术栈**: React + TypeScript + Vite + TailwindCSS + Zustand
 
-Currently, two official plugins are available:
+**架构模式**: Feature-First + Domain-Driven Design (Vibe-Coding-Friendly)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 📐 代码组织方式
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 核心思想：分层架构（Two-Layer Architecture）
 
-## Expanding the ESLint configuration
+```
+┌─────────────────────────────────────────────────────────┐
+│  Pages 层（页面组合层）                                    │
+│  职责：组合 features 的组件，实现页面布局和路由            │
+│  对齐：前端路由                                           │
+└────────────────────┬───────────────────────────────────┘
+                     │ 使用
+┌────────────────────▼────────────────────────────────────┐
+│  Features 层（业务功能层）                                │
+│  职责：实现业务逻辑，提供可复用的组件和 Hooks             │
+│  对齐：后端 backend/domains                              │
+└────────────────────┬────────────────────────────────────┘
+                     │ 调用
+┌────────────────────▼────────────────────────────────────┐
+│  Backend API                                            │
+│  /api/tasks, /api/auth, /api/users                     │
+└─────────────────────────────────────────────────────────┘
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 🗂️ 目录结构
+
+```
+src/
+├── features/                          ← 业务功能层（对齐后端领域）
+│   ├── task/                          ← 对齐 backend/domains/task
+│   │   ├── README.md                  ← 功能说明
+│   │   ├── usecases.md                ← 用例列表
+│   │   ├── api/                       ← API 封装
+│   │   │   └── task.api.ts
+│   │   ├── components/                ← 可复用组件
+│   │   │   ├── TaskList.tsx
+│   │   │   ├── TaskItem.tsx
+│   │   │   ├── TaskCreateDialog.tsx
+│   │   │   ├── TaskEditDialog.tsx
+│   │   │   └── TaskFilters.tsx
+│   │   ├── hooks/                     ← 自定义 Hooks
+│   │   │   ├── useTasks.ts
+│   │   │   ├── useTaskCreate.ts
+│   │   │   ├── useTaskUpdate.ts
+│   │   │   ├── useTaskComplete.ts
+│   │   │   └── useTaskDelete.ts
+│   │   └── stores/                    ← 状态管理
+│   │       └── task.store.ts
+│   │
+│   ├── auth/                          ← 对齐 backend/domains/auth
+│   │   ├── README.md
+│   │   ├── usecases.md
+│   │   ├── api/auth.api.ts
+│   │   ├── components/
+│   │   │   ├── LoginForm.tsx
+│   │   │   └── RegisterForm.tsx
+│   │   ├── hooks/
+│   │   │   ├── useLogin.ts
+│   │   │   └── useRegister.ts
+│   │   └── stores/auth.store.ts
+│   │
+│   └── user/                          ← 对齐 backend/domains/user
+│       ├── README.md
+│       ├── usecases.md
+│       ├── api/user.api.ts
+│       ├── components/
+│       │   ├── UserProfile.tsx
+│       │   └── UserSettings.tsx
+│       ├── hooks/
+│       │   └── useUserProfile.ts
+│       └── stores/user.store.ts
+│
+├── pages/                             ← 页面组合层（对齐路由）
+│   ├── TasksPage/                     ← 单一领域页面
+│   │   ├── TasksPage.tsx              ← 组合 features/task 的组件
+│   │   └── TasksPage.test.tsx
+│   │
+│   ├── DashboardPage/                 ← 跨领域页面
+│   │   ├── DashboardPage.tsx          ← 组合多个 feature
+│   │   ├── components/                ← 页面专属组件
+│   │   │   ├── TaskSummaryCard.tsx
+│   │   │   └── WelcomeSection.tsx
+│   │   └── DashboardPage.test.tsx
+│   │
+│   ├── LoginPage/
+│   │   ├── LoginPage.tsx
+│   │   └── LoginPage.test.tsx
+│   │
+│   ├── RegisterPage/
+│   │   ├── RegisterPage.tsx
+│   │   └── RegisterPage.test.tsx
+│   │
+│   ├── ProfilePage/
+│   │   ├── ProfilePage.tsx
+│   │   └── ProfilePage.test.tsx
+│   │
+│   └── HomePage/
+│       ├── HomePage.tsx
+│       ├── components/
+│       └── HomePage.test.tsx
+│
+├── components/                        ← 全局共享组件
+│   └── ui/                            ← shadcn/ui 组件库
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── dialog.tsx
+│       ├── input.tsx
+│       └── ...
+│
+├── lib/                               ← 工具库
+│   ├── api-client.ts                  ← API 客户端
+│   └── utils.ts                       ← 工具函数
+│
+├── App.tsx                            ← 应用入口
+└── main.tsx                           ← 渲染入口
+```
+
+---
+
+## 🎯 前后端对齐关系
+
+```
+Backend Domains          Frontend Features        Frontend Pages
+-----------------       ------------------       ----------------
+domains/task/     ←→    features/task/     ←─    TasksPage
+                                           └─    DashboardPage (部分)
+
+domains/auth/     ←→    features/auth/     ←─    LoginPage
+                                           └─    RegisterPage
+
+domains/user/     ←→    features/user/     ←─    ProfilePage
+                                          └─    DashboardPage (部分)
+```
+
+**对齐规则**：
+1. **Backend Domain** ↔ **Frontend Feature** = 1:1 对应
+2. **Frontend Page** 可以使用 1 个或多个 **Frontend Feature**
+3. **Feature** 提供可复用的组件和逻辑
+4. **Page** 只负责组合和布局（薄层，< 100 行）
+
+---
+
+## 📦 Feature 层详解
+
+### Feature 的职责
+
+**✅ Feature 应该包含**：
+- **API 层** (`api/`): 封装后端 API 调用
+- **组件层** (`components/`): 可复用的 UI 组件
+- **Hooks 层** (`hooks/`): 业务逻辑封装
+- **Store 层** (`stores/`): 状态管理（Zustand）
+- **文档** (`README.md`, `usecases.md`): 功能说明和用例
+
+**❌ Feature 不应该包含**：
+- 页面路由配置
+- 页面专属的布局组件
+- 跨 feature 的组合逻辑
+
+### Feature 的目录结构（标准模板）
+
+```
+features/{domain}/
+├── README.md              # 功能概述、使用说明
+├── usecases.md            # 用例列表（对齐后端 usecases.yaml）
+├── api/                   # API 封装层
+│   └── {domain}.api.ts    # API 调用（对齐后端 API）
+├── components/            # UI 组件层（可复用）
+│   ├── {Domain}List.tsx
+│   ├── {Domain}Item.tsx
+│   └── {Domain}Dialog.tsx
+├── hooks/                 # 业务逻辑层
+│   ├── use{Domain}s.ts    # 列表 Hook
+│   ├── use{Domain}Create.ts
+│   └── use{Domain}Update.ts
+└── stores/                # 状态管理层
+    └── {domain}.store.ts  # Zustand Store
+```
+
+### Feature 使用示例
+
+#### 1. API 层（api/task.api.ts）
+
+```typescript
+import { api } from '@/lib/api-client'
+import type { CreateTaskRequest, CreateTaskResponse } from '@go-genai-stack/types'
+
+/**
+ * Task API
+ * 对齐后端 backend/domains/task
+ */
+export const taskApi = {
+  create: (data: CreateTaskRequest) => 
+    api.post<CreateTaskResponse>('/api/tasks', data),
+    
+  list: (params?) => 
+    api.get('/api/tasks', { params }),
+  
+  // ...其他方法
+}
+```
+
+#### 2. Store 层（stores/task.store.ts）
+
+```typescript
+import { create } from 'zustand'
+
+interface TaskState {
+  tasks: TaskItem[]
+  loading: boolean
+  setTasks: (tasks: TaskItem[]) => void
+  // ...其他状态和方法
+}
+
+export const useTaskStore = create<TaskState>((set) => ({
+  tasks: [],
+  loading: false,
+  setTasks: (tasks) => set({ tasks }),
+}))
+```
+
+#### 3. Hooks 层（hooks/useTasks.ts）
+
+```typescript
+import { useEffect } from 'react'
+import { useTaskStore } from '../stores/task.store'
+import { taskApi } from '../api/task.api'
+
+/**
+ * 任务列表 Hook
+ * 用例：ListTasks
+ */
+export function useTasks() {
+  const { tasks, setTasks, setLoading } = useTaskStore()
+
+  useEffect(() => {
+    const loadTasks = async () => {
+      setLoading(true)
+      const response = await taskApi.list()
+      setTasks(response.tasks)
+      setLoading(false)
+    }
+    loadTasks()
+  }, [])
+
+  return { tasks }
+}
+```
+
+#### 4. 组件层（components/TaskList.tsx）
+
+```typescript
+import type { TaskItem } from '@go-genai-stack/types'
+
+interface TaskListProps {
+  tasks: TaskItem[]
+  loading?: boolean
+  onTaskClick?: (task: TaskItem) => void
+}
+
+/**
+ * 任务列表组件
+ * 可在多个页面复用
+ */
+export function TaskList({ tasks, loading, onTaskClick }: TaskListProps) {
+  if (loading) return <div>Loading...</div>
+  
+  return (
+    <div>
+      {tasks.map(task => (
+        <div key={task.task_id} onClick={() => onTaskClick?.(task)}>
+          {task.title}
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+---
+
+## 📄 Page 层详解
+
+### Page 的职责
+
+**✅ Page 应该包含**：
+- 页面组件（组合 feature 的组件）
+- 页面专属的组件（如 WelcomeSection）
+- 页面布局和样式
+- 路由参数处理
+
+**❌ Page 不应该包含**：
+- 业务逻辑（应该在 feature/hooks 中）
+- API 调用（应该在 feature/api 中）
+- 状态管理（应该在 feature/stores 中）
+
+### Page 目录结构
+
+```
+pages/{PageName}/
+├── {PageName}.tsx         # 页面组件（主文件）
+├── components/            # 页面专属组件（可选）
+│   └── Section.tsx
+└── {PageName}.test.tsx    # 页面测试
+```
+
+### Page 使用示例
+
+#### 示例 1：单一领域页面（TasksPage）
+
+```typescript
+// pages/TasksPage/TasksPage.tsx
+import { useTasks } from '@/features/task/hooks/useTasks'
+import { TaskList } from '@/features/task/components/TaskList'
+import { TaskFilters } from '@/features/task/components/TaskFilters'
+
+/**
+ * 任务管理页面
+ * 
+ * 职责：
+ * - 组合 features/task 的组件
+ * - 页面布局
+ * 
+ * 对应后端领域：task
+ */
+export default function TasksPage() {
+  const { tasks, loading } = useTasks()
+  
+  return (
+    <div className="container mx-auto py-6">
+      <h1 className="text-3xl font-bold mb-6">任务管理</h1>
+      <TaskFilters />
+      <TaskList tasks={tasks} loading={loading} />
+    </div>
+  )
+}
+```
+
+**特点**：
+- ✅ 代码简洁（< 50 行）
+- ✅ 只使用一个 feature (task)
+- ✅ 无业务逻辑（在 hooks 中）
+
+#### 示例 2：跨领域页面（DashboardPage）
+
+```typescript
+// pages/DashboardPage/DashboardPage.tsx
+import { useUserProfile } from '@/features/user/hooks/useUserProfile'
+import { UserAvatar } from '@/features/user/components/UserAvatar'
+import { useTaskStats } from '@/features/task/hooks/useTaskStats'
+import { TaskStats } from '@/features/task/components/TaskStats'
+import { WelcomeSection } from './components/WelcomeSection'
+
+/**
+ * 仪表盘页面（跨领域）
+ * 
+ * 职责：
+ * - 组合多个 feature 的组件
+ * - 展示概览信息
+ * 
+ * 使用的 features：
+ * - user: 用户信息
+ * - task: 任务统计
+ */
+export default function DashboardPage() {
+  const { user } = useUserProfile()
+  const { stats } = useTaskStats()
+  
+  return (
+    <div className="container mx-auto py-6">
+      <WelcomeSection user={user} />
+      <div className="grid grid-cols-2 gap-4">
+        <UserAvatar user={user} />
+        <TaskStats stats={stats} />
+      </div>
+    </div>
+  )
+}
+```
+
+**特点**：
+- ✅ 代码简洁（< 80 行）
+- ✅ 使用多个 features (user + task)
+- ✅ 页面专属组件放在 components/ 子目录
+
+---
+
+## 🔄 数据流向
+
+```
+用户操作
+   ↓
+Page 组件（组合层）
+   ↓
+Feature Hook（业务逻辑）
+   ↓
+Feature Store（状态管理）
+   ↓
+Feature API（API 调用）
+   ↓
+Backend API
+   ↓
+Feature Store（更新状态）
+   ↓
+Page 组件（重新渲染）
+```
+
+**示例流程**（创建任务）：
+
+1. 用户在 `TasksPage` 点击"新建任务"按钮
+2. `TaskCreateDialog` 组件显示表单
+3. 用户提交表单，调用 `useTaskCreate` Hook
+4. Hook 调用 `taskApi.create(data)`
+5. API 发送请求到后端 `POST /api/tasks`
+6. 后端返回新任务
+7. Hook 调用 `taskStore.addTask(newTask)` 更新状态
+8. Store 更新触发 `TaskList` 重新渲染
+9. 新任务显示在列表中
+
+---
+
+## 🎨 组件复用规则
+
+### 1. 页面专属组件
+
+**使用场景**: 只在一个页面使用  
+**存放位置**: `pages/{PageName}/components/`
+
+```
+pages/DashboardPage/
+└── components/
+    └── WelcomeSection.tsx  ← 只在 DashboardPage 使用
+```
+
+### 2. Feature 内组件
+
+**使用场景**: 在同一 feature 的多个页面使用  
+**存放位置**: `features/{domain}/components/`
+
+```
+features/task/
+└── components/
+    └── TaskList.tsx  ← 可在 TasksPage 和 DashboardPage 使用
+```
+
+### 3. 全局共享组件
+
+**使用场景**: 多个 feature 使用  
+**存放位置**: `components/`
+
+```
+components/
+└── ui/
+    └── Button.tsx  ← 所有页面和 feature 都可使用
+```
+
+---
+
+## 📚 类型定义
+
+### 使用 Monorepo 共享类型
+
+所有类型定义来自 `@go-genai-stack/types` 包（frontend/shared/types）：
+
+```typescript
+import type {
+  TaskItem,
+  CreateTaskRequest,
+  CreateTaskResponse,
+} from '@go-genai-stack/types'
+```
+
+**优势**：
+- ✅ 前端各应用（web, mobile）共享类型
+- ✅ 类型与后端 API 保持同步
+- ✅ 统一的类型定义，减少重复
+
+---
+
+## 🧪 测试策略
+
+### 1. Feature 测试
+
+```typescript
+// features/task/hooks/useTasks.test.ts
+import { renderHook } from '@testing-library/react'
+import { useTasks } from './useTasks'
+
+test('useTasks loads tasks', async () => {
+  const { result } = renderHook(() => useTasks())
+  
+  await waitFor(() => {
+    expect(result.current.tasks).toHaveLength(5)
+  })
+})
+```
+
+### 2. Page 测试
+
+```typescript
+// pages/TasksPage/TasksPage.test.tsx
+import { render, screen } from '@testing-library/react'
+import TasksPage from './TasksPage'
+
+test('TasksPage renders', () => {
+  render(<TasksPage />)
+  expect(screen.getByText('任务管理')).toBeInTheDocument()
+})
+```
+
+---
+
+## 🚀 开发指南
+
+### 添加新功能
+
+**场景 1**: 添加新的用例（如 "任务归档"）
+
+1. 在 `features/task/usecases.md` 添加用例说明
+2. 在 `features/task/api/task.api.ts` 添加 API 方法
+3. 在 `features/task/hooks/` 创建新 Hook (`useTaskArchive.ts`)
+4. 在页面中使用新 Hook
+
+**场景 2**: 添加新的领域（如 "通知"）
+
+1. 创建 `features/notification/` 目录
+2. 参考 `features/task/` 的结构创建文件
+3. 创建 README.md 和 usecases.md
+4. 实现 API、Hooks、Store、Components
+5. 在需要的页面中使用
+
+### 开发工作流
+
+```bash
+# 1. 启动开发服务器
+pnpm dev
+
+# 2. 编辑代码（VS Code + Vite HMR）
+
+# 3. 测试功能
+
+# 4. 运行测试
+pnpm test
+
+# 5. 构建生产版本
+pnpm build
+```
+
+---
+
+## 📖 最佳实践
+
+### ✅ DO（推荐）
+
+1. **Feature 自包含**: 每个 feature 包含完整的功能实现
+2. **Page 保持薄**: 页面组件 < 100 行，只负责组合
+3. **组件可复用**: 提取可复用的组件到 feature/components/
+4. **状态集中管理**: 使用 Store 管理状态，避免 prop drilling
+5. **类型安全**: 使用 TypeScript，导入共享类型
+6. **文档同步**: 修改功能时更新 README.md 和 usecases.md
+
+### ❌ DON'T（避免）
+
+1. **不要在 Page 中写业务逻辑**: 应该在 Hook 中
+2. **不要在 Page 中直接调用 API**: 应该通过 Hook
+3. **不要跨 Feature 导入组件**: 应该提升到 components/
+4. **不要在 Feature 中包含路由逻辑**: 应该在 App.tsx 中
+5. **不要重复类型定义**: 使用 @go-genai-stack/types
+
+---
+
+## 🔗 相关文档
+
+- [后端架构](../../backend/README.md) - 后端领域划分
+- [类型定义](../shared/types/README.md) - 共享类型说明
+- [前端领域讨论](../../docs/FRONTEND_DOMAIN_DISCUSSION.md) - 架构设计讨论
+- [整改计划](../../docs/FRONTEND_REFACTORING_PLAN.md) - 重构计划
+
+---
+
+## 📝 变更日志
+
+### 2025-11-27: Vibe-Coding-Friendly 重构
+
+- ✅ 采用 Feature-First + 分层架构
+- ✅ 前端完全对齐后端领域（task, auth, user）
+- ✅ 创建 features/ 和 pages/ 分层
+- ✅ 添加显式知识（README.md, usecases.md）
+- ✅ 组件瘦化（TasksPage: 431 → <100 行）
+- ✅ 统一状态管理（Zustand）
+- ✅ 统一 API 封装
+
+**架构评分提升**: ⭐⭐☆☆☆ (2/5) → ⭐⭐⭐⭐⭐ (5/5)
+
+---
+
+**维护者**: AI Assistant  
+**最后更新**: 2025-11-27

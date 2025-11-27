@@ -118,11 +118,13 @@ export interface ListTasksRequest {
 export interface TaskItem {
   task_id: string;
   title: string;
+  description?: string; // 任务描述（可选）
   status: TaskStatus;
   priority: TaskPriority;
   due_date?: string; // ISO 8601 格式
   tags: string[];
   created_at: string; // ISO 8601 格式
+  completed_at?: string; // ISO 8601 格式（仅完成的任务）
 }
 
 /**
