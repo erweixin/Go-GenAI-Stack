@@ -12,14 +12,14 @@ export async function loginAsTestUser(page: Page) {
   await page.goto('/login')
   
   // 填写登录表单
-  await page.fill('input[type="email"]', testUsers.validUser.email)
-  await page.fill('input[type="password"]', testUsers.validUser.password)
+  await page.fill('input[id="email"]', testUsers.validUser.email)
+  await page.fill('input[id="password"]', testUsers.validUser.password)
   
   // 点击登录按钮
   await page.click('button[type="submit"]:has-text("登录")')
   
-  // 等待跳转到任务页面或首页
-  await page.waitForURL(/\/(tasks|)$/)
+  // 等待跳转到任务页面
+  await page.waitForURL('/tasks', { timeout: 10000 })
 }
 
 /**
@@ -32,16 +32,16 @@ export async function registerNewUser(
   await page.goto('/register')
   
   // 填写注册表单
-  await page.fill('input[type="email"]', userData.email)
+  await page.fill('input[id="email"]', userData.email)
   await page.fill('input[id="username"]', userData.username || '')
   await page.fill('input[id="full_name"]', userData.full_name || '')
-  await page.fill('input[type="password"]', userData.password)
+  await page.fill('input[id="password"]', userData.password)
   
   // 点击注册按钮
   await page.click('button[type="submit"]:has-text("注册")')
   
-  // 等待跳转
-  await page.waitForURL(/\/(tasks|)$/)
+  // 等待跳转到任务页面
+  await page.waitForURL('/tasks', { timeout: 10000 })
 }
 
 /**
