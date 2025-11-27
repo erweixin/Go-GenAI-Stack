@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:ci": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest --watch",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@go-genai-stack/constants": "workspace:*",
@@ -28,15 +34,22 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.1.17",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^4.0.14",
+    "@vitest/ui": "^4.0.14",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "happy-dom": "^20.0.10",
     "tailwindcss": "^4.1.17",
-    "vite": "npm:rolldown-vite@7.2.5"
+    "vite": "npm:rolldown-vite@7.2.5",
+    "vitest": "^4.0.14"
   },
   "pnpm": {
     "overrides": {

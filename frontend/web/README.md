@@ -4,6 +4,8 @@
 
 **架构模式**: Feature-First + Domain-Driven Design (Vibe-Coding-Friendly)
 
+**测试框架**: Vitest + React Testing Library
+
 ---
 
 ## 📐 代码组织方式
@@ -77,7 +79,11 @@ src/
 │       │   └── UserSettings.tsx
 │       ├── hooks/
 │       │   └── useUserProfile.ts
-│       └── stores/user.store.ts
+│       ├── stores/user.store.ts
+│       └── __tests__/                 ← 测试目录
+│           ├── api/user.api.test.ts
+│           ├── hooks/useUserProfile.test.ts
+│           └── stores/user.store.test.ts
 │
 ├── pages/                             ← 页面组合层（对齐路由）
 │   ├── TasksPage/                     ← 单一领域页面
@@ -577,12 +583,181 @@ pnpm build
 
 ---
 
+## 🧪 测试规范
+
+### 测试框架
+
+```
+✅ Vitest              # 测试运行器（Vite 原生支持）
+✅ React Testing Library  # React 组件测试
+✅ @testing-library/user-event  # 用户交互模拟
+✅ @vitest/coverage-v8  # 代码覆盖率
+```
+
+### 测试组织方式
+
+**采用 Feature 内部 `__tests__` 目录模式**：
+
+```
+src/features/task/
+├── api/
+│   └── task.api.ts
+├── components/
+│   ├── TaskList.tsx
+│   └── TaskItem.tsx
+├── hooks/
+│   ├── useTasks.ts
+│   └── useTaskCreate.ts
+├── stores/
+│   └── task.store.ts
+└── __tests__/              # ⭐ 测试目录
+    ├── api/
+    │   └── task.api.test.ts
+    ├── components/
+    │   ├── TaskList.test.tsx
+    │   └── TaskItem.test.tsx
+    ├── hooks/
+    │   ├── useTasks.test.ts
+    │   └── useTaskCreate.test.ts
+    └── stores/
+        └── task.store.test.ts
+```
+
+**优点**：
+- ✅ 测试与源码在同一 feature，易于查找和维护
+- ✅ 目录结构清晰，镜像源码结构
+- ✅ 删除 feature 时测试一起删除
+- ✅ 符合领域驱动设计原则
+
+### 测试优先级
+
+| 优先级 | 测试内容 | 覆盖率目标 | 说明 |
+|--------|---------|-----------|------|
+| **P0** | Hooks + Stores + API | **90%+** | 业务逻辑核心，最重要 |
+| P1 | Components | 70%+ | UI 组件交互 |
+| P2 | Pages | 60%+ | 页面组合层 |
+
+**整体覆盖率目标**: 70%+
+
+### 测试命令
+
+```bash
+# 运行所有测试
+pnpm test
+
+# 监听模式（开发时）
+pnpm test:watch
+
+# 生成覆盖率报告
+pnpm test:coverage
+
+# UI 模式（可视化界面）
+pnpm test:ui
+
+# CI 模式
+pnpm test:ci
+```
+
+### 测试示例
+
+#### Hooks 测试
+
+```typescript
+// features/task/__tests__/hooks/useTasks.test.ts
+import { renderHook, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { useTasks } from '../../hooks/useTasks'
+import { taskApi } from '../../api/task.api'
+
+vi.mock('../../api/task.api')
+
+describe('useTasks', () => {
+  it('应该成功加载任务列表', async () => {
+    // Arrange
+    const mockTasks = [
+      { task_id: '1', title: 'Test', status: 'pending', priority: 'high', tags: [], created_at: '2025-11-27' }
+    ]
+    vi.mocked(taskApi.list).mockResolvedValue({ tasks: mockTasks, total_count: 1 })
+
+    // Act
+    const { result } = renderHook(() => useTasks())
+
+    // Assert
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.tasks).toEqual(mockTasks)
+  })
+})
+```
+
+#### Store 测试
+
+```typescript
+// features/task/__tests__/stores/task.store.test.ts
+import { describe, it, expect, beforeEach } from 'vitest'
+import { useTaskStore } from '../../stores/task.store'
+
+describe('TaskStore', () => {
+  beforeEach(() => {
+    useTaskStore.getState().reset()
+  })
+
+  it('应该能够添加任务', () => {
+    const store = useTaskStore.getState()
+    const task = { task_id: '1', title: 'New Task', status: 'pending', ... }
+    
+    store.addTask(task)
+    
+    expect(store.tasks).toHaveLength(1)
+    expect(store.tasks[0]).toEqual(task)
+  })
+})
+```
+
+#### Component 测试
+
+```typescript
+// features/task/__tests__/components/TaskItem.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { TaskItemComponent } from '../../components/TaskItem'
+
+describe('TaskItem', () => {
+  it('应该正确渲染任务信息', () => {
+    const mockTask = { task_id: '1', title: 'Test Task', ... }
+    render(<TaskItemComponent task={mockTask} />)
+    
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('点击完成按钮应该触发回调', () => {
+    const onComplete = vi.fn()
+    render(<TaskItemComponent task={mockTask} onComplete={onComplete} />)
+    
+    fireEvent.click(screen.getByRole('button', { name: /complete/i }))
+    
+    expect(onComplete).toHaveBeenCalledWith('1')
+  })
+})
+```
+
+### CI/CD 集成
+
+测试在 GitHub Actions 中自动运行：
+
+- ✅ Push 到 main/develop 时自动测试
+- ✅ Pull Request 时自动测试
+- ✅ 生成覆盖率报告
+- ✅ PR 自动评论覆盖率变化
+
+详细配置见：`.github/workflows/frontend-test.yml`
+
+---
+
 ## 🔗 相关文档
 
 - [后端架构](../../backend/README.md) - 后端领域划分
 - [类型定义](../shared/types/README.md) - 共享类型说明
-- [前端领域讨论](../../docs/FRONTEND_DOMAIN_DISCUSSION.md) - 架构设计讨论
-- [整改计划](../../docs/FRONTEND_REFACTORING_PLAN.md) - 重构计划
+- [测试方案](../../docs/FRONTEND_TESTING_PLAN.md) - 详细测试方案
 
 ---
 
@@ -597,6 +772,8 @@ pnpm build
 - ✅ 组件瘦化（TasksPage: 431 → <100 行）
 - ✅ 统一状态管理（Zustand）
 - ✅ 统一 API 封装
+- ✅ 引入单元测试（Vitest + React Testing Library）
+- ✅ 集成 CI/CD 测试流程
 
 **架构评分提升**: ⭐⭐☆☆☆ (2/5) → ⭐⭐⭐⭐⭐ (5/5)
 
