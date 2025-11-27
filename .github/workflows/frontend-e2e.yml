@@ -1,0 +1,129 @@
+name: Frontend E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'frontend/web/**'
+      - 'backend/**'
+      - '.github/workflows/frontend-e2e.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'frontend/web/**'
+      - 'backend/**'
+
+jobs:
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: go_genai_stack_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: backend/go.sum
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+      
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      
+      - name: Install backend dependencies
+        working-directory: backend
+        run: go mod download
+      
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+      
+      - name: Run database migrations
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/go_genai_stack_test?sslmode=disable
+        run: |
+          # 应用数据库 schema
+          go run ./cmd/migrate up || echo "Migrations not available yet"
+      
+      - name: Start backend server
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/go_genai_stack_test?sslmode=disable
+          JWT_SECRET: test-secret-key-for-e2e
+          PORT: 8080
+        run: |
+          go run ./cmd/server &
+          echo $! > /tmp/backend.pid
+          # 等待服务器启动
+          sleep 5
+          curl -f http://localhost:8080/health || true
+      
+      - name: Install Playwright Browsers
+        run: |
+          cd frontend/web
+          pnpm exec playwright install --with-deps chromium
+      
+      - name: Run E2E tests
+        working-directory: frontend/web
+        env:
+          E2E_BASE_URL: http://localhost:5173
+          VITE_API_BASE_URL: http://localhost:8080
+        run: pnpm e2e:ci
+      
+      - name: Upload Playwright Report
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: frontend/web/playwright-report/
+          retention-days: 7
+      
+      - name: Upload Test Videos
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-videos
+          path: frontend/web/test-results/
+          retention-days: 7
+      
+      - name: Stop backend server
+        if: always()
+        run: |
+          if [ -f /tmp/backend.pid ]; then
+            kill $(cat /tmp/backend.pid) || true
+          fi
+
