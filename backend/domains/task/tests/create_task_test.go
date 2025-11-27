@@ -25,6 +25,7 @@ func TestCreateTask_Success(t *testing.T) {
 	helper.Mock.ExpectExec("INSERT INTO tasks").
 		WithArgs(
 			sqlmock.AnyArg(),   // ID (UUID)
+			TestUserID,         // UserID
 			"Test Task",        // Title
 			"Test Description", // Description
 			"pending",          // Status

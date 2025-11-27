@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/user/http/dto"
-	"github.com/erweixin/go-genai-stack/backend/domains/user/service"
 	"github.com/erweixin/go-genai-stack/backend/infrastructure/middleware"
 )
 
@@ -36,22 +35,16 @@ func (deps *HandlerDependencies) ChangePasswordHandler(ctx context.Context, c *a
 		return
 	}
 
-	// 3. 调用 Domain Service
-	output, err := deps.userService.ChangePassword(ctx, service.ChangePasswordInput{
-		UserID:      userID,
-		OldPassword: req.OldPassword,
-		NewPassword: req.NewPassword,
-	})
+	// 3. 转换为 Domain Input（使用转换层）
+	input := toChangePasswordInput(userID, req)
+
+	// 4. 调用 Domain Service
+	output, err := deps.userService.ChangePassword(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 4. 返回响应
-	response := dto.ChangePasswordResponse{
-		Success: output.Success,
-		Message: output.Message,
-	}
-
-	c.JSON(200, response)
+	// 5. 转换为 HTTP 响应（使用转换层）
+	c.JSON(200, toChangePasswordResponse(output))
 }

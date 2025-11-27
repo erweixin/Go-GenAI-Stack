@@ -46,8 +46,10 @@ func Wrap(err error, code, message string, httpStatus int) *DomainError {
 var (
 	// 客户端错误 (4xx)
 	ErrInvalidRequest       = New("INVALID_REQUEST", "请求参数无效", 400)
+	ErrInvalidInput         = New("INVALID_INPUT", "输入参数无效", 400)
 	ErrMessageEmpty         = New("MESSAGE_EMPTY", "消息不能为空", 400)
 	ErrMessageTooLong       = New("MESSAGE_TOO_LONG", "消息过长，最大 10000 字符", 400)
+	ErrUnauthorized         = New("UNAUTHORIZED", "未授权访问", 401)
 	ErrUnauthorizedAccess   = New("UNAUTHORIZED_ACCESS", "无权访问此资源", 403)
 	ErrConversationNotFound = New("CONVERSATION_NOT_FOUND", "对话不存在", 404)
 	ErrMessageNotFound      = New("MESSAGE_NOT_FOUND", "消息不存在", 404)

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
@@ -51,16 +50,16 @@ func (deps *HandlerDependencies) DeleteTaskHandler(ctx context.Context, c *app.R
 		return
 	}
 
-	// 3. 调用 Domain Service
-	err := deps.taskService.DeleteTask(ctx, userIDStr, taskID)
+	// 3. 转换为 Domain Input（使用转换层）
+	input := toDeleteTaskInput(userIDStr, taskID)
+
+	// 4. 调用 Domain Service
+	output, err := deps.taskService.DeleteTask(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 4. 返回成功响应
-	c.JSON(200, dto.DeleteTaskResponse{
-		Success:   true,
-		DeletedAt: time.Now().Format(time.RFC3339),
-	})
+	// 5. 返回成功响应（使用转换层）
+	c.JSON(200, toDeleteTaskResponse(output))
 }

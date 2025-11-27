@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
@@ -51,41 +50,16 @@ func (deps *HandlerDependencies) GetTaskHandler(ctx context.Context, c *app.Requ
 		return
 	}
 
-	// 3. 调用 Domain Service
-	task, err := deps.taskService.GetTask(ctx, userIDStr, taskID)
+	// 3. 转换为 Domain Input（使用转换层）
+	input := toGetTaskInput(userIDStr, taskID)
+
+	// 4. 调用 Domain Service
+	output, err := deps.taskService.GetTask(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 3. 转换为 HTTP 响应
-	resp := dto.GetTaskResponse{
-		TaskID:      task.ID,
-		Title:       task.Title,
-		Description: task.Description,
-		Status:      string(task.Status),
-		Priority:    string(task.Priority),
-		CreatedAt:   task.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:   task.UpdatedAt.Format(time.RFC3339),
-	}
-
-	// 处理可选字段
-	if task.DueDate != nil {
-		dueDate := task.DueDate.Format(time.RFC3339)
-		resp.DueDate = &dueDate
-	}
-
-	if task.CompletedAt != nil {
-		completedAt := task.CompletedAt.Format(time.RFC3339)
-		resp.CompletedAt = &completedAt
-	}
-
-	// 转换标签
-	tags := make([]string, len(task.Tags))
-	for i, tag := range task.Tags {
-		tags[i] = tag.Name
-	}
-	resp.Tags = tags
-
-	c.JSON(200, resp)
+	// 5. 转换为 HTTP 响应（使用转换层）
+	c.JSON(200, toGetTaskResponse(output))
 }

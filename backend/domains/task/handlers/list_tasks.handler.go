@@ -2,13 +2,9 @@ package handlers
 
 import (
 	"context"
-	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
-	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
-	"github.com/erweixin/go-genai-stack/backend/domains/task/repository"
-	"github.com/erweixin/go-genai-stack/backend/domains/task/service"
 )
 
 // ListTasksHandler 列出任务（HTTP 适配层）
@@ -19,14 +15,15 @@ import (
 //   - Method: GET
 //   - Path: /api/tasks
 //
-// Handler 职责：
-//  1. 解析 HTTP 查询参数 → Domain Input
-//  2. 调用 Domain Service
-//  3. 转换 Domain Output → HTTP 响应
+// Handler 职责（瘦层）：
+//  1. 解析 HTTP 查询参数
+//  2. 转换 DTO（使用转换层）
+//  3. 调用 Domain Service
+//  4. 转换响应（使用转换层）
 //
 // 业务逻辑在 service.TaskService.ListTasks() 中实现
 func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.RequestContext) {
-	// 1. 获取用户 ID（从 JWT 中间件注入）
+	// 1. 获取用户 ID
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(401, dto.ErrorResponse{
@@ -69,77 +66,16 @@ func (deps *HandlerDependencies) ListTasksHandler(ctx context.Context, c *app.Re
 		req.SortOrder = "desc"
 	}
 
-	// 4. 构建 Domain Input（Filter）
-	filter := repository.NewTaskFilter()
-	filter.UserID = &userIDStr // 设置用户 ID 过滤
-	filter.Page = req.Page
-	filter.Limit = req.Limit
-	filter.SortBy = req.SortBy
-	filter.SortOrder = req.SortOrder
-
-	if req.Status != "" {
-		status := model.TaskStatus(req.Status)
-		filter.Status = &status
-	}
-	if req.Priority != "" {
-		priority := model.Priority(req.Priority)
-		filter.Priority = &priority
-	}
-	if req.Tag != "" {
-		filter.Tag = &req.Tag
-	}
-	if req.DueDateFrom != "" {
-		filter.DueDateFrom = &req.DueDateFrom
-	}
-	if req.DueDateTo != "" {
-		filter.DueDateTo = &req.DueDateTo
-	}
-	if req.Keyword != "" {
-		filter.Keyword = &req.Keyword
-	}
+	// 4. 转换为 Domain Input（使用转换层）
+	input := toListTasksInput(userIDStr, req)
 
 	// 5. 调用 Domain Service
-	output, err := deps.taskService.ListTasks(ctx, service.ListTasksInput{
-		Filter: *filter, // 解引用指针
-	})
+	output, err := deps.taskService.ListTasks(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 6. 转换为 HTTP 响应
-	taskItems := make([]dto.TaskItem, 0, len(output.Tasks))
-	for _, task := range output.Tasks {
-		item := dto.TaskItem{
-			TaskID:    task.ID,
-			Title:     task.Title,
-			Status:    string(task.Status),
-			Priority:  string(task.Priority),
-			CreatedAt: task.CreatedAt.Format(time.RFC3339),
-		}
-
-		// 处理可选字段
-		if task.DueDate != nil {
-			dueDate := task.DueDate.Format(time.RFC3339)
-			item.DueDate = &dueDate
-		}
-
-		// 转换标签
-		tags := make([]string, len(task.Tags))
-		for i, tag := range task.Tags {
-			tags[i] = tag.Name
-		}
-		item.Tags = tags
-
-		taskItems = append(taskItems, item)
-	}
-
-	// 7. 返回响应
-	c.JSON(200, dto.ListTasksResponse{
-		Tasks:      taskItems,
-		TotalCount: output.TotalCount,
-		Page:       output.Page,
-		Limit:      output.Limit,
-		HasMore:    output.HasMore,
-	})
+	// 6. 转换为 HTTP 响应（使用转换层）
+	c.JSON(200, toListTasksResponse(output))
 }

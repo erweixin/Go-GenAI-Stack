@@ -23,14 +23,14 @@ func TestListTasks_Success(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT COUNT").
 		WillReturnRows(countRows)
 
-	// Mock 查询任务列表（需要 9 列）
+	// Mock 查询任务列表（需要 10 列）
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).
-		AddRow("task-1", "Task 1", "Description 1", "pending", "high", nil, now, now, nil).
-		AddRow("task-2", "Task 2", "Description 2", "in_progress", "medium", nil, now, now, nil).
-		AddRow("task-3", "Task 3", "Description 3", "completed", "low", nil, now, now, &now)
+		AddRow("task-1", TestUserID, "Task 1", "Description 1", "pending", "high", nil, now, now, nil).
+		AddRow("task-2", TestUserID, "Task 2", "Description 2", "in_progress", "medium", nil, now, now, nil).
+		AddRow("task-3", TestUserID, "Task 3", "Description 3", "completed", "low", nil, now, now, &now)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
 		WillReturnRows(rows)
@@ -52,6 +52,7 @@ func TestListTasks_Success(t *testing.T) {
 	// 创建 HTTP 上下文
 	c := app.NewContext(0)
 	c.Request.SetRequestURI("/api/tasks?page=1&limit=10")
+	SetAuthContext(c, TestUserID)
 
 	// 执行 Handler
 	helper.HandlerDeps.ListTasksHandler(context.Background(), c)
@@ -83,12 +84,12 @@ func TestListTasks_WithFilters(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
 		WillReturnRows(countRows)
 
-	// Mock 查询任务列表（无过滤条件，需要 9 列）
+	// Mock 查询任务列表（无过滤条件，需要 10 列）
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).
-		AddRow("task-1", "High Priority Task", "Description", "pending", "high", nil, now, now, nil)
+		AddRow("task-1", TestUserID, "High Priority Task", "Description", "pending", "high", nil, now, now, nil)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
 		WillReturnRows(rows)
@@ -132,7 +133,7 @@ func TestListTasks_EmptyResult(t *testing.T) {
 
 	// Mock 查询返回空结果（需要 9 列）
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	})
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
@@ -222,13 +223,13 @@ func TestListTasks_Pagination(t *testing.T) {
 	helper.Mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
 		WillReturnRows(countRows)
 
-	// Mock 第 2 页的数据（需要 9 列）
+	// Mock 第 2 页的数据（需要 10 列）
 	now := time.Now()
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).
-		AddRow("task-11", "Task 11", "Description 11", "pending", "medium", nil, now, now, nil).
-		AddRow("task-12", "Task 12", "Description 12", "pending", "low", nil, now, now, nil)
+		AddRow("task-11", TestUserID, "Task 11", "Description 11", "pending", "medium", nil, now, now, nil).
+		AddRow("task-12", TestUserID, "Task 12", "Description 12", "pending", "low", nil, now, now, nil)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
 		WillReturnRows(rows)

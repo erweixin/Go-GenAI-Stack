@@ -2,12 +2,9 @@ package handlers
 
 import (
 	"context"
-	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
-	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
-	"github.com/erweixin/go-genai-stack/backend/domains/task/service"
 )
 
 // UpdateTaskHandler 更新任务（HTTP 适配层）
@@ -64,33 +61,11 @@ func (deps *HandlerDependencies) UpdateTaskHandler(ctx context.Context, c *app.R
 		return
 	}
 
-	// 4. 转换为 Domain Input
-	input := service.UpdateTaskInput{
-		UserID:      userIDStr,
-		TaskID:      taskID,
-		Title:       stringPtr(req.Title),
-		Description: stringPtr(req.Description),
-		Tags:        req.Tags,
-	}
-
-	// 转换优先级
-	if req.Priority != "" {
-		priority := model.Priority(req.Priority)
-		input.Priority = &priority
-	}
-
-	// 解析截止日期
-	if req.DueDate != "" {
-		dueDate, err := time.Parse(time.RFC3339, req.DueDate)
-		if err != nil {
-			c.JSON(400, dto.ErrorResponse{
-				Error:   "INVALID_DUE_DATE",
-				Message: "截止日期格式无效",
-				Details: err.Error(),
-			})
-			return
-		}
-		input.DueDate = &dueDate
+	// 4. 转换为 Domain Input（使用转换层）
+	input, err := toUpdateTaskInput(userIDStr, taskID, req)
+	if err != nil {
+		handleDomainError(c, err)
+		return
 	}
 
 	// 5. 调用 Domain Service
@@ -100,20 +75,6 @@ func (deps *HandlerDependencies) UpdateTaskHandler(ctx context.Context, c *app.R
 		return
 	}
 
-	// 6. 转换为 HTTP 响应
-	task := output.Task
-	c.JSON(200, dto.UpdateTaskResponse{
-		TaskID:    task.ID,
-		Title:     task.Title,
-		Status:    string(task.Status),
-		UpdatedAt: task.UpdatedAt.Format(time.RFC3339),
-	})
-}
-
-// stringPtr 辅助函数：将字符串转为指针
-func stringPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
+	// 6. 转换为 HTTP 响应（使用转换层）
+	c.JSON(200, toUpdateTaskResponse(output))
 }

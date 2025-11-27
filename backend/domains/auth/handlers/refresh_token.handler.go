@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/auth/http/dto"
-	"github.com/erweixin/go-genai-stack/backend/domains/auth/service"
 )
 
 // RefreshTokenHandler 刷新 Token Handler
@@ -15,10 +14,11 @@ import (
 // HTTP Path: /api/auth/refresh
 // 认证：不需要
 //
-// 职责：
+// Handler 职责（瘦层）：
 //   - 解析 HTTP 请求
-//   - 调用 Domain Service 刷新 Token
-//   - 返回 HTTP 响应
+//   - 转换 DTO（使用转换层）
+//   - 调用 Domain Service
+//   - 转换响应（使用转换层）
 func (deps *HandlerDependencies) RefreshTokenHandler(ctx context.Context, c *app.RequestContext) {
 	// 1. 解析请求
 	var req dto.RefreshTokenRequest
@@ -27,22 +27,16 @@ func (deps *HandlerDependencies) RefreshTokenHandler(ctx context.Context, c *app
 		return
 	}
 
-	// 2. 调用 Domain Service
-	output, err := deps.authService.RefreshToken(ctx, service.RefreshTokenInput{
-		RefreshToken: req.RefreshToken,
-	})
+	// 2. 转换为 Domain Input（使用转换层）
+	input := toRefreshTokenInput(req)
+
+	// 3. 调用 Domain Service
+	output, err := deps.authService.RefreshToken(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 3. 返回响应
-	response := dto.RefreshTokenResponse{
-		AccessToken:  output.AccessToken,
-		RefreshToken: output.RefreshToken,
-		ExpiresIn:    output.ExpiresIn,
-	}
-
-	c.JSON(200, response)
+	// 4. 转换为 HTTP 响应（使用转换层）
+	c.JSON(200, toRefreshTokenResponse(output))
 }
-

@@ -93,7 +93,7 @@ func TestNewTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, err := NewTask(tt.title, tt.description, tt.priority)
+			task, err := NewTask("test-user-id", tt.title, tt.description, tt.priority)
 
 			if tt.wantErr != nil {
 				require.Error(t, err)
@@ -133,7 +133,7 @@ func TestTask_Update(t *testing.T) {
 		{
 			name: "更新待处理任务",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Original", "Original Desc", PriorityLow)
+				task, _ := NewTask("test-user-id", "Original", "Original Desc", PriorityLow)
 				return task
 			},
 			updateTitle: "Updated Title",
@@ -144,7 +144,7 @@ func TestTask_Update(t *testing.T) {
 		{
 			name: "更新已完成任务",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				task.Complete()
 				return task
 			},
@@ -156,7 +156,7 @@ func TestTask_Update(t *testing.T) {
 		{
 			name: "更新标题为空",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				return task
 			},
 			updateTitle: "",
@@ -167,7 +167,7 @@ func TestTask_Update(t *testing.T) {
 		{
 			name: "更新标题过长",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				return task
 			},
 			updateTitle: strings.Repeat("a", 201),
@@ -178,7 +178,7 @@ func TestTask_Update(t *testing.T) {
 		{
 			name: "更新描述过长",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				return task
 			},
 			updateTitle: "Test",
@@ -189,7 +189,7 @@ func TestTask_Update(t *testing.T) {
 		{
 			name: "更新优先级无效",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				return task
 			},
 			updateTitle: "Test",
@@ -233,7 +233,7 @@ func TestTask_Complete(t *testing.T) {
 		{
 			name: "完成待处理任务",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				return task
 			},
 			wantErr: nil,
@@ -241,7 +241,7 @@ func TestTask_Complete(t *testing.T) {
 		{
 			name: "完成进行中任务",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				task.Status = StatusInProgress
 				return task
 			},
@@ -250,7 +250,7 @@ func TestTask_Complete(t *testing.T) {
 		{
 			name: "重复完成已完成任务",
 			taskSetup: func() *Task {
-				task, _ := NewTask("Test", "Desc", PriorityMedium)
+				task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 				task.Complete()
 				return task
 			},
@@ -319,7 +319,7 @@ func TestTask_SetDueDate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			task, _ := NewTask("Test", "Desc", PriorityMedium)
+			task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 			oldUpdatedAt := task.UpdatedAt
 
 			time.Sleep(time.Millisecond)
@@ -343,7 +343,7 @@ func TestTask_SetDueDate(t *testing.T) {
 // TestTask_AddTag 测试添加标签
 func TestTask_AddTag(t *testing.T) {
 	t.Run("添加有效标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 		oldUpdatedAt := task.UpdatedAt
 
 		time.Sleep(time.Millisecond)
@@ -358,7 +358,7 @@ func TestTask_AddTag(t *testing.T) {
 	})
 
 	t.Run("添加空名称标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 
 		err := task.AddTag(Tag{Name: "", Color: "#ff0000"})
 
@@ -368,7 +368,7 @@ func TestTask_AddTag(t *testing.T) {
 	})
 
 	t.Run("添加重复标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 		task.AddTag(Tag{Name: "test", Color: "#ff0000"})
 
 		err := task.AddTag(Tag{Name: "test", Color: "#00ff00"})
@@ -379,7 +379,7 @@ func TestTask_AddTag(t *testing.T) {
 	})
 
 	t.Run("添加过多标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 
 		// 添加 10 个标签
 		for i := 0; i < 10; i++ {
@@ -396,7 +396,7 @@ func TestTask_AddTag(t *testing.T) {
 	})
 
 	t.Run("添加多个不同标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 
 		tags := []Tag{
 			{Name: "urgent", Color: "#ff0000"},
@@ -419,7 +419,7 @@ func TestTask_AddTag(t *testing.T) {
 // TestTask_RemoveTag 测试移除标签
 func TestTask_RemoveTag(t *testing.T) {
 	t.Run("移除存在的标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 		task.AddTag(Tag{Name: "test1", Color: "#ff0000"})
 		task.AddTag(Tag{Name: "test2", Color: "#00ff00"})
 		task.AddTag(Tag{Name: "test3", Color: "#0000ff"})
@@ -436,7 +436,7 @@ func TestTask_RemoveTag(t *testing.T) {
 	})
 
 	t.Run("移除不存在的标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 		task.AddTag(Tag{Name: "test", Color: "#ff0000"})
 
 		task.RemoveTag("nonexistent")
@@ -446,7 +446,7 @@ func TestTask_RemoveTag(t *testing.T) {
 	})
 
 	t.Run("移除所有标签", func(t *testing.T) {
-		task, _ := NewTask("Test", "Desc", PriorityMedium)
+		task, _ := NewTask("test-user-id", "Test", "Desc", PriorityMedium)
 		task.AddTag(Tag{Name: "test1", Color: "#ff0000"})
 		task.AddTag(Tag{Name: "test2", Color: "#00ff00"})
 
@@ -503,7 +503,7 @@ func TestPriority_IsValid(t *testing.T) {
 
 // TestTask_CompletePreservesData 测试完成任务保留其他数据
 func TestTask_CompletePreservesData(t *testing.T) {
-	task, _ := NewTask("Test Task", "Test Description", PriorityHigh)
+	task, _ := NewTask("test-user-id", "Test Task", "Test Description", PriorityHigh)
 	dueDate := time.Now().Add(24 * time.Hour)
 	task.SetDueDate(dueDate)
 	task.AddTag(Tag{Name: "urgent", Color: "#ff0000"})
@@ -521,7 +521,7 @@ func TestTask_CompletePreservesData(t *testing.T) {
 
 // TestTask_UpdatePreservesStatus 测试更新任务保留状态（如果未完成）
 func TestTask_UpdatePreservesStatus(t *testing.T) {
-	task, _ := NewTask("Test", "Desc", PriorityLow)
+	task, _ := NewTask("test-user-id", "Test", "Desc", PriorityLow)
 	task.Status = StatusInProgress
 
 	err := task.Update("Updated", "Updated Desc", PriorityHigh)

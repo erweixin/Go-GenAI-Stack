@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/user/http/dto"
-	"github.com/erweixin/go-genai-stack/backend/domains/user/service"
 	"github.com/erweixin/go-genai-stack/backend/infrastructure/middleware"
 )
 
@@ -36,28 +35,17 @@ func (deps *HandlerDependencies) UpdateUserProfileHandler(ctx context.Context, c
 		return
 	}
 
-	// 3. 调用 Domain Service
-	output, err := deps.userService.UpdateUserProfile(ctx, service.UpdateUserProfileInput{
-		UserID:    userID,
-		Username:  req.Username,
-		FullName:  req.FullName,
-		AvatarURL: req.AvatarURL,
-	})
+	// 3. 转换为 Domain Input（使用转换层）
+	input := toUpdateUserProfileInput(userID, req)
+
+	// 4. 调用 Domain Service
+	output, err := deps.userService.UpdateUserProfile(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 4. 返回响应
-	user := output.User
-	response := dto.UpdateUserProfileResponse{
-		UserID:    user.ID,
-		Username:  user.Username,
-		FullName:  user.FullName,
-		AvatarURL: user.AvatarURL,
-		UpdatedAt: user.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
-
-	c.JSON(200, response)
+	// 5. 转换为 HTTP 响应（使用转换层）
+	c.JSON(200, toUpdateUserProfileResponse(output))
 }
 

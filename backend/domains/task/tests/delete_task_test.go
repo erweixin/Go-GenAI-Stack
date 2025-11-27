@@ -29,6 +29,7 @@ func TestDeleteTask_Success(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	c := app.NewContext(0)
+	SetAuthContext(c, TestUserID)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
 	helper.HandlerDeps.DeleteTaskHandler(context.Background(), c)
@@ -54,6 +55,7 @@ func TestDeleteTask_TASK_NOT_FOUND(t *testing.T) {
 		WillReturnError(sql.ErrNoRows)
 
 	c := app.NewContext(0)
+	SetAuthContext(c, TestUserID)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "nonexistent"})
 
 	helper.HandlerDeps.DeleteTaskHandler(context.Background(), c)
@@ -85,6 +87,7 @@ func TestDeleteTask_DELETION_FAILED(t *testing.T) {
 		WillReturnError(sql.ErrConnDone)
 
 	c := app.NewContext(0)
+	SetAuthContext(c, TestUserID)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
 	helper.HandlerDeps.DeleteTaskHandler(context.Background(), c)

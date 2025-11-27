@@ -62,6 +62,40 @@ type CreateTaskOutput struct {
 	Task *model.Task
 }
 
+// CompleteTaskInput 完成任务输入
+type CompleteTaskInput struct {
+	UserID string // 用户 ID（从 JWT 获取）
+	TaskID string // 任务 ID
+}
+
+// CompleteTaskOutput 完成任务输出
+type CompleteTaskOutput struct {
+	Task *model.Task
+}
+
+// DeleteTaskInput 删除任务输入
+type DeleteTaskInput struct {
+	UserID string // 用户 ID（从 JWT 获取）
+	TaskID string // 任务 ID
+}
+
+// DeleteTaskOutput 删除任务输出
+type DeleteTaskOutput struct {
+	Success   bool      // 是否成功
+	DeletedAt time.Time // 删除时间
+}
+
+// GetTaskInput 获取任务输入
+type GetTaskInput struct {
+	UserID string // 用户 ID（从 JWT 获取）
+	TaskID string // 任务 ID
+}
+
+// GetTaskOutput 获取任务输出
+type GetTaskOutput struct {
+	Task *model.Task
+}
+
 // CreateTask 创建任务（用例实现）
 //
 // 对应 usecases.yaml 中的 CreateTask
@@ -254,20 +288,20 @@ func (s *TaskService) UpdateTask(ctx context.Context, input UpdateTaskInput) (*U
 //  6. RecordCompletionTime
 //  7. SaveTask
 //  8. PublishTaskCompletedEvent
-func (s *TaskService) CompleteTask(ctx context.Context, userID, taskID string) (*model.Task, error) {
+func (s *TaskService) CompleteTask(ctx context.Context, input CompleteTaskInput) (*CompleteTaskOutput, error) {
 	// Step 1: ValidateUserID
-	if userID == "" {
+	if input.UserID == "" {
 		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
 	}
 
 	// Step 2: GetTask
-	task, err := s.taskRepo.FindByID(ctx, taskID)
+	task, err := s.taskRepo.FindByID(ctx, input.TaskID)
 	if err != nil {
 		return nil, fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
 	}
 
 	// Step 3: CheckOwnership
-	if task.UserID != userID {
+	if task.UserID != input.UserID {
 		return nil, fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
 	}
 
@@ -276,73 +310,77 @@ func (s *TaskService) CompleteTask(ctx context.Context, userID, taskID string) (
 		return nil, err
 	}
 
-	// Step 4: RecordCompletionTime（已在 task.Complete() 中完成）
+	// Step 6: RecordCompletionTime（已在 task.Complete() 中完成）
 
-	// Step 5: SaveTask
+	// Step 7: SaveTask
 	if err := s.taskRepo.Update(ctx, task); err != nil {
 		return nil, fmt.Errorf("COMPLETION_FAILED: 完成任务失败")
 	}
 
-	// Step 6: PublishTaskCompletedEvent
+	// Step 8: PublishTaskCompletedEvent
 	// Extension point: 发布事件
 	log.Printf("Task completed: %s", task.ID)
 
-	return task, nil
+	return &CompleteTaskOutput{Task: task}, nil
 }
 
 // DeleteTask 删除任务（用例实现）
 //
 // 对应 usecases.yaml 中的 DeleteTask
-func (s *TaskService) DeleteTask(ctx context.Context, userID, taskID string) error {
+func (s *TaskService) DeleteTask(ctx context.Context, input DeleteTaskInput) (*DeleteTaskOutput, error) {
 	// Step 1: ValidateUserID
-	if userID == "" {
-		return fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
-	}
-
-	// Step 2: GetTask - 确认任务存在
-	task, err := s.taskRepo.FindByID(ctx, taskID)
-	if err != nil {
-		return fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
-	}
-
-	// Step 3: CheckOwnership
-	if task.UserID != userID {
-		return fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
-	}
-
-	// Step 4: DeleteTaskRecord
-	if err := s.taskRepo.Delete(ctx, taskID); err != nil {
-		return fmt.Errorf("DELETION_FAILED: 删除任务失败")
-	}
-
-	// Step 3: PublishTaskDeletedEvent
-	// Extension point: 发布事件
-	log.Printf("Task deleted: %s", taskID)
-
-	return nil
-}
-
-// GetTask 获取任务详情（用例实现）
-//
-// 对应 usecases.yaml 中的 GetTask
-func (s *TaskService) GetTask(ctx context.Context, userID, taskID string) (*model.Task, error) {
-	// Step 1: ValidateUserID
-	if userID == "" {
+	if input.UserID == "" {
 		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
 	}
 
-	// Step 2: GetTask
-	task, err := s.taskRepo.FindByID(ctx, taskID)
+	// Step 2: GetTask - 确认任务存在
+	task, err := s.taskRepo.FindByID(ctx, input.TaskID)
 	if err != nil {
 		return nil, fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
 	}
 
 	// Step 3: CheckOwnership
-	if task.UserID != userID {
+	if task.UserID != input.UserID {
 		return nil, fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
 	}
 
-	return task, nil
+	// Step 4: DeleteTaskRecord
+	if err := s.taskRepo.Delete(ctx, input.TaskID); err != nil {
+		return nil, fmt.Errorf("DELETION_FAILED: 删除任务失败")
+	}
+
+	// Step 5: PublishTaskDeletedEvent
+	// Extension point: 发布事件
+	log.Printf("Task deleted: %s", input.TaskID)
+
+	deletedAt := time.Now()
+	return &DeleteTaskOutput{
+		Success:   true,
+		DeletedAt: deletedAt,
+	}, nil
+}
+
+// GetTask 获取任务详情（用例实现）
+//
+// 对应 usecases.yaml 中的 GetTask
+func (s *TaskService) GetTask(ctx context.Context, input GetTaskInput) (*GetTaskOutput, error) {
+	// Step 1: ValidateUserID
+	if input.UserID == "" {
+		return nil, fmt.Errorf("USER_ID_REQUIRED: 用户 ID 不能为空")
+	}
+
+	// Step 2: GetTask
+	task, err := s.taskRepo.FindByID(ctx, input.TaskID)
+	if err != nil {
+		return nil, fmt.Errorf("TASK_NOT_FOUND: 任务不存在")
+	}
+
+	// Step 3: CheckOwnership
+	if task.UserID != input.UserID {
+		return nil, fmt.Errorf("UNAUTHORIZED_ACCESS: 无权访问此任务")
+	}
+
+	return &GetTaskOutput{Task: task}, nil
 }
 
 // ListTasksInput 列出任务输入

@@ -24,9 +24,10 @@ func TestGetTask_Success(t *testing.T) {
 	createdAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 	updatedAt, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow(
 		"task-123",
+		TestUserID,
 		"Test Task",
 		"Test Description",
 		"pending",
@@ -49,6 +50,7 @@ func TestGetTask_Success(t *testing.T) {
 
 	// 创建 HTTP 上下文
 	c := app.NewContext(0)
+	SetAuthContext(c, TestUserID)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
 
 	// 执行 Handler
@@ -81,6 +83,7 @@ func TestGetTask_TASK_NOT_FOUND(t *testing.T) {
 		WillReturnError(sql.ErrNoRows)
 
 	c := app.NewContext(0)
+	SetAuthContext(c, TestUserID)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "nonexistent-task"})
 
 	helper.HandlerDeps.GetTaskHandler(context.Background(), c)

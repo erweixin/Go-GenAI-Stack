@@ -21,12 +21,13 @@ func TestTaskRepository_Create(t *testing.T) {
 		defer db.Close()
 
 		repo := NewTaskRepository(db)
-		task, _ := model.NewTask("Test Task", "Description", model.PriorityMedium)
+		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 
 		// Mock INSERT tasks
 		mock.ExpectExec("INSERT INTO tasks").
 			WithArgs(
 				task.ID,
+				task.UserID,
 				task.Title,
 				task.Description,
 				string(task.Status),
@@ -50,7 +51,7 @@ func TestTaskRepository_Create(t *testing.T) {
 		defer db.Close()
 
 		repo := NewTaskRepository(db)
-		task, _ := model.NewTask("Test Task", "Description", model.PriorityMedium)
+		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 		task.AddTag(model.Tag{Name: "urgent", Color: "#ff0000"})
 		task.AddTag(model.Tag{Name: "important", Color: "#00ff00"})
 
@@ -78,7 +79,7 @@ func TestTaskRepository_Create(t *testing.T) {
 		defer db.Close()
 
 		repo := NewTaskRepository(db)
-		task, _ := model.NewTask("Test Task", "Description", model.PriorityMedium)
+		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 
 		mock.ExpectExec("INSERT INTO tasks").
 			WillReturnError(fmt.Errorf("database error"))
@@ -102,10 +103,10 @@ func TestTaskRepository_FindByID(t *testing.T) {
 
 		// Mock SELECT tasks
 		rows := sqlmock.NewRows([]string{
-			"id", "title", "description", "status", "priority",
+			"id", "user_id", "title", "description", "status", "priority",
 			"due_date", "created_at", "updated_at", "completed_at",
 		}).AddRow(
-			"task-123", "Test Task", "Description", "pending", "medium",
+			"task-123", "user-123", "Test Task", "Description", "pending", "medium",
 			nil, now, now, nil,
 		)
 		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
@@ -177,7 +178,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		defer db.Close()
 
 		repo := NewTaskRepository(db)
-		task, _ := model.NewTask("Updated Task", "Updated Desc", model.PriorityHigh)
+		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
 		// Mock UPDATE
 		mock.ExpectExec("UPDATE tasks SET").
@@ -210,7 +211,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		defer db.Close()
 
 		repo := NewTaskRepository(db)
-		task, _ := model.NewTask("Updated Task", "Updated Desc", model.PriorityHigh)
+		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 		task.AddTag(model.Tag{Name: "new-tag", Color: "#ff0000"})
 
 		// Mock UPDATE
@@ -238,7 +239,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		defer db.Close()
 
 		repo := NewTaskRepository(db)
-		task, _ := model.NewTask("Updated Task", "Updated Desc", model.PriorityHigh)
+		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
 		// Mock UPDATE returns 0 rows affected
 		mock.ExpectExec("UPDATE tasks SET").
@@ -256,7 +257,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		defer db.Close()
 
 		repo := NewTaskRepository(db)
-		task, _ := model.NewTask("Updated Task", "Updated Desc", model.PriorityHigh)
+		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
 		mock.ExpectExec("UPDATE tasks SET").
 			WillReturnError(fmt.Errorf("database error"))
@@ -345,11 +346,11 @@ func TestTaskRepository_List(t *testing.T) {
 
 		// Mock SELECT tasks
 		rows := sqlmock.NewRows([]string{
-			"id", "title", "description", "status", "priority",
+			"id", "user_id", "title", "description", "status", "priority",
 			"due_date", "created_at", "updated_at", "completed_at",
 		}).
-			AddRow("task-1", "Task 1", "Desc 1", "pending", "medium", nil, now, now, nil).
-			AddRow("task-2", "Task 2", "Desc 2", "completed", "high", nil, now, now, &now)
+			AddRow("task-1", "user-123", "Task 1", "Desc 1", "pending", "medium", nil, now, now, nil).
+			AddRow("task-2", "user-123", "Task 2", "Desc 2", "completed", "high", nil, now, now, &now)
 
 		mock.ExpectQuery("SELECT (.+) FROM tasks").
 			WillReturnRows(rows)
@@ -403,9 +404,9 @@ func TestTaskRepository_List(t *testing.T) {
 
 		// Mock SELECT with WHERE
 		rows := sqlmock.NewRows([]string{
-			"id", "title", "description", "status", "priority",
+			"id", "user_id", "title", "description", "status", "priority",
 			"due_date", "created_at", "updated_at", "completed_at",
-		}).AddRow("task-1", "Task 1", "Desc 1", "pending", "high", nil, now, now, nil)
+		}).AddRow("task-1", "user-123", "Task 1", "Desc 1", "pending", "high", nil, now, now, nil)
 
 		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE").
 			WithArgs("pending", "high", 10, 0).
@@ -443,7 +444,7 @@ func TestTaskRepository_List(t *testing.T) {
 
 		// Mock SELECT
 		rows := sqlmock.NewRows([]string{
-			"id", "title", "description", "status", "priority",
+			"id", "user_id", "title", "description", "status", "priority",
 			"due_date", "created_at", "updated_at", "completed_at",
 		})
 		mock.ExpectQuery("SELECT (.+) FROM tasks").

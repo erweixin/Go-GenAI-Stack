@@ -22,6 +22,9 @@ import (
 // ========== 测试常量 ==========
 
 const (
+	// 测试用户数据
+	TestUserID = "test-user-123"
+
 	// 测试任务数据
 	TestTaskID          = "test-task-123"
 	TestTaskTitle       = "Test Task"
@@ -128,18 +131,28 @@ func (h *TestHelper) PerformRequest(method, path string, body io.Reader, headers
 }
 
 // RegisterRoute 注册路由到测试 Server
+//
+// 自动为所有路由添加测试用户 ID (模拟 JWT 中间件)
 func (h *TestHelper) RegisterRoute(method, path string, handler app.HandlerFunc) {
+	// 包装 handler，自动注入测试用户 ID
+	wrappedHandler := func(ctx context.Context, c *app.RequestContext) {
+		// 模拟 JWT 中间件注入 user_id
+		SetAuthContext(c, TestUserID)
+		// 调用原始 handler
+		handler(ctx, c)
+	}
+
 	switch method {
 	case "GET":
-		h.Server.GET(path, handler)
+		h.Server.GET(path, wrappedHandler)
 	case "POST":
-		h.Server.POST(path, handler)
+		h.Server.POST(path, wrappedHandler)
 	case "PUT":
-		h.Server.PUT(path, handler)
+		h.Server.PUT(path, wrappedHandler)
 	case "DELETE":
-		h.Server.DELETE(path, handler)
+		h.Server.DELETE(path, wrappedHandler)
 	case "PATCH":
-		h.Server.PATCH(path, handler)
+		h.Server.PATCH(path, wrappedHandler)
 	}
 }
 
@@ -173,11 +186,21 @@ func (h *TestHelper) PerformRealRequest(t *testing.T, method, path string, body 
 	return client.Do(req)
 }
 
+// ========== 测试辅助方法 ==========
+
+// SetAuthContext 为测试上下文设置认证信息
+//
+// 模拟 JWT 中间件注入的 user_id
+func SetAuthContext(c *app.RequestContext, userID string) {
+	c.Set("user_id", userID)
+}
+
 // ========== 测试数据生成器 ==========
 
 // CreateTestTask 创建标准测试任务
 func CreateTestTask() *model.Task {
 	task, _ := model.NewTask(
+		TestUserID,
 		TestTaskTitle,
 		TestTaskDescription,
 		model.Priority(TestPriority),
@@ -206,7 +229,7 @@ func CreateTestTaskWithTags(tagNames ...string) *model.Task {
 
 // CreateTestTaskWithCustomFields 创建自定义字段的测试任务
 func CreateTestTaskWithCustomFields(title, description string, priority model.Priority) *model.Task {
-	task, _ := model.NewTask(title, description, priority)
+	task, _ := model.NewTask(TestUserID, title, description, priority)
 	return task
 }
 
@@ -222,10 +245,10 @@ func CreateCompletedTestTask() *model.Task {
 // MockFindByID Mock 查询任务
 func MockFindByID(mock sqlmock.Sqlmock, task *model.Task) {
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority",
+		"id", "user_id", "title", "description", "status", "priority",
 		"due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow(
-		task.ID, task.Title, task.Description,
+		task.ID, task.UserID, task.Title, task.Description,
 		string(task.Status), string(task.Priority),
 		task.DueDate, task.CreatedAt, task.UpdatedAt, task.CompletedAt,
 	)

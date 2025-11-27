@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"time"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/task/http/dto"
@@ -16,14 +15,15 @@ import (
 //   - Method: POST
 //   - Path: /api/tasks/:id/complete
 //
-// Handler 职责：
+// Handler 职责（瘦层）：
 //  1. 解析 HTTP 请求
-//  2. 调用 Domain Service
-//  3. 转换 Domain Output → HTTP 响应
+//  2. 转换 DTO（使用转换层）
+//  3. 调用 Domain Service
+//  4. 转换响应（使用转换层）
 //
 // 业务逻辑在 service.TaskService.CompleteTask() 中实现
 func (deps *HandlerDependencies) CompleteTaskHandler(ctx context.Context, c *app.RequestContext) {
-	// 1. 获取用户 ID（从 JWT 中间件注入）
+	// 1. 获取用户 ID
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(401, dto.ErrorResponse{
@@ -51,17 +51,16 @@ func (deps *HandlerDependencies) CompleteTaskHandler(ctx context.Context, c *app
 		return
 	}
 
-	// 3. 调用 Domain Service
-	task, err := deps.taskService.CompleteTask(ctx, userIDStr, taskID)
+	// 3. 转换为 Domain Input（使用转换层）
+	input := toCompleteTaskInput(userIDStr, taskID)
+
+	// 4. 调用 Domain Service
+	output, err := deps.taskService.CompleteTask(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 4. 转换为 HTTP 响应
-	c.JSON(200, dto.CompleteTaskResponse{
-		TaskID:      task.ID,
-		Status:      string(task.Status),
-		CompletedAt: task.CompletedAt.Format(time.RFC3339),
-	})
+	// 5. 转换为 HTTP 响应（使用转换层）
+	c.JSON(200, toCompleteTaskResponse(output))
 }

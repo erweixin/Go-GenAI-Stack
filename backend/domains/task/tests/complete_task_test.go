@@ -22,8 +22,8 @@ func TestCompleteTask_Success(t *testing.T) {
 
 	// Mock 查询任务
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
-	}).AddRow("task-123", "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+	}).AddRow("task-123", TestUserID, "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
@@ -56,6 +56,7 @@ func TestCompleteTask_Success(t *testing.T) {
 
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
+	SetAuthContext(c, TestUserID)
 
 	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 
@@ -87,6 +88,7 @@ func TestCompleteTask_TASK_NOT_FOUND(t *testing.T) {
 
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "nonexistent"})
+	SetAuthContext(c, TestUserID)
 
 	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 
@@ -108,8 +110,8 @@ func TestCompleteTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 	// Mock 查询任务（已完成状态）
 	completedAt := time.Now()
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
-	}).AddRow("task-123", "Test Task", "Description", "completed", "medium", nil, time.Now(), time.Now(), &completedAt)
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+	}).AddRow("task-123", TestUserID, "Test Task", "Description", "completed", "medium", nil, time.Now(), time.Now(), &completedAt)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
@@ -123,6 +125,7 @@ func TestCompleteTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
+	SetAuthContext(c, TestUserID)
 
 	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 
@@ -148,8 +151,8 @@ func TestCompleteTask_COMPLETION_FAILED(t *testing.T) {
 
 	// Mock 查询成功
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
-	}).AddRow("task-123", "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+	}).AddRow("task-123", TestUserID, "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
@@ -167,6 +170,7 @@ func TestCompleteTask_COMPLETION_FAILED(t *testing.T) {
 
 	c := app.NewContext(0)
 	c.Params = append(c.Params, param.Param{Key: "id", Value: "task-123"})
+	SetAuthContext(c, TestUserID)
 
 	helper.HandlerDeps.CompleteTaskHandler(context.Background(), c)
 

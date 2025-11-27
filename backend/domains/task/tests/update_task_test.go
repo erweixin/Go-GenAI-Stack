@@ -22,8 +22,8 @@ func TestUpdateTask_Success(t *testing.T) {
 
 	// Mock 查询任务
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
-	}).AddRow("task-123", "Old Title", "Old Description", "pending", "low", nil, time.Now(), time.Now(), nil)
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+	}).AddRow("task-123", TestUserID, "Old Title", "Old Description", "pending", "low", nil, time.Now(), time.Now(), nil)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
@@ -127,8 +127,8 @@ func TestUpdateTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 	// Mock 查询任务（已完成状态）
 	completedAt := time.Now()
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
-	}).AddRow("task-123", "Test Task", "Description", "completed", "medium", nil, time.Now(), time.Now(), &completedAt)
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+	}).AddRow("task-123", TestUserID, "Test Task", "Description", "completed", "medium", nil, time.Now(), time.Now(), &completedAt)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
@@ -178,8 +178,8 @@ func TestUpdateTask_INVALID_PRIORITY(t *testing.T) {
 
 	// Mock 查询任务
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
-	}).AddRow("task-123", "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+	}).AddRow("task-123", TestUserID, "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").
@@ -225,8 +225,8 @@ func TestUpdateTask_UPDATE_FAILED(t *testing.T) {
 
 	// Mock 查询成功
 	rows := sqlmock.NewRows([]string{
-		"id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
-	}).AddRow("task-123", "Old Title", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
+		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
+	}).AddRow("task-123", TestUserID, "Old Title", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
 	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 		WithArgs("task-123").

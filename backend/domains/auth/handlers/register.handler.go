@@ -5,7 +5,6 @@ import (
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/erweixin/go-genai-stack/backend/domains/auth/http/dto"
-	"github.com/erweixin/go-genai-stack/backend/domains/auth/service"
 )
 
 // RegisterHandler 用户注册 Handler
@@ -15,10 +14,11 @@ import (
 // HTTP Path: /api/auth/register
 // 认证：不需要
 //
-// 职责：
+// Handler 职责（瘦层）：
 //   - 解析 HTTP 请求
-//   - 调用 Domain Service 注册用户
-//   - 返回 HTTP 响应
+//   - 转换 DTO（使用转换层）
+//   - 调用 Domain Service
+//   - 转换响应（使用转换层）
 func (deps *HandlerDependencies) RegisterHandler(ctx context.Context, c *app.RequestContext) {
 	// 1. 解析请求
 	var req dto.RegisterRequest
@@ -27,27 +27,17 @@ func (deps *HandlerDependencies) RegisterHandler(ctx context.Context, c *app.Req
 		return
 	}
 
-	// 2. 调用 Domain Service
-	output, err := deps.authService.Register(ctx, service.RegisterInput{
-		Email:    req.Email,
-		Password: req.Password,
-		Username: req.Username,
-		FullName: req.FullName,
-	})
+	// 2. 转换为 Domain Input（使用转换层）
+	input := toRegisterInput(req)
+
+	// 3. 调用 Domain Service
+	output, err := deps.authService.Register(ctx, input)
 	if err != nil {
 		handleDomainError(c, err)
 		return
 	}
 
-	// 3. 返回响应
-	response := dto.RegisterResponse{
-		UserID:       output.UserID,
-		Email:        output.Email,
-		AccessToken:  output.AccessToken,
-		RefreshToken: output.RefreshToken,
-		ExpiresIn:    output.ExpiresIn,
-	}
-
-	c.JSON(201, response)
+	// 4. 转换为 HTTP 响应（使用转换层）
+	c.JSON(201, toRegisterResponse(output))
 }
 
