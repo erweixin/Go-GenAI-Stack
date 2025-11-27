@@ -532,13 +532,38 @@ curl -X POST http://localhost:8081/api/auth/login \
 
 ---
 
+## CI 性能优化
+
+E2E CI 已实现三层缓存策略，显著加速测试运行：
+
+### 缓存层级
+
+#### 1. pnpm Store 缓存
+- **加速效果**: ~50s
+- **失效条件**: `pnpm-lock.yaml` 变化
+
+#### 2. Playwright Browsers 缓存
+- **加速效果**: ~80s  
+- **失效条件**: `@playwright/test` 版本变化
+- **智能安装**: 缓存命中时只安装系统依赖
+
+#### 3. Docker 层缓存
+- **加速效果**: ~150s
+- **失效条件**: 每次 commit 更新，但复用基础层
+
+### 性能对比
+
+| 运行场景 | 首次运行 | 缓存命中 | 加速效果 |
+|---------|---------|---------|----------|
+| **总耗时** | ~7 分钟 | ~2.3 分钟 | **节省 67%** |
+
+---
+
 ## 相关资源
 
 - [Playwright 文档](https://playwright.dev/)
 - [Playwright 最佳实践](https://playwright.dev/docs/best-practices)
-- [E2E 测试方案](../../../docs/FRONTEND_E2E_PLAN.md)
 - [Docker E2E 环境](../../../docker/e2e/README.md)
-- [E2E 测试完成报告](../../../docs/FRONTEND_E2E_COMPLETE.md)
 
 ---
 

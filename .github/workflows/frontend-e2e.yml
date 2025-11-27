@@ -74,16 +74,51 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
       
+      - name: Get Playwright version
+        id: playwright-version
+        working-directory: frontend/web
+        run: echo "version=$(pnpm list @playwright/test --depth=0 --json | jq -r '.[0].devDependencies["@playwright/test"].version')" >> $GITHUB_OUTPUT
+      
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-chromium
+          restore-keys: |
+            ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}-
+            ${{ runner.os }}-playwright-
+      
       - name: Install Playwright Browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: frontend/web
         run: pnpm exec playwright install --with-deps chromium
+      
+      - name: Install Playwright dependencies (if cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: frontend/web
+        run: pnpm exec playwright install-deps chromium
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       
       - name: Start E2E environment (Docker Compose)
         working-directory: docker
         env:
           COMPOSE_HTTP_TIMEOUT: 120
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
         run: |
-          echo "🐳 Starting E2E environment..."
+          echo "🐳 Building and starting E2E environment..."
+          docker compose -f docker-compose-e2e.yml build --build-arg BUILDKIT_INLINE_CACHE=1
           docker compose -f docker-compose-e2e.yml up -d
           
           echo "⏳ Waiting for Postgres to be healthy..."
