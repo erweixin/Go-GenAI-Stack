@@ -361,6 +361,352 @@ docker compose restart backend
 docker compose restart
 ```
 
+## 🗄️ 数据库管理
+
+### 首次部署
+
+首次部署时，数据库会通过 `init-db.sql` 自动初始化。如果需要使用 Atlas 迁移系统：
+
+```bash
+# 1. 确保服务已启动
+cd docker/prod
+./start.sh
+
+# 2. 进入数据库管理目录
+cd ../../backend/database
+
+# 3. 配置生产环境连接（临时）
+export ATLAS_DB_URL="postgres://postgres:YOUR_PASSWORD@localhost:5432/go_genai_stack_prod?sslmode=disable"
+
+# 4. 查看当前迁移状态
+atlas migrate status \
+  --dir "file://migrations" \
+  --url "$ATLAS_DB_URL"
+
+# 5. 如果需要，应用迁移
+atlas migrate apply \
+  --dir "file://migrations" \
+  --url "$ATLAS_DB_URL"
+```
+
+### Schema 更新（日常迁移）
+
+当需要更新数据库 Schema 时：
+
+#### 1️⃣ 开发环境生成迁移
+
+```bash
+# 在开发环境
+cd backend/database
+
+# 1. 修改 schema.sql
+vim schema.sql
+
+# 2. 生成迁移文件
+make diff NAME=add_user_feature
+
+# 3. 测试迁移
+make apply
+
+# 4. 提交迁移文件
+git add migrations/
+git commit -m "feat: add user feature migration"
+git push
+```
+
+#### 2️⃣ 生产环境应用迁移
+
+**方法 A：使用容器内 Atlas（推荐）**
+
+```bash
+cd docker/prod
+
+# 1. 进入后端容器
+docker compose exec backend sh
+
+# 2. 进入数据库目录
+cd database
+
+# 3. 查看迁移状态
+atlas migrate status \
+  --dir "file://migrations" \
+  --url "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/go_genai_stack_prod?sslmode=require"
+
+# 4. 应用迁移
+atlas migrate apply \
+  --dir "file://migrations" \
+  --url "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/go_genai_stack_prod?sslmode=require"
+
+# 5. 退出容器
+exit
+```
+
+**方法 B：从主机直接连接**
+
+```bash
+cd backend/database
+
+# 1. 配置数据库连接
+export ATLAS_DB_URL="postgres://postgres:YOUR_PASSWORD@YOUR_HOST:5432/go_genai_stack_prod?sslmode=require"
+
+# 2. 查看待应用的迁移
+atlas migrate status \
+  --dir "file://migrations" \
+  --url "$ATLAS_DB_URL"
+
+# 3. 应用迁移
+atlas migrate apply \
+  --dir "file://migrations" \
+  --url "$ATLAS_DB_URL"
+```
+
+#### 3️⃣ 验证迁移结果
+
+```bash
+# 查看迁移历史
+atlas migrate status \
+  --dir "file://migrations" \
+  --url "$ATLAS_DB_URL"
+
+# 检查数据库结构
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "\d"
+
+# 查看特定表结构
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "\d users"
+
+# 测试后端服务
+curl http://localhost:8080/health
+```
+
+### 查看迁移状态
+
+```bash
+# 进入后端容器
+docker compose exec backend sh
+
+# 查看当前迁移版本
+atlas migrate status \
+  --dir "file://database/migrations" \
+  --url "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/go_genai_stack_prod?sslmode=require"
+
+# 输出示例：
+# Migration Status: OK
+#   -- Current Version: 20241127115128
+#   -- Next Version:    Already at latest version
+#   -- Executed Files:  3
+```
+
+### 迁移回滚
+
+**⚠️ 警告**：生产环境回滚需谨慎！
+
+Atlas 本身不支持自动回滚，但你可以手动执行：
+
+```bash
+# 1. 创建回滚迁移
+cd backend/database
+
+# 2. 手动编写回滚 SQL
+vim migrations/YYYYMMDD_rollback_feature.sql
+
+# 内容示例：
+# -- 回滚 add_user_bio
+# ALTER TABLE users DROP COLUMN bio;
+
+# 3. 应用回滚迁移
+make apply
+```
+
+**最佳实践**：
+- ✅ 避免删除列，使用标记废弃
+- ✅ 新增列使用 NULL 或默认值
+- ✅ 在测试环境先验证
+- ✅ 准备好回滚计划
+
+### 零停机迁移
+
+对于大型表的 Schema 变更：
+
+#### 1️⃣ 添加列（安全）
+
+```sql
+-- ✅ 使用默认值，无需锁表
+ALTER TABLE users ADD COLUMN bio TEXT DEFAULT '';
+```
+
+#### 2️⃣ 删除列（分步进行）
+
+```sql
+-- 步骤 1: 停止使用该列（代码部署）
+-- 步骤 2: 等待几天确认无问题
+-- 步骤 3: 删除列（迁移）
+ALTER TABLE users DROP COLUMN old_column;
+```
+
+#### 3️⃣ 修改列（使用中间列）
+
+```sql
+-- 步骤 1: 添加新列
+ALTER TABLE users ADD COLUMN email_new VARCHAR(255);
+
+-- 步骤 2: 数据迁移（代码部署，双写）
+-- 步骤 3: 删除旧列，重命名新列
+ALTER TABLE users DROP COLUMN email;
+ALTER TABLE users RENAME COLUMN email_new TO email;
+```
+
+### 数据库维护
+
+```bash
+# 查看数据库大小
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "
+  SELECT 
+    pg_size_pretty(pg_database_size('go_genai_stack_prod')) as size;
+"
+
+# 查看表大小
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "
+  SELECT 
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+  FROM pg_tables
+  WHERE schemaname = 'public'
+  ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+"
+
+# 分析和优化
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "
+  VACUUM ANALYZE;
+"
+
+# 重建索引
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "
+  REINDEX DATABASE go_genai_stack_prod;
+"
+```
+
+### 迁移最佳实践
+
+#### ✅ 部署前
+
+1. **在测试环境验证**
+   ```bash
+   # 在开发/测试环境先测试迁移
+   cd docker/e2e
+   ./stop.sh --clean && ./start.sh
+   cd ../../backend/database
+   make apply
+   ```
+
+2. **备份数据库**
+   ```bash
+   # 执行迁移前先备份（见下方备份章节）
+   cd docker/prod
+   docker compose exec postgres pg_dump -U postgres go_genai_stack_prod > backup_before_migration.sql
+   ```
+
+3. **检查迁移内容**
+   ```bash
+   # 查看将要执行的 SQL
+   cat backend/database/migrations/*_your_change.sql
+   ```
+
+#### ✅ 部署时
+
+1. **使用事务**（Atlas 默认）
+   - 迁移失败自动回滚
+   - 保证数据一致性
+
+2. **监控执行时间**
+   ```bash
+   # 对于大表变更，估算时间
+   EXPLAIN ANALYZE ALTER TABLE ...
+   ```
+
+3. **维护窗口**
+   - 大型变更在低峰期执行
+   - 准备回滚方案
+
+#### ✅ 部署后
+
+1. **验证迁移**
+   ```bash
+   # 检查迁移状态
+   atlas migrate status ...
+   
+   # 测试应用功能
+   curl http://localhost:8080/health
+   ```
+
+2. **监控性能**
+   - 查看 Grafana 监控
+   - 检查数据库负载
+   - 查看应用日志
+
+3. **准备回滚**
+   - 保留备份至少 7 天
+   - 记录迁移版本
+   - 文档化回滚步骤
+
+### 常见问题
+
+#### 问题 1：迁移失败
+
+```bash
+# 查看错误信息
+docker compose logs backend
+
+# 检查数据库连接
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod
+
+# 查看迁移历史表
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "
+  SELECT * FROM atlas_schema_revisions ORDER BY executed_at DESC LIMIT 5;
+"
+```
+
+#### 问题 2：版本冲突
+
+**错误**：`sql/migrate: checksum mismatch`
+
+**原因**：迁移文件被修改
+
+**解决**：
+```bash
+# 重新生成校验和（仅开发环境）
+cd backend/database
+make hash
+
+# 生产环境：回退到正确版本
+git checkout HEAD -- migrations/
+```
+
+#### 问题 3：迁移执行时间过长
+
+**解决**：
+```bash
+# 1. 检查是否有锁表
+docker compose exec postgres psql -U postgres -d go_genai_stack_prod -c "
+  SELECT * FROM pg_stat_activity WHERE state = 'active';
+"
+
+# 2. 使用 CONCURRENTLY（不锁表）
+CREATE INDEX CONCURRENTLY idx_users_email ON users(email);
+
+# 3. 分批执行数据迁移
+UPDATE users SET new_column = old_column WHERE id < 1000;
+-- 分多次执行，避免长时间锁表
+```
+
+### 相关文档
+
+- [数据库管理完整文档](../../backend/database/README.md)
+- [Atlas CLI 参考](https://atlasgo.io/cli-reference)
+- [PostgreSQL 维护](https://www.postgresql.org/docs/current/maintenance.html)
+
+---
+
 ## 💾 数据备份与恢复
 
 ### 数据库备份
