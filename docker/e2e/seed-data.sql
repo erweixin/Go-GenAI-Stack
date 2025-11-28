@@ -18,7 +18,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- E2E 测试用户
 -- Email: e2e-test@example.com
 -- Password: Test123456!
--- Hash: bcrypt hash of "Test123456!"
+-- Hash: bcrypt hash of "Test123456!" (cost 10)
 INSERT INTO users (
     id,
     email,
@@ -33,7 +33,7 @@ INSERT INTO users (
     gen_random_uuid(),
     'e2e-test@example.com',
     'e2e-test-user',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMye6YI0yGz3dGS2XN9p0ZEd7tOLJ1R0PbW',
+    '$2a$10$yzEocIrL.wWrXOGN7HsrP.TKSUAaU4naOTuB3bJNKn4jBW0a3MMjm',
     'E2E Test User',
     'active',
     CURRENT_TIMESTAMP,

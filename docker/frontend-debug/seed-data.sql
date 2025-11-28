@@ -17,7 +17,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 前端调试测试用户
 -- Email: frontend-debug@example.com
 -- Password: Frontend123456!
--- Hash: bcrypt hash of "Frontend123456!"
+-- Hash: bcrypt hash of "Frontend123456!" (cost 10)
 INSERT INTO users (
     id,
     email,
@@ -32,7 +32,7 @@ INSERT INTO users (
     gen_random_uuid(),
     'frontend-debug@example.com',
     'frontend-debug-user',
-    '$2a$10$N9qo8uLOickgx2ZMRZoMye6YI0yGz3dGS2XN9p0ZEd7tOLJ1R0PbW',
+    '$2a$10$kikYrmIvmqok2DL7uecsbOeeVb5XZhxEfxm4CojMZ9vNn86jZdGL.',
     'Frontend Debug User',
     'active',
     CURRENT_TIMESTAMP,
