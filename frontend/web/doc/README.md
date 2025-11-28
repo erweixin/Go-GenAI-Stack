@@ -130,7 +130,7 @@ pnpm e2e:teardown # 清理环境
 1. **E2E 环境启动失败？**
    ```bash
    # 查看日志
-   docker-compose -f docker/docker-compose-e2e.yml logs
+   cd docker/e2e && docker compose logs
    
    # 完全重置
    ./docker/e2e/stop.sh --clean

@@ -25,7 +25,7 @@ docker/e2e/
 ./docker/e2e/start.sh
 
 # 方式 2：使用 Docker Compose
-docker-compose -f docker/docker-compose-e2e.yml up -d
+cd docker/e2e && docker compose up -d
 ```
 
 ### 2. 运行 E2E 测试
@@ -50,7 +50,7 @@ pnpm e2e:ui           # UI 模式（推荐）
 
 ## 🐳 服务配置
 
-### docker-compose-e2e.yml
+### docker-compose.yml
 
 包含两个服务：
 
@@ -160,17 +160,17 @@ pnpm e2e:ui           # UI 模式（推荐）
 
 ```bash
 # 查看所有服务日志
-docker-compose -f docker/docker-compose-e2e.yml logs -f
+cd docker/e2e && docker compose logs -f
 
 # 查看特定服务日志
-docker-compose -f docker/docker-compose-e2e.yml logs -f postgres-e2e
-docker-compose -f docker/docker-compose-e2e.yml logs -f backend-e2e
+cd docker/e2e && docker compose logs -f postgres-e2e
+cd docker/e2e && docker compose logs -f backend-e2e
 ```
 
 ### 检查服务状态
 
 ```bash
-docker-compose -f docker/docker-compose-e2e.yml ps
+cd docker/e2e && docker compose ps
 ```
 
 ### 进入容器
@@ -207,7 +207,7 @@ curl -X POST http://localhost:8081/api/v1/auth/login \
 lsof -i :5433
 lsof -i :8081
 
-# 停止占用端口的服务或修改 docker-compose-e2e.yml 中的端口
+# 停止占用端口的服务或修改 docker/e2e/docker-compose.yml 中的端口
 ```
 
 #### 问题 2：服务启动失败
@@ -215,10 +215,10 @@ lsof -i :8081
 **解决**：
 ```bash
 # 查看日志
-docker-compose -f docker/docker-compose-e2e.yml logs
+cd docker/e2e && docker compose logs
 
 # 重新构建并启动
-docker-compose -f docker/docker-compose-e2e.yml up -d --build
+cd docker/e2e && docker compose up -d --build
 ```
 
 #### 问题 3：数据库连接失败
@@ -226,7 +226,7 @@ docker-compose -f docker/docker-compose-e2e.yml up -d --build
 **解决**：
 ```bash
 # 检查 Postgres 健康状态
-docker-compose -f docker/docker-compose-e2e.yml ps postgres-e2e
+cd docker/e2e && docker compose ps postgres-e2e
 
 # 手动连接测试
 docker exec -it go-genai-stack-postgres-e2e psql -U postgres -d go_genai_stack_e2e -c "SELECT 1"
@@ -243,7 +243,7 @@ docker exec -it go-genai-stack-postgres-e2e psql -U postgres -d go_genai_stack_e
 ./docker/e2e/stop.sh --clean
 
 # 或使用 Docker Compose
-docker-compose -f docker/docker-compose-e2e.yml down -v
+cd docker/e2e && docker compose down -v
 
 # 清理未使用的镜像
 docker image prune -f
@@ -265,10 +265,10 @@ docker image prune -f
 
 ### 修改后端配置
 
-编辑 `docker-compose-e2e.yml` 中的环境变量，然后重启：
+编辑 `docker/e2e/docker-compose.yml` 中的环境变量，然后重启：
 
 ```bash
-docker-compose -f docker/docker-compose-e2e.yml restart backend-e2e
+cd docker/e2e && docker compose restart backend-e2e
 ```
 
 ### 使用自定义环境变量

@@ -58,7 +58,7 @@ pnpm dev:debug
 ### 方法 3: Docker Compose
 
 ```bash
-docker compose -f docker/docker-compose-debug.yml up -d
+cd docker/debug && docker compose up -d
 cd frontend/web
 VITE_API_BASE_URL=http://localhost:8082 pnpm dev
 ```
@@ -121,19 +121,19 @@ pnpm debug:dev        # 启动环境 + 运行前端
 
 ```bash
 # 启动
-docker compose -f docker/docker-compose-debug.yml up -d
+cd docker/debug && docker compose up -d
 
 # 停止
-docker compose -f docker/docker-compose-debug.yml down
+cd docker/debug && docker compose down
 
 # 停止并清理数据
-docker compose -f docker/docker-compose-debug.yml down -v
+cd docker/debug && docker compose down -v
 
 # 查看日志
-docker compose -f docker/docker-compose-debug.yml logs -f
+cd docker/debug && docker compose logs -f
 
 # 重启服务
-docker compose -f docker/docker-compose-debug.yml restart backend-debug
+cd docker/debug && docker compose restart backend-debug
 ```
 
 ---
@@ -186,7 +186,7 @@ lsof -i :8082
 # 停止占用端口的进程
 kill -9 <PID>
 
-# 或修改 docker-compose-debug.yml 中的端口
+# 或修改 docker/debug/docker-compose.yml 中的端口
 ```
 
 ### 2. 服务无法启动
@@ -197,7 +197,7 @@ kill -9 <PID>
 
 ```bash
 # 查看详细日志
-docker compose -f docker/docker-compose-debug.yml logs
+cd docker/debug && docker compose logs
 
 # 清理并重新启动
 ./docker/debug/stop.sh --clean
@@ -212,13 +212,13 @@ docker compose -f docker/docker-compose-debug.yml logs
 
 ```bash
 # 检查容器状态
-docker compose -f docker/docker-compose-debug.yml ps
+cd docker/debug && docker compose ps
 
 # 查看健康检查状态
 docker inspect go-genai-stack-postgres-debug --format='{{.State.Health.Status}}'
 
 # 查看数据库日志
-docker compose -f docker/docker-compose-debug.yml logs postgres-debug
+cd docker/debug && docker compose logs postgres-debug
 ```
 
 ### 4. 后端 API 502/503
@@ -232,10 +232,10 @@ docker compose -f docker/docker-compose-debug.yml logs postgres-debug
 curl http://localhost:8082/health
 
 # 查看后端日志
-docker compose -f docker/docker-compose-debug.yml logs backend-debug
+cd docker/debug && docker compose logs backend-debug
 
 # 重启后端
-docker compose -f docker/docker-compose-debug.yml restart backend-debug
+cd docker/debug && docker compose restart backend-debug
 ```
 
 ---
@@ -261,8 +261,8 @@ pnpm debug:clean
 pnpm debug:setup
 
 # 方法 3: 手动清理
-docker compose -f docker/docker-compose-debug.yml down -v
-docker compose -f docker/docker-compose-debug.yml up -d
+cd docker/debug && docker compose down -v
+cd docker/debug && docker compose up -d
 ```
 
 ---
@@ -300,7 +300,7 @@ docker compose -f docker/docker-compose-debug.yml up -d
 
 ```bash
 # 遇到问题时，先查看日志
-docker compose -f docker/docker-compose-debug.yml logs -f backend-debug
+cd docker/debug && docker compose logs -f backend-debug
 ```
 
 ### 4. 端口管理
@@ -335,7 +335,7 @@ VALUES ('user-uuid', 'Custom Task', 'Description', 'pending', 'high');
 
 ### 修改端口映射
 
-编辑 `docker/docker-compose-debug.yml`：
+编辑 `docker/debug/docker-compose.yml`：
 
 ```yaml
 services:

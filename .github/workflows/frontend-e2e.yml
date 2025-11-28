@@ -109,7 +109,7 @@ jobs:
             ${{ runner.os }}-buildx-
       
       - name: Start E2E environment (Docker Compose)
-        working-directory: docker
+        working-directory: docker/e2e
         env:
           COMPOSE_HTTP_TIMEOUT: 120
           DOCKER_BUILDKIT: 1
@@ -176,7 +176,7 @@ jobs:
       
       - name: Show Docker logs on failure
         if: failure()
-        working-directory: docker
+        working-directory: docker/e2e
         run: |
           echo "📊 Container Status:"
           docker compose ps
@@ -193,7 +193,7 @@ jobs:
       
       - name: Stop E2E environment
         if: always()
-        working-directory: docker
+        working-directory: docker/e2e
         run: |
           echo "🛑 Stopping E2E environment..."
           docker compose down -v

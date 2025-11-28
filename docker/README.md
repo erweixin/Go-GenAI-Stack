@@ -5,7 +5,7 @@
 ## 📁 文件说明
 
 - **`docker-compose.yml`**: 完整的 Docker Compose 配置文件，包含后端服务、PostgreSQL、Redis 和可观测性组件
-- **`docker-compose-debug.yml`**: Debug 环境配置，支持热重载和 Delve 调试
+- **`debug/docker-compose.yml`**: Debug 环境配置，支持热重载和 Delve 调试
 - **`docker-up.sh`**: 一键启动脚本（推荐使用）
 - **`env.example`**: 环境变量配置示例文件
 - **`.env`**: 实际环境变量配置（从 env.example 复制，不提交到 Git）
@@ -93,17 +93,17 @@ docker-compose down
 cd docker
 
 # 1. 启动调试环境（基础服务 + 后端服务）
-docker-compose -f docker-compose-debug.yml --profile debug up -d
+cd debug && docker compose --profile debug up -d
 
 # 2. 查看日志（实时查看后端输出）
-docker-compose -f docker-compose-debug.yml logs -f backend
+cd debug && docker compose logs -f backend
 
 # 3. 访问应用
 # - API: http://localhost:8080
 # - Delve 调试端口: localhost:2345
 
 # 4. 停止服务
-docker-compose -f docker-compose-debug.yml --profile debug down
+cd debug && docker compose --profile debug down
 ```
 
 ---
@@ -163,7 +163,7 @@ docker-compose down -v
 - **端口**: `5432` (可通过 `DB_PORT` 环境变量修改)
 - **数据持久化**: 
   - `postgres_data` (docker-compose.yml)
-  - `postgres_debug_data` (docker-compose-debug.yml)
+  - `postgres_debug_data` (debug/docker-compose.yml)
 - **初始化脚本**: `backend/migrations/seed/` 目录下的 SQL 文件会在首次启动时自动执行
 - **健康检查**: 每 10 秒检查一次，超时 5 秒，重试 5 次
 
@@ -178,14 +178,14 @@ docker-compose down -v
 - **端口**: `6379` (可通过 `REDIS_PORT` 环境变量修改)
 - **数据持久化**: 
   - `redis_data` (docker-compose.yml)
-  - `redis_debug_data` (docker-compose-debug.yml)
+  - `redis_debug_data` (debug/docker-compose.yml)
 - **内存限制**: 256MB
 - **淘汰策略**: `allkeys-lru` (最近最少使用)
 
 **默认配置**:
 - 密码: `redis_password`
 
-### Backend (仅 docker-compose-debug.yml)
+### Backend (仅 debug/docker-compose.yml)
 
 - **基础镜像**: `golang:1.21-alpine`
 - **端口**: 
@@ -205,7 +205,7 @@ docker-compose down -v
 
 1. 启动调试环境：
 ```bash
-docker compose -f docker/docker-compose-debug.yml --profile debug up -d
+cd docker/debug && docker compose --profile debug up -d
 ```
 
 2. 在 `.vscode/launch.json` 添加配置：

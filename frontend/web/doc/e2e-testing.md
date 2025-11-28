@@ -443,8 +443,7 @@ await expect(page.locator('text=任务创建成功')).toBeVisible()
 pnpm e2e:setup
 
 # 方式 2: 使用 Docker Compose
-cd docker
-docker-compose -f docker-compose-e2e.yml up -d
+cd docker/e2e && docker compose up -d
 
 # 方式 3: 使用启动脚本
 ./docker/e2e/start.sh
@@ -453,18 +452,17 @@ docker-compose -f docker-compose-e2e.yml up -d
 ### Q2: 如何查看 Docker 服务状态？
 
 ```bash
-cd docker
-docker-compose -f docker-compose-e2e.yml ps
+cd docker/e2e && docker compose ps
 ```
 
 ### Q3: 如何查看 Docker 日志？
 
 ```bash
 # 所有服务
-docker-compose -f docker/docker-compose-e2e.yml logs -f
+cd docker/e2e && docker compose logs -f
 
 # 特定服务
-docker-compose -f docker/docker-compose-e2e.yml logs -f backend-e2e
+cd docker/e2e && docker compose logs -f backend-e2e
 ```
 
 ### Q4: 测试失败后如何清理环境？
