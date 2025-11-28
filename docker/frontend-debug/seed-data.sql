@@ -1,8 +1,14 @@
 -- 前端调试环境测试数据
 -- 用途：为前端开发环境提供测试数据
--- 说明：Schema 由 docker/schema/schema.sql 统一管理
+-- 说明：Schema 由 backend/database/schema.sql 统一管理
 -- 
 -- 依赖：需要先执行 schema.sql
+
+-- ============================================
+-- 确保扩展已启用
+-- ============================================
+-- pgcrypto 提供 gen_random_uuid() 函数
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ============================================
 -- 插入测试数据
@@ -35,36 +41,7 @@ INSERT INTO users (
 );
 
 -- 插入测试 LLM 模型配置
-INSERT INTO llm_models (
-    id,
-    name,
-    provider,
-    model_id,
-    api_endpoint,
-    is_enabled,
-    created_at,
-    updated_at
-) VALUES 
-(
-    gen_random_uuid(),
-    'GPT-4 Turbo',
-    'openai',
-    'gpt-4-turbo-preview',
-    'https://api.openai.com/v1/chat/completions',
-    true,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-),
-(
-    gen_random_uuid(),
-    'Claude 3 Sonnet',
-    'anthropic',
-    'claude-3-sonnet-20240229',
-    'https://api.anthropic.com/v1/messages',
-    true,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-);
+-- 注意：llm_models 表在 schema.sql 中未实现，跳过
 
 -- 插入测试任务
 INSERT INTO tasks (
