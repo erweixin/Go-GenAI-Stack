@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:debug": "VITE_API_BASE_URL=http://localhost:8082 vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -23,7 +24,11 @@
     "e2e:teardown": "../../docker/e2e/stop.sh",
     "e2e:clean": "../../docker/e2e/stop.sh --clean",
     "e2e:all": "pnpm e2e:setup && pnpm e2e && pnpm e2e:teardown",
-    "playwright:install": "playwright install --with-deps"
+    "playwright:install": "playwright install --with-deps",
+    "debug:setup": "../../docker/debug/start.sh",
+    "debug:teardown": "../../docker/debug/stop.sh",
+    "debug:clean": "../../docker/debug/stop.sh --clean",
+    "debug:dev": "pnpm debug:setup && pnpm dev:debug"
   },
   "dependencies": {
     "@go-genai-stack/constants": "workspace:*",
