@@ -1,0 +1,28 @@
+# Grafana 仪表板目录
+
+将 Grafana 仪表板 JSON 文件放在此目录中，它们会自动被加载。
+
+## 推荐仪表板
+
+可以从 Grafana 官方仪表板库下载：
+
+1. **Go Processes** (ID: 6671)
+   - 监控 Go 应用的内存、CPU、Goroutines 等
+
+2. **PostgreSQL Database** (ID: 9628)
+   - 监控数据库性能、连接数、查询性能等
+
+3. **Redis Dashboard** (ID: 11835)
+   - 监控 Redis 性能、内存使用、命令统计等
+
+## 导入方式
+
+1. **通过 UI 导入**:
+   - 访问 Grafana: http://localhost:3000
+   - Dashboards → Import
+   - 输入仪表板 ID 或上传 JSON 文件
+
+2. **自动导入** (推荐):
+   - 将 JSON 文件放在此目录
+   - 重启 Grafana 服务
+

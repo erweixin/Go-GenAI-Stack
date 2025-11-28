@@ -1,0 +1,391 @@
+# ============================================
+# Go-GenAI-Stack 生产环境配置
+# ============================================
+# 用于生产环境的独立 Docker Compose 配置
+#
+# 使用方式：
+#   cd docker/prod
+#   docker compose up -d
+#
+# 说明：
+#   - 独立配置，不依赖其他 compose 文件
+#   - 专注于生产环境的安全性、性能和可靠性
+#   - 包含完整的监控和可观测性栈
+# ============================================
+
+services:
+  # ============================================
+  # PostgreSQL 数据库（生产环境）
+  # ============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: go-genai-stack-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-genai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?请设置 POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-go_genai_stack}
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+    volumes:
+      # 数据持久化
+      - postgres-prod-data:/var/lib/postgresql/data
+      # 初始化脚本（仅首次运行）
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    # 性能优化配置
+    command: 
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - max_connections=100
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - wal_buffers=16MB
+      - -c
+      - default_statistics_target=100
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - min_wal_size=1GB
+      - -c
+      - max_wal_size=4GB
+      - -c
+      - max_worker_processes=4
+      - -c
+      - max_parallel_workers_per_gather=2
+      - -c
+      - max_parallel_workers=4
+      - -c
+      - max_parallel_maintenance_workers=2
+      - -c
+      - log_statement=all
+      - -c
+      - log_duration=on
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-genai} -d ${POSTGRES_DB:-go_genai_stack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - prod-network
+
+  # ============================================
+  # Redis 缓存（生产环境）
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: go-genai-stack-redis-prod
+    restart: always
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis-prod-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+    networks:
+      - prod-network
+
+  # ============================================
+  # 后端服务（生产环境）
+  # ============================================
+  backend:
+    build:
+      context: ../..
+      dockerfile: backend/Dockerfile
+      args:
+        - BUILD_ENV=production
+    image: go-genai-stack-backend:${VERSION:-latest}
+    container_name: go-genai-stack-backend-prod
+    restart: always
+    environment:
+      # 环境标识
+      APP_ENV: ${APP_ENV:-production}
+      
+      # 服务器配置
+      APP_SERVER_HOST: ${APP_SERVER_HOST:-0.0.0.0}
+      APP_SERVER_PORT: ${APP_SERVER_PORT:-8080}
+      APP_SERVER_READ_TIMEOUT: ${APP_SERVER_READ_TIMEOUT:-30s}
+      APP_SERVER_WRITE_TIMEOUT: ${APP_SERVER_WRITE_TIMEOUT:-30s}
+      APP_SERVER_IDLE_TIMEOUT: ${APP_SERVER_IDLE_TIMEOUT:-60s}
+      APP_SERVER_MAX_BODY_SIZE: ${APP_SERVER_MAX_BODY_SIZE:-10485760}
+      
+      # 数据库配置
+      APP_DATABASE_TYPE: postgres
+      APP_DATABASE_HOST: postgres
+      APP_DATABASE_PORT: 5432
+      APP_DATABASE_USER: ${POSTGRES_USER:-genai}
+      APP_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?请设置 POSTGRES_PASSWORD}
+      APP_DATABASE_DATABASE: ${POSTGRES_DB:-go_genai_stack}
+      APP_DATABASE_SSL_MODE: ${APP_DATABASE_SSL_MODE:-require}
+      APP_DATABASE_MAX_OPEN_CONNS: ${APP_DATABASE_MAX_OPEN_CONNS:-25}
+      APP_DATABASE_MAX_IDLE_CONNS: ${APP_DATABASE_MAX_IDLE_CONNS:-5}
+      APP_DATABASE_CONN_MAX_LIFETIME: ${APP_DATABASE_CONN_MAX_LIFETIME:-5m}
+      APP_DATABASE_CONN_MAX_IDLE_TIME: ${APP_DATABASE_CONN_MAX_IDLE_TIME:-2m}
+      
+      # Redis 配置
+      APP_REDIS_HOST: redis
+      APP_REDIS_PORT: 6379
+      APP_REDIS_PASSWORD: ${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}
+      APP_REDIS_DB: ${APP_REDIS_DB:-0}
+      APP_REDIS_POOL_SIZE: ${APP_REDIS_POOL_SIZE:-10}
+      APP_REDIS_MIN_IDLE_CONNS: ${APP_REDIS_MIN_IDLE_CONNS:-5}
+      APP_REDIS_MAX_RETRIES: ${APP_REDIS_MAX_RETRIES:-3}
+      APP_REDIS_DIAL_TIMEOUT: ${APP_REDIS_DIAL_TIMEOUT:-5s}
+      APP_REDIS_READ_TIMEOUT: ${APP_REDIS_READ_TIMEOUT:-3s}
+      APP_REDIS_WRITE_TIMEOUT: ${APP_REDIS_WRITE_TIMEOUT:-3s}
+      
+      # JWT 配置
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?请设置 APP_JWT_SECRET}
+      APP_JWT_EXPIRY: ${APP_JWT_EXPIRY:-24h}
+      
+      # 日志配置（生产环境使用 JSON 格式）
+      APP_LOGGING_ENABLED: "true"
+      APP_LOGGING_LEVEL: ${APP_LOGGING_LEVEL:-info}
+      APP_LOGGING_FORMAT: ${APP_LOGGING_FORMAT:-json}
+      APP_LOGGING_OUTPUT: ${APP_LOGGING_OUTPUT:-file}
+      APP_LOGGING_OUTPUT_PATH: ${APP_LOGGING_OUTPUT_PATH:-/app/logs/app.log}
+      APP_LOGGING_MAX_SIZE: ${APP_LOGGING_MAX_SIZE:-100}
+      APP_LOGGING_MAX_BACKUPS: ${APP_LOGGING_MAX_BACKUPS:-3}
+      APP_LOGGING_MAX_AGE: ${APP_LOGGING_MAX_AGE:-7}
+      APP_LOGGING_COMPRESS: ${APP_LOGGING_COMPRESS:-true}
+      
+      # 监控配置
+      APP_MONITORING_METRICS_ENABLED: ${APP_MONITORING_METRICS_ENABLED:-true}
+      APP_MONITORING_METRICS_PATH: ${APP_MONITORING_METRICS_PATH:-/metrics}
+      APP_MONITORING_METRICS_PORT: ${APP_MONITORING_METRICS_PORT:-0}
+      APP_MONITORING_HEALTH_ENABLED: ${APP_MONITORING_HEALTH_ENABLED:-true}
+      APP_MONITORING_HEALTH_PATH: ${APP_MONITORING_HEALTH_PATH:-/health}
+      APP_MONITORING_TRACING_ENABLED: ${APP_MONITORING_TRACING_ENABLED:-true}
+      APP_MONITORING_TRACING_TYPE: ${APP_MONITORING_TRACING_TYPE:-otlp}
+      APP_MONITORING_TRACING_ENDPOINT: ${APP_MONITORING_TRACING_ENDPOINT:-jaeger:4318}
+      APP_MONITORING_SAMPLE_RATE: ${APP_MONITORING_SAMPLE_RATE:-0.1}
+      APP_MONITORING_JAEGER_ENDPOINT: ${APP_MONITORING_JAEGER_ENDPOINT:-http://jaeger:4318/v1/traces}
+      
+      # LLM 配置（可选）
+      APP_LLM_DEFAULT_MODEL: ${APP_LLM_DEFAULT_MODEL:-gpt-4o}
+      APP_LLM_DEFAULT_PROVIDER: ${APP_LLM_DEFAULT_PROVIDER:-openai}
+      APP_LLM_TIMEOUT: ${APP_LLM_TIMEOUT:-30s}
+      APP_LLM_MAX_RETRIES: ${APP_LLM_MAX_RETRIES:-3}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      - backend-prod-logs:/app/logs
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - prod-network
+
+  # ============================================
+  # Jaeger - 分布式追踪（生产环境）
+  # ============================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: go-genai-stack-jaeger-prod
+    restart: always
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=info
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "${JAEGER_UI_PORT:-16686}:16686"  # Jaeger UI
+    volumes:
+      - jaeger-prod-data:/badger
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - prod-network
+
+  # ============================================
+  # Prometheus - 指标收集（生产环境）
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: go-genai-stack-prometheus-prod
+    restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-prod-data:/prometheus
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - prod-network
+
+  # ============================================
+  # Grafana - 可视化（生产环境）
+  # ============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: go-genai-stack-grafana-prod
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?请设置 GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_URL:-http://localhost:3000}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana-prod-data:/var/lib/grafana
+      - ./grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - prod-network
+
+# ============================================
+# 数据卷（生产环境）
+# ============================================
+volumes:
+  postgres-prod-data:
+    driver: local
+    name: go-genai-stack-postgres-prod-data
+  redis-prod-data:
+    driver: local
+    name: go-genai-stack-redis-prod-data
+  backend-prod-logs:
+    driver: local
+    name: go-genai-stack-backend-prod-logs
+  jaeger-prod-data:
+    driver: local
+    name: go-genai-stack-jaeger-prod-data
+  prometheus-prod-data:
+    driver: local
+    name: go-genai-stack-prometheus-prod-data
+  grafana-prod-data:
+    driver: local
+    name: go-genai-stack-grafana-prod-data
+
+# ============================================
+# 网络（生产环境）
+# ============================================
+networks:
+  prod-network:
+    driver: bridge
+    name: go-genai-stack-prod-network
+
