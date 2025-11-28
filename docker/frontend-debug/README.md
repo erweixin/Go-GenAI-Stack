@@ -321,7 +321,7 @@ cd docker/frontend-debug && docker compose logs -f backend-debug
 
 ### 自定义种子数据
 
-编辑 `docker/frontend-debug/seed.sql`，添加你需要的测试数据：
+编辑 `docker/frontend-debug/seed-data.sql`，添加你需要的测试数据：
 
 ```sql
 -- 添加更多测试用户
@@ -386,7 +386,7 @@ A: 可以使用浏览器开发者工具、Postman 或 curl 访问 `http://localh
 
 ### Q: 可以修改测试数据吗？
 
-A: 可以！直接连接数据库修改，或编辑 `seed.sql` 后重新启动。
+A: 可以！直接连接数据库修改，或编辑 `seed-data.sql` 后重新启动。
 
 ---
 

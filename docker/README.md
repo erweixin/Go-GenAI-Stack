@@ -21,23 +21,26 @@ docker/
 ├── docker-up.sh                    # 一键启动脚本
 ├── env.example                     # 环境变量示例
 │
+├── schema/                         # Schema 说明文档
+│   └── README.md                   #   所有环境共享 backend/database/schema.sql
+│
 ├── frontend-debug/                 # 前端调试环境
 │   ├── docker-compose.yml          #   数据库 + 后端服务
-│   ├── seed.sql
+│   ├── seed-data.sql               #   测试数据（Schema 统一管理）
 │   ├── start.sh
 │   ├── stop.sh
 │   └── README.md
 │
 ├── backend-debug/                  # 后端调试环境
 │   ├── docker-compose.yml          #   仅数据库
-│   ├── seed.sql
+│   ├── seed-data.sql               #   测试数据（Schema 统一管理）
 │   ├── start.sh
 │   ├── stop.sh
 │   └── README.md
 │
 ├── e2e/                            # E2E 测试环境
 │   ├── docker-compose.yml
-│   ├── seed.sql
+│   ├── seed-data.sql               #   测试数据（Schema 统一管理）
 │   ├── start.sh
 │   ├── stop.sh
 │   └── README.md

@@ -184,7 +184,7 @@ db, err := sql.Open("postgres", connStr)
 
 ## 👤 测试数据
 
-环境启动时会自动加载测试数据（`seed.sql`）：
+环境启动时会自动加载数据库结构和测试数据：
 
 ### 测试用户
 
@@ -194,11 +194,16 @@ db, err := sql.Open("postgres", connStr)
 
 ### 数据结构
 
-数据库 schema 基于 `backend/database/schema.sql`，包含：
+数据库 schema 来自 `backend/database/schema.sql`（自动加载），测试数据来自 `seed-data.sql`：
 
+**表结构**：
 - `users` - 用户表
 - `llm_models` - LLM 模型配置表
 - `tasks` - 任务表
+
+**数据加载顺序**：
+1. `01-schema.sql` - 表结构（来自 backend/database/schema.sql）
+2. `02-seed-data.sql` - 测试数据（本环境的 seed-data.sql）
 
 ## 🔍 常见操作
 
@@ -231,7 +236,7 @@ cd docker/backend-debug && docker compose restart postgres-backend-debug
 cd docker/backend-debug
 ./stop.sh --clean
 
-# 重新启动（会重新执行 seed.sql）
+# 重新启动（会重新执行 schema.sql 和 seed-data.sql）
 ./start.sh
 ```
 
@@ -283,7 +288,7 @@ cd docker/backend-debug && docker compose logs postgres-backend-debug
 
 **解决**：
 
-1. 编辑 `docker/backend-debug/seed.sql`
+1. 编辑 `docker/backend-debug/seed-data.sql`
 2. 重新初始化：
    ```bash
    cd docker/backend-debug
@@ -293,9 +298,11 @@ cd docker/backend-debug && docker compose logs postgres-backend-debug
 
 ### 问题 4：Schema 更新后数据不一致
 
+**说明**：Schema 由 `backend/database/schema.sql` 统一管理，更新后需要重新初始化。
+
 **解决**：
 ```bash
-# 清空旧数据，重新加载
+# 清空旧数据，重新加载（会自动加载最新的 schema.sql）
 cd docker/backend-debug
 ./stop.sh --clean
 ./start.sh

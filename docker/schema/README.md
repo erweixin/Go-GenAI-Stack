@@ -1,10 +1,6 @@
-# 共享 Schema 目录
+# 共享 Schema 说明
 
-这个目录包含所有 Docker 环境共享的数据库 Schema。
-
-## 📁 文件说明
-
-- **`schema.sql`**: 软链接到 `backend/database/schema.sql`
+这个目录用于说明所有 Docker 环境如何共享数据库 Schema。
 
 ## 🎯 设计原则
 
@@ -13,8 +9,9 @@
 所有 Docker 环境的数据库 Schema 都来自 `backend/database/schema.sql`：
 
 - ✅ **统一管理**：Schema 只需在一处维护
-- ✅ **自动同步**：通过软链接，Schema 更新自动生效
+- ✅ **直接引用**：所有环境直接引用源文件
 - ✅ **避免重复**：消除了多环境维护的成本
+- ✅ **CI/CD 友好**：不依赖软链接，跨平台兼容
 
 ### 两阶段初始化
 
@@ -22,8 +19,8 @@
 
 ```yaml
 volumes:
-  # 阶段 1: 加载 Schema（共享）
-  - ../schema/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+  # 阶段 1: 加载 Schema（共享，直接引用源文件）
+  - ../../backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
   
   # 阶段 2: 加载测试数据（环境独立）
   - ./seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
@@ -78,41 +75,41 @@ vim docker/frontend-debug/seed-data.sql
 vim docker/e2e/seed-data.sql
 ```
 
-### 验证软链接
+### 验证 Schema 源文件
 
 ```bash
-# 检查软链接状态
-ls -la docker/schema/
+# 查看 Schema 源文件
+cat backend/database/schema.sql
 
-# 应该看到：
-# lrwxr-xr-x  schema.sql -> ../../backend/database/schema.sql
-
-# 验证文件可访问
-cat docker/schema/schema.sql
+# 验证各环境的 docker-compose.yml 配置
+grep "schema.sql" docker/*/docker-compose.yml
 ```
 
 ## ⚠️ 注意事项
 
-### 软链接的跨平台兼容性
+### 为什么不使用软链接？
 
-- ✅ **macOS/Linux**: 原生支持软链接
-- ⚠️ **Windows**: 
-  - Git Bash: 支持
-  - PowerShell: 需要管理员权限
-  - 如果软链接不工作，可以改用硬拷贝
+我们最初使用了软链接（`docker/schema/schema.sql -> ../../backend/database/schema.sql`），但发现了以下问题：
 
-### 硬拷贝替代方案（可选）
+- ❌ **CI/CD 兼容性差**：GitHub Actions 中软链接可能无法正确解析
+- ❌ **Windows 兼容性**：需要管理员权限或特殊配置
+- ❌ **Docker 挂载问题**：Docker volume 挂载软链接时可能出错
 
-如果软链接有问题，可以使用硬拷贝：
+### 当前方案：直接引用
 
-```bash
-# 复制而不是链接
-cp backend/database/schema.sql docker/schema/schema.sql
+现在我们直接在 `docker-compose.yml` 中引用源文件：
 
-# 需要记得在更新 Schema 后重新复制
+```yaml
+volumes:
+  - ../../backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
 ```
 
-但这样会失去自动同步的优势。
+**优势**：
+- ✅ CI/CD 完全兼容
+- ✅ 跨平台支持
+- ✅ Docker 挂载可靠
+- ✅ 路径清晰明确
+- ✅ 仍然是单一数据源
 
 ## 🔍 故障排查
 
@@ -120,17 +117,21 @@ cp backend/database/schema.sql docker/schema/schema.sql
 
 **检查**：
 ```bash
-# 1. 验证软链接
-ls -la docker/schema/schema.sql
+# 1. 验证源文件存在
+ls -la backend/database/schema.sql
 
 # 2. 验证 Docker Compose 配置
-docker compose -f docker/backend-debug/docker-compose.yml config
+cd docker/e2e
+docker compose config
+
+# 3. 检查 volume 挂载路径
+grep "schema.sql" docker-compose.yml
 ```
 
 **解决**：
-- 确保软链接指向正确的路径
 - 确保 `backend/database/schema.sql` 存在
-- 如果软链接不工作，改用硬拷贝
+- 确保相对路径 `../../backend/database/schema.sql` 正确
+- 检查文件权限（应该可读）
 
 ### 问题：Schema 更新后没有生效
 

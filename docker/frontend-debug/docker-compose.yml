@@ -17,8 +17,8 @@ services:
     ports:
       - "5434:5432"  # 使用不同端口避免与开发环境和 E2E 冲突
     volumes:
-      # Schema（统一管理）
-      - ../schema/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # Schema（统一管理，直接引用源文件）
+      - ../../backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       # 测试数据（环境独立）
       - ./seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
       # 数据持久化（可选，用于调试）
