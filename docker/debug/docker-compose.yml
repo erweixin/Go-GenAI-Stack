@@ -1,6 +1,9 @@
+# ============================================
 # 前端调试环境
+# ============================================
 # 用途：为前端开发提供隔离的后端和数据库环境
-# 使用：docker-compose -f docker/docker-compose-debug.yml up -d
+# 使用：cd docker/debug && docker compose up -d
+# ============================================
 
 services:
   # PostgreSQL 开发数据库
@@ -15,7 +18,7 @@ services:
       - "5434:5432"  # 使用不同端口避免与开发环境和 E2E 冲突
     volumes:
       # 开发数据种子（自动执行）
-      - ./debug/seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+      - ./seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
       # 数据持久化（可选，用于调试）
       - postgres-debug-data:/var/lib/postgresql/data
     healthcheck:
@@ -30,7 +33,7 @@ services:
   # 后端服务器
   backend-debug:
     build:
-      context: ..
+      context: ../..
       dockerfile: backend/Dockerfile
     container_name: go-genai-stack-backend-debug
     environment:
@@ -76,3 +79,4 @@ networks:
   debug-network:
     driver: bridge
     name: go-genai-stack-debug-network
+

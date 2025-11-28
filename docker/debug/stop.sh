@@ -13,10 +13,7 @@ NC='\033[0m' # No Color
 
 # 获取脚本所在目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DOCKER_DIR="$PROJECT_ROOT/docker"
-
-cd "$DOCKER_DIR"
+cd "$SCRIPT_DIR"
 
 # 检测 Docker Compose 命令（兼容新旧版本）
 if docker compose version > /dev/null 2>&1; then
@@ -35,11 +32,11 @@ echo -e "${BLUE}🛑 Stopping Debug Environment...${NC}"
 echo ""
 
 # 检查是否在运行
-if ! $DOCKER_COMPOSE -f docker-compose-debug.yml ps | grep -q "Up"; then
+if ! $DOCKER_COMPOSE ps | grep -q "Up"; then
     echo -e "${YELLOW}⚠️  Debug environment is not running${NC}"
     if [ "$CLEAN_VOLUMES" = true ]; then
         echo -e "${YELLOW}Cleaning up volumes anyway...${NC}"
-        $DOCKER_COMPOSE -f docker-compose-debug.yml down -v
+        $DOCKER_COMPOSE down -v
         echo -e "${GREEN}✅ Volumes cleaned${NC}"
     fi
     exit 0
@@ -48,13 +45,13 @@ fi
 # 停止服务
 if [ "$CLEAN_VOLUMES" = true ]; then
     echo -e "${YELLOW}🧹 Stopping and cleaning up (including volumes)...${NC}"
-    $DOCKER_COMPOSE -f docker-compose-debug.yml down -v
+    $DOCKER_COMPOSE down -v
     echo ""
     echo -e "${GREEN}✅ Debug environment stopped and cleaned${NC}"
     echo -e "${BLUE}ℹ️  All data has been removed${NC}"
 else
     echo -e "${BLUE}📦 Stopping containers (keeping volumes)...${NC}"
-    $DOCKER_COMPOSE -f docker-compose-debug.yml down
+    $DOCKER_COMPOSE down
     echo ""
     echo -e "${GREEN}✅ Debug environment stopped${NC}"
     echo -e "${BLUE}ℹ️  Data volumes preserved${NC}"

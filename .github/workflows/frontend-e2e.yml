@@ -6,7 +6,6 @@ on:
     paths:
       - 'frontend/web/**'
       - 'backend/**'
-      - 'docker/docker-compose-e2e.yml'
       - 'docker/e2e/**'
       - '.github/workflows/frontend-e2e.yml'
   pull_request:
@@ -14,7 +13,6 @@ on:
     paths:
       - 'frontend/web/**'
       - 'backend/**'
-      - 'docker/docker-compose-e2e.yml'
       - 'docker/e2e/**'
   # 允许手动触发
   workflow_dispatch:
@@ -118,8 +116,8 @@ jobs:
           COMPOSE_DOCKER_CLI_BUILD: 1
         run: |
           echo "🐳 Building and starting E2E environment..."
-          docker compose -f docker-compose-e2e.yml build --build-arg BUILDKIT_INLINE_CACHE=1
-          docker compose -f docker-compose-e2e.yml up -d
+          docker compose build --build-arg BUILDKIT_INLINE_CACHE=1
+          docker compose up -d
           
           echo "⏳ Waiting for Postgres to be healthy..."
           timeout 60s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-postgres-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
@@ -130,7 +128,7 @@ jobs:
           echo " ✅"
           
           echo "✅ All services are ready"
-          docker compose -f docker-compose-e2e.yml ps
+          docker compose ps
       
       - name: Verify backend health
         run: |
@@ -181,22 +179,22 @@ jobs:
         working-directory: docker
         run: |
           echo "📊 Container Status:"
-          docker compose -f docker-compose-e2e.yml ps
+          docker compose ps
           echo ""
           echo "🔍 Health Status:"
           docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-postgres-e2e || echo "postgres-e2e: not found"
           docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-backend-e2e || echo "backend-e2e: not found"
           echo ""
           echo "📋 Postgres Logs:"
-          docker compose -f docker-compose-e2e.yml logs --tail=50 postgres-e2e
+          docker compose logs --tail=50 postgres-e2e
           echo ""
           echo "📋 Backend Logs:"
-          docker compose -f docker-compose-e2e.yml logs --tail=100 backend-e2e
+          docker compose logs --tail=100 backend-e2e
       
       - name: Stop E2E environment
         if: always()
         working-directory: docker
         run: |
           echo "🛑 Stopping E2E environment..."
-          docker compose -f docker-compose-e2e.yml down -v
+          docker compose down -v
           echo "✅ Environment cleaned up"

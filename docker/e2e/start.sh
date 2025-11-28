@@ -13,10 +13,9 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# 项目根目录
+# 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DOCKER_DIR="$PROJECT_ROOT/docker"
+cd "$SCRIPT_DIR"
 
 echo -e "${BLUE}🚀 Starting E2E Test Environment...${NC}"
 echo ""
@@ -35,14 +34,11 @@ else
     DOCKER_COMPOSE="docker-compose"
 fi
 
-# 进入 docker 目录
-cd "$DOCKER_DIR"
-
 # 检查是否已经运行（检查 E2E 特定容器）
 if docker ps --filter "name=postgres-e2e" --filter "status=running" | grep -q "postgres-e2e"; then
     echo -e "${YELLOW}⚠️  E2E environment is already running${NC}"
     echo ""
-    $DOCKER_COMPOSE -f docker-compose-e2e.yml ps
+    $DOCKER_COMPOSE ps
     echo ""
     echo "To restart, run: ./docker/e2e/stop.sh && ./docker/e2e/start.sh"
     exit 0
@@ -50,7 +46,7 @@ fi
 
 # 启动 Docker Compose
 echo -e "${BLUE}📦 Starting Docker containers...${NC}"
-$DOCKER_COMPOSE -f docker-compose-e2e.yml up -d
+$DOCKER_COMPOSE up -d
 
 # 等待服务健康检查
 echo ""
@@ -74,7 +70,7 @@ done
 if [ $ELAPSED -ge $TIMEOUT ]; then
     echo -e "${RED}✗ Timeout${NC}"
     echo "Postgres failed to start. Check logs:"
-    $DOCKER_COMPOSE -f docker-compose-e2e.yml logs postgres-e2e
+    $DOCKER_COMPOSE logs postgres-e2e
     exit 1
 fi
 
@@ -96,7 +92,7 @@ done
 if [ $ELAPSED -ge $TIMEOUT ]; then
     echo -e "${RED}✗ Timeout${NC}"
     echo "Backend failed to start. Check logs:"
-    $DOCKER_COMPOSE -f docker-compose-e2e.yml logs backend-e2e
+    $DOCKER_COMPOSE logs backend-e2e
     exit 1
 fi
 
@@ -122,7 +118,7 @@ echo "  pnpm e2e              # Run all tests"
 echo "  pnpm e2e:ui           # UI mode (recommended)"
 echo ""
 echo -e "${BLUE}📊 View Logs:${NC}"
-echo "  $DOCKER_COMPOSE -f docker/docker-compose-e2e.yml logs -f"
+echo "  docker compose -f docker/e2e/docker-compose.yml logs -f"
 echo ""
 echo -e "${BLUE}🛑 Stop Environment:${NC}"
 echo "  ./docker/e2e/stop.sh"

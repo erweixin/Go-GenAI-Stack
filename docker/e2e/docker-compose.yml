@@ -1,6 +1,9 @@
+# ============================================
 # E2E 测试环境
+# ============================================
 # 用途：为端到端测试提供隔离的后端和数据库环境
-# 使用：docker-compose -f docker/docker-compose-e2e.yml up -d
+# 使用：cd docker/e2e && docker compose up -d
+# ============================================
 
 services:
   # PostgreSQL 测试数据库
@@ -15,7 +18,7 @@ services:
       - "5433:5432"  # 使用不同端口避免与开发环境冲突
     volumes:
       # 测试数据种子（自动执行）
-      - ./e2e/seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+      - ./seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
       # 数据持久化（可选，用于调试）
       - postgres-e2e-data:/var/lib/postgresql/data
     healthcheck:
@@ -30,7 +33,7 @@ services:
   # 后端服务器
   backend-e2e:
     build:
-      context: ..
+      context: ../..
       dockerfile: backend/Dockerfile
     container_name: go-genai-stack-backend-e2e
     environment:

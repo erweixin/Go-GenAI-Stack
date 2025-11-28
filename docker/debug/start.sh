@@ -13,10 +13,7 @@ NC='\033[0m' # No Color
 
 # 获取脚本所在目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DOCKER_DIR="$PROJECT_ROOT/docker"
-
-cd "$DOCKER_DIR"
+cd "$SCRIPT_DIR"
 
 echo -e "${BLUE}🚀 Starting Frontend Debug Environment...${NC}"
 echo ""
@@ -39,7 +36,7 @@ fi
 if docker ps --filter "name=postgres-debug" --filter "status=running" | grep -q "postgres-debug"; then
     echo -e "${YELLOW}⚠️  Debug environment is already running${NC}"
     echo ""
-    $DOCKER_COMPOSE -f docker-compose-debug.yml ps
+    $DOCKER_COMPOSE ps
     echo ""
     echo "To restart, run: ./docker/debug/stop.sh && ./docker/debug/start.sh"
     exit 0
@@ -47,8 +44,8 @@ fi
 
 # 启动 Docker Compose
 echo -e "${BLUE}📦 Building and starting Docker containers...${NC}"
-$DOCKER_COMPOSE -f docker-compose-debug.yml build
-$DOCKER_COMPOSE -f docker-compose-debug.yml up -d
+$DOCKER_COMPOSE build
+$DOCKER_COMPOSE up -d
 
 # 等待服务健康检查
 echo ""
@@ -72,7 +69,7 @@ done
 if [ $ELAPSED -ge $TIMEOUT ]; then
     echo -e "${RED}✗ Timeout${NC}"
     echo "Postgres failed to start. Check logs:"
-    $DOCKER_COMPOSE -f docker-compose-debug.yml logs postgres-debug
+    $DOCKER_COMPOSE logs postgres-debug
     exit 1
 fi
 
@@ -94,7 +91,7 @@ done
 if [ $ELAPSED -ge $TIMEOUT ]; then
     echo -e "${RED}✗ Timeout${NC}"
     echo "Backend failed to start. Check logs:"
-    $DOCKER_COMPOSE -f docker-compose-debug.yml logs backend-debug
+    $DOCKER_COMPOSE logs backend-debug
     exit 1
 fi
 
@@ -115,7 +112,7 @@ echo "  1. Set VITE_API_BASE_URL=http://localhost:8082 in frontend/web/.env"
 echo "  2. Run: cd frontend/web && pnpm dev"
 echo ""
 echo -e "${BLUE}📊 View Logs:${NC}"
-echo "  $DOCKER_COMPOSE -f docker/docker-compose-debug.yml logs -f"
+echo "  docker compose -f docker/debug/docker-compose.yml logs -f"
 echo ""
 echo -e "${BLUE}🛑 Stop Environment:${NC}"
 echo "  ./docker/debug/stop.sh"
