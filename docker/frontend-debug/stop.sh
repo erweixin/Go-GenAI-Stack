@@ -57,7 +57,7 @@ else
     echo -e "${BLUE}ℹ️  Data volumes preserved${NC}"
     echo ""
     echo "To also remove data volumes, run:"
-    echo "  ./docker/debug/stop.sh --clean"
+    echo "  ./docker/frontend-debug/stop.sh --clean"
 fi
 
 echo ""

@@ -143,7 +143,7 @@ up-infra:
 ## up-debug: 启动调试环境
 up-debug:
 	@echo "🚀 启动调试环境..."
-	@cd debug && docker compose --profile debug up -d
+	@cd frontend-debug && docker compose up -d
 	@echo "✅ 调试环境已启动"
 	@echo ""
 	@echo "调试端口："

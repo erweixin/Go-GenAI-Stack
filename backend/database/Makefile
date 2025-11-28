@@ -7,7 +7,7 @@
 ENV ?= dev
 
 # 环境变量文件路径
-ENV_FILE := ../../docker/.env
+ENV_FILE := ../../docker/prod/.env
 
 # Shell 配置：自动加载环境变量
 SHELL := /bin/bash

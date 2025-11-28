@@ -1,0 +1,45 @@
+# ============================================
+# 后端调试环境（仅数据库）
+# ============================================
+# 用途：为后端开发提供独立的数据库环境
+# 使用：cd docker/backend-debug && docker compose up -d
+# 说明：后端代码在本地 IDE 中运行和调试
+# ============================================
+
+services:
+  # PostgreSQL 开发数据库
+  postgres-backend-debug:
+    image: postgres:15-alpine
+    container_name: go-genai-stack-postgres-backend-debug
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: go_genai_stack_backend_debug
+    ports:
+      - "5435:5432"  # 使用不同端口避免与其他环境冲突
+    volumes:
+      # Schema（统一管理）
+      - ../schema/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # 测试数据（环境独立）
+      - ./seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
+      # 数据持久化
+      - postgres-backend-debug-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d go_genai_stack_backend_debug"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - backend-debug-network
+
+volumes:
+  postgres-backend-debug-data:
+    driver: local
+    name: go-genai-stack-postgres-backend-debug-data
+
+networks:
+  backend-debug-network:
+    driver: bridge
+    name: go-genai-stack-backend-debug-network
+

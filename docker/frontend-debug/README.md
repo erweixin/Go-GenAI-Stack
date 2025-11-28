@@ -48,7 +48,7 @@ pnpm debug:dev
 
 ```bash
 # 1. 启动 Debug 环境
-./docker/debug/start.sh
+./docker/frontend-debug/start.sh
 
 # 2. 启动前端（在新终端）
 cd frontend/web
@@ -108,13 +108,13 @@ pnpm debug:dev        # 启动环境 + 运行前端
 
 ```bash
 # 启动环境
-./docker/debug/start.sh
+./docker/frontend-debug/start.sh
 
 # 停止环境（保留数据）
-./docker/debug/stop.sh
+./docker/frontend-debug/stop.sh
 
 # 停止环境（清理数据）
-./docker/debug/stop.sh --clean
+./docker/frontend-debug/stop.sh --clean
 ```
 
 ### Docker Compose
@@ -130,10 +130,10 @@ cd docker/debug && docker compose down
 cd docker/debug && docker compose down -v
 
 # 查看日志
-cd docker/debug && docker compose logs -f
+cd docker/frontend-debug && docker compose logs -f
 
 # 重启服务
-cd docker/debug && docker compose restart backend-debug
+cd docker/frontend-debug && docker compose restart backend-debug
 ```
 
 ---
@@ -186,7 +186,7 @@ lsof -i :8082
 # 停止占用端口的进程
 kill -9 <PID>
 
-# 或修改 docker/debug/docker-compose.yml 中的端口
+# 或修改 docker/frontend-debug/docker-compose.yml 中的端口
 ```
 
 ### 2. 服务无法启动
@@ -200,8 +200,8 @@ kill -9 <PID>
 cd docker/debug && docker compose logs
 
 # 清理并重新启动
-./docker/debug/stop.sh --clean
-./docker/debug/start.sh
+./docker/frontend-debug/stop.sh --clean
+./docker/frontend-debug/start.sh
 ```
 
 ### 3. 数据库连接失败
@@ -212,7 +212,7 @@ cd docker/debug && docker compose logs
 
 ```bash
 # 检查容器状态
-cd docker/debug && docker compose ps
+cd docker/frontend-debug && docker compose ps
 
 # 查看健康检查状态
 docker inspect go-genai-stack-postgres-debug --format='{{.State.Health.Status}}'
@@ -235,7 +235,7 @@ curl http://localhost:8082/health
 cd docker/debug && docker compose logs backend-debug
 
 # 重启后端
-cd docker/debug && docker compose restart backend-debug
+cd docker/frontend-debug && docker compose restart backend-debug
 ```
 
 ---
@@ -252,8 +252,8 @@ cd docker/debug && docker compose restart backend-debug
 
 ```bash
 # 方法 1: 使用脚本（推荐）
-./docker/debug/stop.sh --clean
-./docker/debug/start.sh
+./docker/frontend-debug/stop.sh --clean
+./docker/frontend-debug/start.sh
 
 # 方法 2: 使用 npm 脚本
 cd frontend/web
@@ -292,15 +292,15 @@ cd docker/debug && docker compose up -d
 
 ```bash
 # 建议每天或每个功能开发前重置
-./docker/debug/stop.sh --clean
-./docker/debug/start.sh
+./docker/frontend-debug/stop.sh --clean
+./docker/frontend-debug/start.sh
 ```
 
 ### 3. 日志查看
 
 ```bash
 # 遇到问题时，先查看日志
-cd docker/debug && docker compose logs -f backend-debug
+cd docker/frontend-debug && docker compose logs -f backend-debug
 ```
 
 ### 4. 端口管理
@@ -321,7 +321,7 @@ cd docker/debug && docker compose logs -f backend-debug
 
 ### 自定义种子数据
 
-编辑 `docker/debug/seed.sql`，添加你需要的测试数据：
+编辑 `docker/frontend-debug/seed.sql`，添加你需要的测试数据：
 
 ```sql
 -- 添加更多测试用户
@@ -335,7 +335,7 @@ VALUES ('user-uuid', 'Custom Task', 'Description', 'pending', 'high');
 
 ### 修改端口映射
 
-编辑 `docker/debug/docker-compose.yml`：
+编辑 `docker/frontend-debug/docker-compose.yml`：
 
 ```yaml
 services:

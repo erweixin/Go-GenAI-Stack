@@ -25,9 +25,9 @@
     "e2e:clean": "../../docker/e2e/stop.sh --clean",
     "e2e:all": "pnpm e2e:setup && pnpm e2e && pnpm e2e:teardown",
     "playwright:install": "playwright install --with-deps",
-    "debug:setup": "../../docker/debug/start.sh",
-    "debug:teardown": "../../docker/debug/stop.sh",
-    "debug:clean": "../../docker/debug/stop.sh --clean",
+    "debug:setup": "../../docker/frontend-debug/start.sh",
+    "debug:teardown": "../../docker/frontend-debug/stop.sh",
+    "debug:clean": "../../docker/frontend-debug/stop.sh --clean",
     "debug:dev": "pnpm debug:setup && pnpm dev:debug"
   },
   "dependencies": {

@@ -1,14 +1,55 @@
 # Docker 开发环境
 
-本目录包含 Go-GenAI-Stack 项目的 Docker 开发环境配置。
+本目录包含 Go-GenAI-Stack 项目的所有 Docker 环境配置。
 
-## 📁 文件说明
+## 🎯 环境概览
 
-- **`docker-compose.yml`**: 完整的 Docker Compose 配置文件，包含后端服务、PostgreSQL、Redis 和可观测性组件
-- **`debug/docker-compose.yml`**: Debug 环境配置，支持热重载和 Delve 调试
-- **`docker-up.sh`**: 一键启动脚本（推荐使用）
-- **`env.example`**: 环境变量配置示例文件
-- **`.env`**: 实际环境变量配置（从 env.example 复制，不提交到 Git）
+本项目提供 **4 个独立的 Docker 环境**，适用于不同的开发和测试场景：
+
+| 环境 | 用途 | 数据库 | 后端 | 端口 | 启动方式 |
+|------|------|--------|------|------|---------|
+| **frontend-debug** | 前端开发 | ✅ | ✅ | 5434, 8082 | `cd frontend-debug && ./start.sh` |
+| **backend-debug** | 后端开发 | ✅ | ❌ | 5435 | `cd backend-debug && ./start.sh` |
+| **e2e** | E2E 测试 | ✅ | ✅ | 5433, 8081 | `cd e2e && ./start.sh` |
+| **prod** | 生产环境 | ✅ | ✅ | 5432, 8080 | `cd prod && ./start.sh` |
+
+## 📁 目录结构
+
+```
+docker/
+├── docker-compose.yml              # 完整开发环境（基础）
+├── docker-up.sh                    # 一键启动脚本
+├── env.example                     # 环境变量示例
+│
+├── frontend-debug/                 # 前端调试环境
+│   ├── docker-compose.yml          #   数据库 + 后端服务
+│   ├── seed.sql
+│   ├── start.sh
+│   ├── stop.sh
+│   └── README.md
+│
+├── backend-debug/                  # 后端调试环境
+│   ├── docker-compose.yml          #   仅数据库
+│   ├── seed.sql
+│   ├── start.sh
+│   ├── stop.sh
+│   └── README.md
+│
+├── e2e/                            # E2E 测试环境
+│   ├── docker-compose.yml
+│   ├── seed.sql
+│   ├── start.sh
+│   ├── stop.sh
+│   └── README.md
+│
+└── prod/                           # 生产环境
+    ├── docker-compose.yml
+    ├── env.example
+    ├── start.sh
+    ├── stop.sh
+    ├── validate-config.sh
+    └── README.md
+```
 
 ## 🚀 快速开始
 
@@ -93,17 +134,17 @@ docker-compose down
 cd docker
 
 # 1. 启动调试环境（基础服务 + 后端服务）
-cd debug && docker compose --profile debug up -d
+cd frontend-debug && docker compose up -d
 
 # 2. 查看日志（实时查看后端输出）
-cd debug && docker compose logs -f backend
+cd frontend-debug && docker compose logs -f backend-debug
 
 # 3. 访问应用
 # - API: http://localhost:8080
 # - Delve 调试端口: localhost:2345
 
 # 4. 停止服务
-cd debug && docker compose --profile debug down
+cd frontend-debug && docker compose down
 ```
 
 ---
@@ -163,7 +204,8 @@ docker-compose down -v
 - **端口**: `5432` (可通过 `DB_PORT` 环境变量修改)
 - **数据持久化**: 
   - `postgres_data` (docker-compose.yml)
-  - `postgres_debug_data` (debug/docker-compose.yml)
+  - `postgres_debug_data` (frontend-debug/docker-compose.yml)
+  - `postgres_backend_debug_data` (backend-debug/docker-compose.yml)
 - **初始化脚本**: `backend/migrations/seed/` 目录下的 SQL 文件会在首次启动时自动执行
 - **健康检查**: 每 10 秒检查一次，超时 5 秒，重试 5 次
 
@@ -178,14 +220,14 @@ docker-compose down -v
 - **端口**: `6379` (可通过 `REDIS_PORT` 环境变量修改)
 - **数据持久化**: 
   - `redis_data` (docker-compose.yml)
-  - `redis_debug_data` (debug/docker-compose.yml)
+  - `redis_debug_data` (frontend-debug/docker-compose.yml)
 - **内存限制**: 256MB
 - **淘汰策略**: `allkeys-lru` (最近最少使用)
 
 **默认配置**:
 - 密码: `redis_password`
 
-### Backend (仅 debug/docker-compose.yml)
+### Backend (仅 frontend-debug/docker-compose.yml)
 
 - **基础镜像**: `golang:1.21-alpine`
 - **端口**: 
@@ -205,7 +247,7 @@ docker-compose down -v
 
 1. 启动调试环境：
 ```bash
-cd docker/debug && docker compose --profile debug up -d
+cd docker/frontend-debug && docker compose up -d
 ```
 
 2. 在 `.vscode/launch.json` 添加配置：

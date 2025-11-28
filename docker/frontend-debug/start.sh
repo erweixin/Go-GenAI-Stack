@@ -38,7 +38,7 @@ if docker ps --filter "name=postgres-debug" --filter "status=running" | grep -q 
     echo ""
     $DOCKER_COMPOSE ps
     echo ""
-    echo "To restart, run: ./docker/debug/stop.sh && ./docker/debug/start.sh"
+    echo "To restart, run: ./docker/frontend-debug/stop.sh && ./docker/frontend-debug/start.sh"
     exit 0
 fi
 
@@ -112,9 +112,9 @@ echo "  1. Set VITE_API_BASE_URL=http://localhost:8082 in frontend/web/.env"
 echo "  2. Run: cd frontend/web && pnpm dev"
 echo ""
 echo -e "${BLUE}📊 View Logs:${NC}"
-echo "  docker compose -f docker/debug/docker-compose.yml logs -f"
+echo "  docker compose -f docker/frontend-debug/docker-compose.yml logs -f"
 echo ""
 echo -e "${BLUE}🛑 Stop Environment:${NC}"
-echo "  ./docker/debug/stop.sh"
+echo "  ./docker/frontend-debug/stop.sh"
 echo ""
 

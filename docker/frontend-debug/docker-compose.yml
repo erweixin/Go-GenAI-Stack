@@ -2,7 +2,7 @@
 # 前端调试环境
 # ============================================
 # 用途：为前端开发提供隔离的后端和数据库环境
-# 使用：cd docker/debug && docker compose up -d
+# 使用：cd docker/frontend-debug && docker compose up -d
 # ============================================
 
 services:
@@ -17,8 +17,10 @@ services:
     ports:
       - "5434:5432"  # 使用不同端口避免与开发环境和 E2E 冲突
     volumes:
-      # 开发数据种子（自动执行）
-      - ./seed.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+      # Schema（统一管理）
+      - ../schema/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # 测试数据（环境独立）
+      - ./seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
       # 数据持久化（可选，用于调试）
       - postgres-debug-data:/var/lib/postgresql/data
     healthcheck:
