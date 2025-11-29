@@ -1,33 +1,26 @@
 {
   "name": "@go-genai-stack/mobile",
   "version": "1.0.0",
-  "private": true,
-  "main": "expo-router",
+  "main": "index.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web",
-    "build": "tsc",
-    "lint": "eslint . --ext ts,tsx",
-    "clean": "rm -rf node_modules .expo"
+    "web": "expo start --web"
   },
   "dependencies": {
+    "@go-genai-stack/constants": "workspace:*",
     "@go-genai-stack/types": "workspace:*",
     "@go-genai-stack/utils": "workspace:*",
-    "@go-genai-stack/constants": "workspace:*",
-    "react": "^19.0.0",
-    "react-native": "^0.73.0",
-    "expo": "~50.0.0",
-    "expo-router": "~3.4.0",
-    "@react-native-async-storage/async-storage": "^1.21.0",
-    "zustand": "^4.4.0"
+    "expo": "~54.0.25",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.2.0",
+    "react-native": "0.81.5",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-native": "^0.73.0",
-    "typescript": "^5.3.0",
-    "eslint": "^8.56.0"
-  }
+    "@types/react": "~19.2.0",
+    "typescript": "~5.9.2"
+  },
+  "private": true
 }
-

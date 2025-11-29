@@ -1,16 +1,6 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
-    "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@go-genai-stack/types": ["../shared/types"],
-      "@go-genai-stack/utils": ["../shared/utils"],
-      "@go-genai-stack/constants": ["../shared/constants"]
-    }
-  },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+    "strict": true
+  }
 }
-
