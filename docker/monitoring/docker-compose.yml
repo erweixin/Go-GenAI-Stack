@@ -1,21 +1,27 @@
 # ============================================
-# Sentry 监控服务（独立部署）
+# Go-GenAI-Stack 监控服务（独立部署）
 # ============================================
-# 用于前端错误追踪、性能监控和会话重放
+# 统一可观测性栈，包括：
+#   - Sentry: 前端错误追踪、性能监控、会话重放
+#   - Jaeger: 后端分布式追踪
+#   - Prometheus: 指标收集
+#   - Grafana: 可视化
 #
 # 使用方式：
 #   cd docker/monitoring
-#   cp .env.example .env
+#   cp env.template .env
 #   # 编辑 .env 设置密码
 #   docker compose up -d
 #   # 初始化 Sentry
 #   docker compose exec sentry-web sentry upgrade --noinput
 #   docker compose exec sentry-web sentry createuser
 #
-# 访问：http://localhost:9000
+# 访问：
+#   - Sentry: http://localhost:9000
+#   - Jaeger UI: http://localhost:16686
+#   - Prometheus: http://localhost:9090
+#   - Grafana: http://localhost:3000
 # ============================================
-
-version: '3.8'
 
 services:
   # ============================================
@@ -254,7 +260,122 @@ services:
         max-size: "5m"
         max-file: "3"
 
+  # ============================================
+  # Jaeger - 分布式追踪
+  # ============================================
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: go-genai-stack-jaeger
+    restart: always
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=info
+      - SPAN_STORAGE_TYPE=badger
+      - BADGER_EPHEMERAL=false
+      - BADGER_DIRECTORY_VALUE=/badger/data
+      - BADGER_DIRECTORY_KEY=/badger/key
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "${JAEGER_UI_PORT:-16686}:16686"  # Jaeger UI
+    volumes:
+      - jaeger-data:/badger
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - monitoring-network
+      - go-genai-stack-network
+
+  # ============================================
+  # Prometheus - 指标收集
+  # ============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: go-genai-stack-prometheus
+    restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - monitoring-network
+      - go-genai-stack-network
+
+  # ============================================
+  # Grafana - 可视化
+  # ============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: go-genai-stack-grafana
+    restart: always
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?请设置 GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_URL:-http://localhost:3000}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - monitoring-network
+      - go-genai-stack-network
+
+# ============================================
+# 数据卷
+# ============================================
 volumes:
+  # Sentry 数据卷
   sentry-postgres-data:
     driver: local
     name: sentry-postgres-data
@@ -264,9 +385,35 @@ volumes:
   sentry-data:
     driver: local
     name: sentry-data
+  
+  # 后端监控数据卷
+  jaeger-data:
+    driver: local
+    name: go-genai-stack-jaeger-data
+  prometheus-data:
+    driver: local
+    name: go-genai-stack-prometheus-data
+  grafana-data:
+    driver: local
+    name: go-genai-stack-grafana-data
 
+# ============================================
+# 网络配置
+# ============================================
 networks:
+  # Sentry 内部网络
   sentry-network:
     driver: bridge
     name: sentry-network
+  
+  # 监控服务内部网络
+  monitoring-network:
+    driver: bridge
+    name: go-genai-stack-monitoring-network
+  
+  # 连接到业务服务网络（用于监控后端服务）
+  go-genai-stack-network:
+    driver: bridge
+    name: go-genai-stack-network
+    external: true
 

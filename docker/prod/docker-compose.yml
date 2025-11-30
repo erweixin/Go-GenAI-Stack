@@ -10,7 +10,7 @@
 # 说明：
 #   - 独立配置，不依赖其他 compose 文件
 #   - 专注于生产环境的安全性、性能和可靠性
-#   - 包含完整的监控和可观测性栈
+#   - 监控服务已迁移到 docker/monitoring（独立部署）
 # ============================================
 
 services:
@@ -248,116 +248,6 @@ services:
     networks:
       - prod-network
 
-  # ============================================
-  # Jaeger - 分布式追踪（生产环境）
-  # ============================================
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: go-genai-stack-jaeger-prod
-    restart: always
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-      - LOG_LEVEL=info
-      - SPAN_STORAGE_TYPE=badger
-      - BADGER_EPHEMERAL=false
-      - BADGER_DIRECTORY_VALUE=/badger/data
-      - BADGER_DIRECTORY_KEY=/badger/key
-    ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-      - "${JAEGER_UI_PORT:-16686}:16686"  # Jaeger UI
-    volumes:
-      - jaeger-prod-data:/badger
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    networks:
-      - prod-network
-
-  # ============================================
-  # Prometheus - 指标收集（生产环境）
-  # ============================================
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: go-genai-stack-prometheus-prod
-    restart: always
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
-    ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-prod-data:/prometheus
-    depends_on:
-      - backend
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    networks:
-      - prod-network
-
-  # ============================================
-  # Grafana - 可视化（生产环境）
-  # ============================================
-  grafana:
-    image: grafana/grafana:latest
-    container_name: go-genai-stack-grafana-prod
-    restart: always
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?请设置 GRAFANA_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=${GRAFANA_URL:-http://localhost:3000}
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-    ports:
-      - "${GRAFANA_PORT:-3000}:3000"
-    volumes:
-      - grafana-prod-data:/var/lib/grafana
-      - ./grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
-    depends_on:
-      - prometheus
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.1'
-          memory: 128M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    networks:
-      - prod-network
-
 # ============================================
 # 数据卷（生产环境）
 # ============================================
@@ -371,15 +261,6 @@ volumes:
   backend-prod-logs:
     driver: local
     name: go-genai-stack-backend-prod-logs
-  jaeger-prod-data:
-    driver: local
-    name: go-genai-stack-jaeger-prod-data
-  prometheus-prod-data:
-    driver: local
-    name: go-genai-stack-prometheus-prod-data
-  grafana-prod-data:
-    driver: local
-    name: go-genai-stack-grafana-prod-data
 
 # ============================================
 # 网络（生产环境）
@@ -387,5 +268,5 @@ volumes:
 networks:
   prod-network:
     driver: bridge
-    name: go-genai-stack-prod-network
+    name: go-genai-stack-network
 
