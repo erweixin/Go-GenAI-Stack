@@ -1,6 +1,6 @@
 # Go-GenAI-Stack Mobile
 
-基于 React Native (Expo) 的跨平台移动应用。
+【WIP】基于 React Native (Expo) 的跨平台移动应用。
 
 ## 技术栈
 

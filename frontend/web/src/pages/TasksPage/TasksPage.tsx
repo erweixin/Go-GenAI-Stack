@@ -9,6 +9,7 @@ import { TaskFilters } from '@/features/task/components/TaskFilters'
 import { TaskCreateDialog } from '@/features/task/components/TaskCreateDialog'
 import { TaskEditDialog } from '@/features/task/components/TaskEditDialog'
 import { Button } from '@/components/ui/button'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { Plus, LogOut, Home } from 'lucide-react'
 import type { TaskItem } from '@go-genai-stack/types'
 
@@ -65,13 +66,14 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* 顶部导航 */}
-      <div className="bg-white shadow">
+      <div className="bg-card shadow border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">任务管理</h1>
             <div className="flex gap-2">
+              <ThemeToggle />
               <Button variant="outline" onClick={() => navigate('/')}>
                 <Home className="mr-2 h-4 w-4" /> 首页
               </Button>
@@ -87,7 +89,7 @@ export default function TasksPage() {
       <div className="container mx-auto px-4 py-6">
         {/* 操作栏 */}
         <div className="flex justify-between items-center mb-6">
-          <div className="text-gray-600">
+          <div className="text-muted-foreground">
             共 {tasks.length} 个任务
           </div>
           <Button onClick={() => setIsCreateDialogOpen(true)}>

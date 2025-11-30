@@ -29,9 +29,9 @@ export function TaskItemComponent({
   const isCompleted = task.status === 'completed'
   
   const priorityColors = {
-    low: 'bg-green-100 text-green-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    high: 'bg-red-100 text-red-800',
+    low: 'bg-green-500/10 text-green-600 dark:text-green-400',
+    medium: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
+    high: 'bg-red-500/10 text-red-600 dark:text-red-400',
   }
 
   return (
@@ -49,17 +49,17 @@ export function TaskItemComponent({
                 {isCompleted ? (
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
                 ) : (
-                  <Circle className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
                 )}
               </button>
-              <h3 className={`text-lg font-medium ${isCompleted ? 'line-through text-gray-500' : ''}`}>
+              <h3 className={`text-lg font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
                 {task.title}
               </h3>
             </div>
 
             {/* 描述 */}
             {task.description && (
-              <p className="text-gray-600 text-sm ml-8 mb-2">
+              <p className="text-muted-foreground text-sm ml-8 mb-2">
                 {task.description}
               </p>
             )}
@@ -73,7 +73,7 @@ export function TaskItemComponent({
 
               {/* 截止日期 */}
               {task.due_date && (
-                <div className="flex items-center gap-1 text-sm text-gray-500">
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   <span>{new Date(task.due_date).toLocaleDateString()}</span>
                 </div>
@@ -83,7 +83,7 @@ export function TaskItemComponent({
               {task.tags && task.tags.length > 0 && (
                 <div className="flex gap-1">
                   {task.tags.map((tag, index) => (
-                    <span key={index} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                    <span key={index} className="px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs">
                       {tag}
                     </span>
                   ))}
@@ -108,7 +108,7 @@ export function TaskItemComponent({
               size="sm"
               onClick={() => onDelete?.(task.task_id)}
             >
-              <Trash2 className="h-4 w-4 text-red-500" />
+              <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
         </div>

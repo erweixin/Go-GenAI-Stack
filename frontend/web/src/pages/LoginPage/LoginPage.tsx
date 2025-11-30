@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ThemeToggle } from '@/components/theme-toggle'
 import type { LoginRequest } from '@go-genai-stack/types'
 
 /**
@@ -42,7 +43,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>登录</CardTitle>
@@ -89,11 +93,19 @@ export default function LoginPage() {
               {loading ? '登录中...' : '登录'}
             </Button>
 
-            <div className="text-sm text-center text-gray-600">
-              还没有账号？{' '}
-              <Link to="/register" className="text-blue-600 hover:underline">
-                注册
-              </Link>
+            <div className="text-sm text-center text-muted-foreground space-y-2">
+              <div>
+                还没有账号？{' '}
+                <Link to="/register" className="text-primary hover:underline">
+                  注册
+                </Link>
+              </div>
+              <div>
+                查看{' '}
+                <Link to="/showcase" className="text-primary hover:underline">
+                  UI 组件展示
+                </Link>
+              </div>
             </div>
           </CardFooter>
         </form>

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ThemeToggle } from '@/components/theme-toggle'
 import type { RegisterRequest } from '@go-genai-stack/types'
 
 /**
@@ -44,7 +45,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>注册</CardTitle>
@@ -106,7 +110,7 @@ export default function RegisterPage() {
                 required
                 minLength={8}
               />
-              <p className="text-xs text-gray-500">密码至少8个字符</p>
+              <p className="text-xs text-muted-foreground">密码至少8个字符</p>
             </div>
           </CardContent>
 
@@ -115,11 +119,19 @@ export default function RegisterPage() {
               {loading ? '注册中...' : '注册'}
             </Button>
 
-            <div className="text-sm text-center text-gray-600">
-              已有账号？{' '}
-              <Link to="/login" className="text-blue-600 hover:underline">
-                登录
-              </Link>
+            <div className="text-sm text-center text-muted-foreground space-y-2">
+              <div>
+                已有账号？{' '}
+                <Link to="/login" className="text-primary hover:underline">
+                  登录
+                </Link>
+              </div>
+              <div>
+                查看{' '}
+                <Link to="/showcase" className="text-primary hover:underline">
+                  UI 组件展示
+                </Link>
+              </div>
             </div>
           </CardFooter>
         </form>
