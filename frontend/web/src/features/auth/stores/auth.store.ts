@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { authApi } from '../api/auth.api'
+import { setUser as setSentryUser, clearUser as clearSentryUser } from '@/lib/monitoring/sentry'
 import type { LoginRequest, RegisterRequest } from '@go-genai-stack/types'
 
 interface UserProfile {
@@ -85,15 +86,23 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem('user_id', response.user_id)
 
           // 更新状态
+          const user = {
+            user_id: response.user_id,
+            email: response.email,
+          }
+          
           set({ 
             isAuthenticated: true,
             accessToken: response.access_token,
             refreshToken: response.refresh_token,
-            user: {
-              user_id: response.user_id,
-              email: response.email,
-            },
+            user,
             isLoading: false,
+          })
+          
+          // 设置 Sentry 用户上下文
+          setSentryUser({
+            id: user.user_id,
+            email: user.email,
           })
         } catch (error: any) {
           const errorMessage = error.response?.data?.message || '注册失败'
@@ -114,6 +123,9 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user_id')
+        
+        // 清除 Sentry 用户上下文
+        clearSentryUser()
         
         set({
           isAuthenticated: false,

@@ -1,0 +1,60 @@
+# ============================================
+# Go-GenAI-Stack Frontend 环境变量模板
+# ============================================
+# 使用方式：
+#   1. 复制此文件: cp env-template .env.local
+#   2. 填写配置值
+#   3. pnpm dev
+# ============================================
+
+# ============================================
+# Sentry 监控配置
+# ============================================
+
+# Sentry DSN（从 Sentry 项目获取）
+# 格式：http://public_key@host/project_id
+# 示例：http://abc123@localhost:9000/1
+VITE_SENTRY_DSN=
+
+# Sentry Auth Token（用于上传 Source Map，生产构建时需要）
+# 获取方式：Sentry → Settings → Auth Tokens
+# 权限：project:releases, project:write
+VITE_SENTRY_AUTH_TOKEN=
+
+# Sentry 组织名称（可选，默认：go-genai-stack）
+VITE_SENTRY_ORG=go-genai-stack
+
+# Sentry 项目名称（可选，默认：web）
+VITE_SENTRY_PROJECT=web
+
+# ============================================
+# 应用配置
+# ============================================
+
+# API Base URL（如果需要覆盖）
+# VITE_API_BASE_URL=http://localhost:8080
+
+# 是否在 Release 名称中包含 Git Hash（默认：true）
+# 设置为 false 则只使用版本号（如：1.0.0）
+# VITE_USE_GIT_HASH=false
+
+# ============================================
+# 说明
+# ============================================
+#
+# 版本号管理：
+#   - 版本号自动从 package.json 读取
+#   - 开发环境：1.0.0-dev-abc123
+#   - 生产环境：1.0.0-abc123 或 1.0.0（如果禁用 git hash）
+#   - 更新版本：修改 package.json 中的 version 字段
+#
+# 开发环境示例：
+#   VITE_SENTRY_DSN=http://xxx@localhost:9000/1
+#
+# 生产环境示例：
+#   VITE_SENTRY_DSN=http://xxx@sentry.yourdomain.com/1
+#   VITE_SENTRY_AUTH_TOKEN=your-token-here
+#   VITE_USE_GIT_HASH=true
+#
+# ============================================
+

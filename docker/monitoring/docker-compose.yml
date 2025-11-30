@@ -1,0 +1,272 @@
+# ============================================
+# Sentry 监控服务（独立部署）
+# ============================================
+# 用于前端错误追踪、性能监控和会话重放
+#
+# 使用方式：
+#   cd docker/monitoring
+#   cp .env.example .env
+#   # 编辑 .env 设置密码
+#   docker compose up -d
+#   # 初始化 Sentry
+#   docker compose exec sentry-web sentry upgrade --noinput
+#   docker compose exec sentry-web sentry createuser
+#
+# 访问：http://localhost:9000
+# ============================================
+
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL for Sentry
+  # ============================================
+  sentry-postgres:
+    image: postgres:14-alpine
+    container_name: sentry-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: sentry
+      POSTGRES_PASSWORD: ${SENTRY_POSTGRES_PASSWORD:?请设置 SENTRY_POSTGRES_PASSWORD}
+      POSTGRES_DB: sentry
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    volumes:
+      - sentry-postgres-data:/var/lib/postgresql/data
+    networks:
+      - sentry-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentry -d sentry"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Redis for Sentry
+  # ============================================
+  sentry-redis:
+    image: redis:7-alpine
+    container_name: sentry-redis
+    restart: always
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --appendonly yes
+    volumes:
+      - sentry-redis-data:/data
+    networks:
+      - sentry-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ============================================
+  # Sentry Web Server
+  # ============================================
+  sentry-web:
+    image: getsentry/sentry:24.1.0
+    container_name: sentry-web
+    restart: always
+    depends_on:
+      sentry-postgres:
+        condition: service_healthy
+      sentry-redis:
+        condition: service_healthy
+    environment:
+      # Sentry 核心配置
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:?请设置 SENTRY_SECRET_KEY}
+      
+      # 数据库配置
+      SENTRY_POSTGRES_HOST: sentry-postgres
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: ${SENTRY_POSTGRES_PASSWORD:?请设置 SENTRY_POSTGRES_PASSWORD}
+      SENTRY_DB_NAME: sentry
+      
+      # Redis 配置
+      SENTRY_REDIS_HOST: sentry-redis
+      SENTRY_REDIS_PORT: 6379
+      SENTRY_REDIS_DB: 0
+      SENTRY_USE_REDIS_CLUSTER: 0
+      
+      # 文件存储配置
+      SENTRY_FILESTORE_BACKEND: filesystem
+      SENTRY_FILESTORE_OPTIONS: '{"location": "/var/lib/sentry/files"}'
+      
+      # Web 服务配置
+      SENTRY_WEB_HOST: 0.0.0.0
+      SENTRY_WEB_PORT: 9000
+      SENTRY_WEB_OPTIONS: '{"workers": 3, "limit_request_line": 0, "limit_request_field_size": 0}'
+      
+      # URL 配置（用于邮件链接等）
+      SENTRY_URL_PREFIX: ${SENTRY_URL_PREFIX:-http://localhost:9000}
+      
+      # 邮件配置（可选）
+      SENTRY_EMAIL_BACKEND: ${SENTRY_EMAIL_BACKEND:-console}
+      SENTRY_EMAIL_HOST: ${SENTRY_EMAIL_HOST:-}
+      SENTRY_EMAIL_PORT: ${SENTRY_EMAIL_PORT:-587}
+      SENTRY_EMAIL_USER: ${SENTRY_EMAIL_USER:-}
+      SENTRY_EMAIL_PASSWORD: ${SENTRY_EMAIL_PASSWORD:-}
+      SENTRY_EMAIL_USE_TLS: ${SENTRY_EMAIL_USE_TLS:-true}
+      SENTRY_SERVER_EMAIL: ${SENTRY_SERVER_EMAIL:-sentry@localhost}
+    ports:
+      - "${SENTRY_PORT:-9000}:9000"
+    volumes:
+      - sentry-data:/var/lib/sentry/files
+    networks:
+      - sentry-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/0/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Sentry Worker (后台任务处理)
+  # ============================================
+  sentry-worker:
+    image: getsentry/sentry:24.1.0
+    container_name: sentry-worker
+    restart: always
+    depends_on:
+      sentry-postgres:
+        condition: service_healthy
+      sentry-redis:
+        condition: service_healthy
+    command: run worker
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:?请设置 SENTRY_SECRET_KEY}
+      SENTRY_POSTGRES_HOST: sentry-postgres
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: ${SENTRY_POSTGRES_PASSWORD:?请设置 SENTRY_POSTGRES_PASSWORD}
+      SENTRY_DB_NAME: sentry
+      SENTRY_REDIS_HOST: sentry-redis
+      SENTRY_REDIS_PORT: 6379
+      SENTRY_REDIS_DB: 0
+      SENTRY_USE_REDIS_CLUSTER: 0
+      SENTRY_FILESTORE_BACKEND: filesystem
+      SENTRY_FILESTORE_OPTIONS: '{"location": "/var/lib/sentry/files"}'
+    volumes:
+      - sentry-data:/var/lib/sentry/files
+    networks:
+      - sentry-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Sentry Cron (定时任务)
+  # ============================================
+  sentry-cron:
+    image: getsentry/sentry:24.1.0
+    container_name: sentry-cron
+    restart: always
+    depends_on:
+      sentry-postgres:
+        condition: service_healthy
+      sentry-redis:
+        condition: service_healthy
+    command: run cron
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:?请设置 SENTRY_SECRET_KEY}
+      SENTRY_POSTGRES_HOST: sentry-postgres
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: ${SENTRY_POSTGRES_PASSWORD:?请设置 SENTRY_POSTGRES_PASSWORD}
+      SENTRY_DB_NAME: sentry
+      SENTRY_REDIS_HOST: sentry-redis
+      SENTRY_REDIS_PORT: 6379
+      SENTRY_REDIS_DB: 0
+      SENTRY_USE_REDIS_CLUSTER: 0
+      SENTRY_FILESTORE_BACKEND: filesystem
+      SENTRY_FILESTORE_OPTIONS: '{"location": "/var/lib/sentry/files"}'
+    volumes:
+      - sentry-data:/var/lib/sentry/files
+    networks:
+      - sentry-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+volumes:
+  sentry-postgres-data:
+    driver: local
+    name: sentry-postgres-data
+  sentry-redis-data:
+    driver: local
+    name: sentry-redis-data
+  sentry-data:
+    driver: local
+    name: sentry-data
+
+networks:
+  sentry-network:
+    driver: bridge
+    name: sentry-network
+
