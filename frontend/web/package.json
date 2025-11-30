@@ -3,6 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=8.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "dev:debug": "VITE_API_BASE_URL=http://localhost:8082 vite",

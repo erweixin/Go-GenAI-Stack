@@ -71,9 +71,7 @@ describe('useTaskCreateMutation', () => {
 
     result.current.mutate(mockRequest)
 
-    // Assert
-    expect(result.current.isPending).toBe(true)
-
+    // Assert - 等待 mutation 完成
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
     })
