@@ -11,6 +11,7 @@ import { TaskList } from '@/features/task/components/TaskList'
 import { TaskFilters } from '@/features/task/components/TaskFilters'
 import { TaskCreateDialog } from '@/features/task/components/TaskCreateDialog'
 import { TaskEditDialog } from '@/features/task/components/TaskEditDialog'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Plus, LogOut, Home } from 'lucide-react'
@@ -43,6 +44,7 @@ export default function TasksPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<TaskItem | null>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   const handleEdit = (task: TaskItem) => {
     setEditingTask(task)
@@ -50,8 +52,12 @@ export default function TasksPage() {
   }
 
   const handleDelete = (taskId: string) => {
-    if (confirm('确定要删除这个任务吗？')) {
-      deleteMutation.mutate(taskId)
+    setDeleteConfirmId(taskId)
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteMutation.mutate(deleteConfirmId)
     }
   }
 
@@ -119,6 +125,18 @@ export default function TasksPage() {
         open={isEditDialogOpen}
         onOpenChange={setIsEditDialogOpen}
         task={editingTask}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        onConfirm={confirmDelete}
+        title="确认删除"
+        description="确定要删除这个任务吗？此操作无法撤销。"
+        confirmText="删除"
+        cancelText="取消"
+        variant="destructive"
+        loading={deleteMutation.isPending}
       />
     </div>
   )

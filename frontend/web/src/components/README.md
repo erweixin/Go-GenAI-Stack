@@ -4,7 +4,16 @@
 
 本项目使用 **shadcn/ui** 作为核心组件库，基于 Tailwind CSS 4 和 Radix UI 构建。
 
-## 已安装组件 (31 个)
+## 组件列表
+
+### 自定义组件 (5 个)
+- `ConfirmDialog` - 确认对话框（替代 window.confirm）⭐ 新增
+- `ErrorBoundary` - 错误边界
+- `PageLoader` - 页面加载器
+- `ProtectedRoute` - 路由保护
+- `ThemeToggle` - 主题切换
+
+### shadcn/ui 组件 (33 个)
 
 ### 基础组件
 - `button` - 按钮
@@ -203,6 +212,74 @@ toast.info('提示信息')
 
 // 需要在 App 中添加 <Toaster />
 import { Toaster } from '@/components/ui/sonner'
+```
+
+### 确认对话框（ConfirmDialog）⭐ 推荐
+
+替代原生 `window.confirm()`，提供更好的用户体验：
+
+```tsx
+import { useState } from 'react'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { Button } from '@/components/ui/button'
+
+function TaskList() {
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const deleteMutation = useTaskDeleteMutation()
+  
+  const handleDelete = (taskId: string) => {
+    setDeleteId(taskId)
+  }
+  
+  const confirmDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId)
+    }
+  }
+  
+  return (
+    <>
+      <Button onClick={() => handleDelete('task-123')} variant="destructive">
+        删除任务
+      </Button>
+      
+      {/* 确认对话框 */}
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="确认删除"
+        description="确定要删除这个任务吗？此操作无法撤销。"
+        confirmText="删除"
+        cancelText="取消"
+        variant="destructive"
+        loading={deleteMutation.isPending}
+      />
+    </>
+  )
+}
+```
+
+**特性**：
+- ✅ 支持加载状态（禁用按钮）
+- ✅ 支持自定义按钮文本
+- ✅ 支持 destructive variant（红色警告样式）
+- ✅ 完全类型安全
+- ✅ 可复用
+
+**Props**：
+```typescript
+interface ConfirmDialogProps {
+  open: boolean                    // 是否打开
+  onOpenChange: (open: boolean) => void  // 打开/关闭回调
+  onConfirm: () => void            // 确认回调
+  title: string                    // 标题
+  description?: string             // 描述（可选）
+  confirmText?: string             // 确认按钮文本（默认："确认"）
+  cancelText?: string              // 取消按钮文本（默认："取消"）
+  variant?: 'default' | 'destructive'  // 样式变体（默认："default"）
+  loading?: boolean                // 加载状态（默认：false）
+}
 ```
 
 ## 添加新组件

@@ -18,6 +18,11 @@
     "test:web": "pnpm --filter @go-genai-stack/web test",
     "test:mobile": "pnpm --filter @go-genai-stack/mobile test",
     "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:web": "pnpm --filter @go-genai-stack/web format",
+    "format:mobile": "pnpm --filter @go-genai-stack/mobile format",
+    "format:shared": "prettier --write \"shared/**/*.{ts,tsx,js,jsx,json}\"",
     "clean": "pnpm -r clean && rm -rf node_modules"
   },
   "keywords": [
@@ -37,6 +42,11 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.15.0"
+  "packageManager": "pnpm@8.15.0",
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1"
+  }
 }
 
