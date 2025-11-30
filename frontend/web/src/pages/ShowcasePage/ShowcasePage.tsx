@@ -53,7 +53,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Home, Info, Palette, Plus, Settings, User } from 'lucide-react'
+import { Home, Info, Plus, Settings, User } from 'lucide-react'
 
 /**
  * 组件展示页面

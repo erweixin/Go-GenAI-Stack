@@ -38,6 +38,8 @@ export function initSentry() {
     
     // ==================== 集成配置 ====================
     integrations: [
+      ...Sentry.getDefaultIntegrations({}),
+      
       // 浏览器追踪（性能监控）
       Sentry.browserTracingIntegration(),
       
@@ -54,6 +56,13 @@ export function initSentry() {
         networkRequestHeaders: ['User-Agent'],
         networkResponseHeaders: ['Content-Type'],
       }),
+    ],
+    
+    // 自动追踪组件更新（性能监控配置）
+    tracePropagationTargets: [
+      'localhost',
+      /^https:\/\/yourapp\.com/,
+      /^\/api/,
     ],
     
     // ==================== 采样率配置 ====================
@@ -77,14 +86,15 @@ export function initSentry() {
       // 移除密码字段
       if (event.request?.data) {
         const data = event.request.data
-        if (typeof data === 'object') {
-          delete data.password
-          delete data.oldPassword
-          delete data.newPassword
-          delete data.confirmPassword
-          delete data.token
-          delete data.accessToken
-          delete data.refreshToken
+        if (typeof data === 'object' && data !== null) {
+          const dataObj = data as Record<string, any>
+          delete dataObj.password
+          delete dataObj.oldPassword
+          delete dataObj.newPassword
+          delete dataObj.confirmPassword
+          delete dataObj.token
+          delete dataObj.accessToken
+          delete dataObj.refreshToken
         }
       }
       
@@ -155,27 +165,10 @@ export function initSentry() {
       /googletagmanager\.com/i,
     ],
     
-    // ==================== 性能配置 ====================
-    
-    // 开启性能监控
-    enableTracing: true,
-    
-    // 自动追踪组件更新
-    tracePropagationTargets: [
-      'localhost',
-      /^https:\/\/yourapp\.com/,
-      /^\/api/,
-    ],
-    
     // ==================== 调试配置 ====================
     
     // 开发环境开启调试
     debug: environment === 'development',
-    
-    // 控制台集成
-    integrations: [
-      ...Sentry.getDefaultIntegrations({}),
-    ],
   })
 }
 

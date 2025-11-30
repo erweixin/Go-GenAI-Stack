@@ -164,36 +164,40 @@ class ErrorBoundaryClass extends Component<Props, State> {
 
 // 使用 Sentry 的 ErrorBoundary 包装
 export const ErrorBoundary = Sentry.withErrorBoundary(ErrorBoundaryClass, {
-  fallback: ({ error, resetError }) => (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-destructive/10 rounded-lg">
-              <AlertCircle className="h-6 w-6 text-destructive" />
+  fallback: ({ error, resetError }) => {
+    const errorMessage = error instanceof Error ? error.message : '发生了未知错误'
+    
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-destructive/10 rounded-lg">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <CardTitle>出错了</CardTitle>
+                <CardDescription>应用遇到了错误</CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle>出错了</CardTitle>
-              <CardDescription>应用遇到了错误</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertDescription>{error.message}</AlertDescription>
-          </Alert>
-        </CardContent>
-        <CardFooter className="flex gap-2">
-          <Button onClick={resetError} variant="outline">
-            重试
-          </Button>
-          <Button onClick={() => window.location.reload()}>
-            刷新页面
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
-  ),
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            <Button onClick={resetError} variant="outline">
+              重试
+            </Button>
+            <Button onClick={() => window.location.reload()}>
+              刷新页面
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    )
+  },
   showDialog: false, // 不显示 Sentry 默认对话框
 })
 

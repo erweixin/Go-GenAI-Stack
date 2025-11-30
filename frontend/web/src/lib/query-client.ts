@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
-import { captureSentryException } from '@/lib/monitoring/sentry'
+import { captureException } from '@/lib/monitoring/sentry'
 
 /**
  * React Query Client 配置
@@ -49,9 +49,11 @@ export const queryClient = new QueryClient({
       // 错误处理
       onError: (error) => {
         // 上报到 Sentry
-        captureSentryException(error, {
-          tags: { type: 'mutation' },
-        })
+        if (error instanceof Error) {
+          captureException(error, {
+            type: 'mutation',
+          })
+        }
       },
     },
   },
