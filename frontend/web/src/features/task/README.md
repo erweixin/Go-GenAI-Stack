@@ -73,7 +73,7 @@ task/
 
 ## Hooks 说明
 
-### React Query Hooks（推荐）⭐
+### React Query Hooks ⭐
 
 我们推荐使用 React Query hooks 进行数据管理，它提供：
 - ✅ 自动缓存和刷新
@@ -185,55 +185,22 @@ const { mutate: deleteTask } = useTaskDeleteMutation()
 deleteTask('task-123')
 ```
 
----
-
-### 旧版 Hooks（向后兼容）
-
-以下 hooks 仍然可用，但推荐迁移到 React Query 版本。
-
-#### useTasks()
-获取任务列表，自动处理加载和错误状态。
-
-**返回值**:
-```typescript
-{
-  tasks: TaskItem[]
-  loading: boolean
-  error: string | null
-  refresh: () => void
-}
-```
-
-#### useTaskCreate()
-创建任务 Hook。
-
-**返回值**:
-```typescript
-{
-  createTask: (data: CreateTaskRequest) => Promise<TaskItem | null>
-  loading: boolean
-  error: string | null
-}
-```
-
 ## Store 说明
 
-### task.store.ts
-任务状态管理，使用 Zustand。
+### task.store.ts（仅 UI 状态）
+
+任务 UI 状态管理，使用 Zustand。
+
+**注意**：服务器数据（任务列表）已由 React Query 管理，此 Store 仅管理 UI 状态。
 
 **状态**:
-- `tasks`: 任务列表
-- `selectedTask`: 当前选中的任务
-- `loading`: 加载状态
-- `error`: 错误信息
-- `filters`: 筛选条件
+- `selectedTask`: 当前选中的任务（用于详情页、编辑对话框等）
+- `filters`: 筛选条件（传递给 React Query）
 
 **Actions**:
-- `setTasks`: 设置任务列表
-- `addTask`: 添加任务
-- `updateTask`: 更新任务
-- `deleteTask`: 删除任务
+- `setSelectedTask`: 设置选中的任务
 - `setFilters`: 设置筛选条件
+- `reset`: 重置 UI 状态
 
 ## 使用示例
 

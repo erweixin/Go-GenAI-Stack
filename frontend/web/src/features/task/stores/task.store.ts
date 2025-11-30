@@ -1,74 +1,56 @@
 import { create } from 'zustand'
 import type { TaskItem, TaskStatus, TaskPriority } from '@go-genai-stack/types'
 
-interface TaskFilters {
+/**
+ * 任务筛选条件
+ */
+export interface TaskFilters {
   status?: TaskStatus
   priority?: TaskPriority
   tag?: string
   keyword?: string
 }
 
-interface TaskState {
-  // 状态
-  tasks: TaskItem[]
+/**
+ * Task UI State
+ * 
+ * 注意：服务器数据（任务列表）已由 React Query 管理
+ * 此 Store 仅管理客户端 UI 状态
+ */
+interface TaskUIState {
+  // UI 状态
   selectedTask: TaskItem | null
-  loading: boolean
-  error: string | null
   
-  // 筛选条件
+  // 筛选条件（用于 React Query）
   filters: TaskFilters
   
   // Actions
-  setTasks: (tasks: TaskItem[]) => void
-  addTask: (task: TaskItem) => void
-  updateTask: (taskId: string, task: Partial<TaskItem>) => void
-  deleteTask: (taskId: string) => void
   setSelectedTask: (task: TaskItem | null) => void
   setFilters: (filters: TaskFilters) => void
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
   reset: () => void
 }
 
 const initialState = {
-  tasks: [],
   selectedTask: null,
-  loading: false,
-  error: null,
   filters: {},
 }
 
 /**
- * Task Store
+ * Task Store（仅 UI 状态）
  * 
- * 任务状态管理
+ * 数据管理已迁移到 React Query：
+ * - 任务列表：useTasksQuery()
+ * - 创建任务：useTaskCreateMutation()
+ * - 更新任务：useTaskUpdateMutation()
+ * - 完成任务：useTaskCompleteMutation()
+ * - 删除任务：useTaskDeleteMutation()
  */
-export const useTaskStore = create<TaskState>((set) => ({
+export const useTaskStore = create<TaskUIState>((set) => ({
   ...initialState,
-  
-  setTasks: (tasks) => set({ tasks }),
-  
-  addTask: (task) => set((state) => ({ 
-    tasks: [task, ...state.tasks] 
-  })),
-  
-  updateTask: (taskId, updatedTask) => set((state) => ({
-    tasks: state.tasks.map((t) => 
-      t.task_id === taskId ? { ...t, ...updatedTask } : t
-    ),
-  })),
-  
-  deleteTask: (taskId) => set((state) => ({
-    tasks: state.tasks.filter((t) => t.task_id !== taskId),
-  })),
   
   setSelectedTask: (task) => set({ selectedTask: task }),
   
   setFilters: (filters) => set({ filters }),
-  
-  setLoading: (loading) => set({ loading }),
-  
-  setError: (error) => set({ error }),
   
   reset: () => set(initialState),
 }))

@@ -10,12 +10,16 @@ export { TaskCreateDialog } from './components/TaskCreateDialog'
 export { TaskEditDialog } from './components/TaskEditDialog'
 export { TaskFilters } from './components/TaskFilters'
 
-// Hooks
-export { useTasks } from './hooks/useTasks'
-export { useTaskCreate } from './hooks/useTaskCreate'
-export { useTaskUpdate } from './hooks/useTaskUpdate'
-export { useTaskComplete } from './hooks/useTaskComplete'
-export { useTaskDelete } from './hooks/useTaskDelete'
+// Hooks (React Query)
+export {
+  useTasksQuery,
+  useTaskQuery,
+  taskKeys,
+  useTaskCreateMutation,
+  useTaskUpdateMutation,
+  useTaskCompleteMutation,
+  useTaskDeleteMutation,
+} from './hooks'
 
 // Stores
 export { useTaskStore } from './stores/task.store'

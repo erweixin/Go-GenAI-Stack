@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useTaskCreate } from '../hooks/useTaskCreate'
+import { useTaskCreateMutation } from '../hooks'
 import type { CreateTaskRequest, TaskPriority } from '@go-genai-stack/types'
 
 interface TaskCreateDialogProps {
@@ -27,12 +27,12 @@ interface TaskCreateDialogProps {
 }
 
 /**
- * 创建任务对话框
+ * 创建任务对话框（使用 React Query）
  * 
  * 用例：CreateTask
  */
 export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) {
-  const { createTask, loading } = useTaskCreate()
+  const createMutation = useTaskCreateMutation()
   
   const [formData, setFormData] = useState<CreateTaskRequest>({
     title: '',
@@ -43,24 +43,25 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
 
   const [tagInput, setTagInput] = useState('')
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!formData.title.trim()) {
       alert('请输入任务标题')
       return
     }
 
-    const success = await createTask(formData)
-    if (success) {
-      // 重置表单
-      setFormData({
-        title: '',
-        description: '',
-        priority: 'medium',
-        tags: [],
-      })
-      setTagInput('')
-      onOpenChange(false)
-    }
+    createMutation.mutate(formData, {
+      onSuccess: () => {
+        // 重置表单
+        setFormData({
+          title: '',
+          description: '',
+          priority: 'medium',
+          tags: [],
+        })
+        setTagInput('')
+        onOpenChange(false)
+      }
+    })
   }
 
   const handleAddTag = () => {
@@ -180,8 +181,8 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? '创建中...' : '创建'}
+          <Button onClick={handleSubmit} disabled={createMutation.isPending}>
+            {createMutation.isPending ? '创建中...' : '创建'}
           </Button>
         </DialogFooter>
       </DialogContent>

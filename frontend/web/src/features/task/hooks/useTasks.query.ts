@@ -55,7 +55,6 @@ export function useTaskQuery(taskId: string, enabled = true) {
   return useQuery({
     queryKey: taskKeys.detail(taskId),
     queryFn: () => taskApi.get(taskId),
-    select: (data) => data.task, // 只返回 task 对象
     enabled: !!taskId && enabled, // 仅在有 taskId 且 enabled 时才执行
   })
 }

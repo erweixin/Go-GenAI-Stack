@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
-import { useTasks } from '@/features/task/hooks/useTasks'
-import { useTaskComplete } from '@/features/task/hooks/useTaskComplete'
-import { useTaskDelete } from '@/features/task/hooks/useTaskDelete'
+import { useTaskStore } from '@/features/task/stores/task.store'
+import {
+  useTasksQuery,
+  useTaskCompleteMutation,
+  useTaskDeleteMutation,
+} from '@/features/task/hooks'
 import { TaskList } from '@/features/task/components/TaskList'
 import { TaskFilters } from '@/features/task/components/TaskFilters'
 import { TaskCreateDialog } from '@/features/task/components/TaskCreateDialog'
@@ -14,7 +17,7 @@ import { Plus, LogOut, Home } from 'lucide-react'
 import type { TaskItem } from '@go-genai-stack/types'
 
 /**
- * 任务管理页面
+ * 任务管理页面（使用 React Query）
  * 
  * 职责：
  * - 组合 features/task 的组件
@@ -23,7 +26,6 @@ import type { TaskItem } from '@go-genai-stack/types'
  * 
  * 不包含：
  * - 业务逻辑（在 features/task/hooks 中）
- * - 状态管理（在 features/task/stores 中）
  * - UI 细节（在 features/task/components 中）
  * 
  * 对应后端领域：task
@@ -31,9 +33,12 @@ import type { TaskItem } from '@go-genai-stack/types'
 export default function TasksPage() {
   const navigate = useNavigate()
   const { logout } = useAuthStore()
-  const { tasks, loading, refresh } = useTasks()
-  const { completeTask } = useTaskComplete()
-  const { deleteTask } = useTaskDelete()
+  const { filters } = useTaskStore()
+  
+  // ✅ 使用 React Query hooks（带筛选条件）
+  const { data: tasks = [], isLoading } = useTasksQuery(filters)
+  const completeMutation = useTaskCompleteMutation()
+  const deleteMutation = useTaskDeleteMutation()
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -44,20 +49,14 @@ export default function TasksPage() {
     setIsEditDialogOpen(true)
   }
 
-  const handleDelete = async (taskId: string) => {
+  const handleDelete = (taskId: string) => {
     if (confirm('确定要删除这个任务吗？')) {
-      const success = await deleteTask(taskId)
-      if (success) {
-        refresh()
-      }
+      deleteMutation.mutate(taskId)
     }
   }
 
-  const handleComplete = async (taskId: string) => {
-    const success = await completeTask(taskId)
-    if (success) {
-      refresh()
-    }
+  const handleComplete = (taskId: string) => {
+    completeMutation.mutate(taskId)
   }
 
   const handleLogout = () => {
@@ -103,7 +102,7 @@ export default function TasksPage() {
         {/* 任务列表 */}
         <TaskList
           tasks={tasks}
-          loading={loading}
+          loading={isLoading}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onComplete={handleComplete}

@@ -5,7 +5,6 @@ import { taskKeys } from './useTasks.query'
 import type {
   CreateTaskRequest,
   UpdateTaskRequest,
-  TaskItem,
 } from '@go-genai-stack/types'
 
 /**
@@ -77,7 +76,7 @@ export function useTaskUpdateMutation() {
     mutationFn: ({ taskId, data }: { taskId: string; data: UpdateTaskRequest }) =>
       taskApi.update(taskId, data),
 
-    onSuccess: (response, { taskId }) => {
+    onSuccess: (_response, { taskId }) => {
       // 使任务列表查询失效
       queryClient.invalidateQueries({
         queryKey: taskKeys.lists(),
@@ -167,7 +166,7 @@ export function useTaskCompleteMutation() {
     },
 
     // 总是重新获取数据确保一致性
-    onSettled: (data, error, taskId) => {
+    onSettled: (_data, _error, taskId) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) })
     },
   })
@@ -193,7 +192,7 @@ export function useTaskDeleteMutation() {
   return useMutation({
     mutationFn: (taskId: string) => taskApi.delete(taskId),
 
-    onSuccess: (response, taskId) => {
+    onSuccess: (_response, taskId) => {
       // 移除单个任务的缓存
       queryClient.removeQueries({
         queryKey: taskKeys.detail(taskId),

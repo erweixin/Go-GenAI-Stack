@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useTasksQuery } from '../../hooks/useTasks.query'
 import { taskApi } from '../../api/task.api'
+import type { ListTasksRequest } from '@go-genai-stack/types'
 
 // Mock API
 vi.mock('../../api/task.api')
@@ -155,12 +156,13 @@ describe('useTasks (React Query 版本)', () => {
       has_more: false
     })
 
+    let filters: ListTasksRequest | undefined = undefined
+
     // Act - 先不带筛选条件
     const { result, rerender } = renderHook(
-      ({ filters }) => useTasksQuery(filters),
+      () => useTasksQuery(filters),
       {
         wrapper: createWrapper(),
-        initialProps: { filters: undefined }
       }
     )
 
@@ -172,7 +174,8 @@ describe('useTasks (React Query 版本)', () => {
     expect(taskApi.list).toHaveBeenCalledWith(undefined)
 
     // 修改筛选条件
-    rerender({ filters: { status: 'completed' } })
+    filters = { status: 'completed' as const }
+    rerender()
 
     // Assert - 应该触发新的 API 调用
     await waitFor(() => {

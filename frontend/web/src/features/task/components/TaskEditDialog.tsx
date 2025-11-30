@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useTaskUpdate } from '../hooks/useTaskUpdate'
+import { useTaskUpdateMutation } from '../hooks'
 import type { TaskItem, UpdateTaskRequest, TaskPriority } from '@go-genai-stack/types'
 
 interface TaskEditDialogProps {
@@ -28,12 +28,12 @@ interface TaskEditDialogProps {
 }
 
 /**
- * 编辑任务对话框
+ * 编辑任务对话框（使用 React Query）
  * 
  * 用例：UpdateTask
  */
 export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps) {
-  const { updateTask, loading } = useTaskUpdate()
+  const updateMutation = useTaskUpdateMutation()
   
   const [formData, setFormData] = useState<UpdateTaskRequest>({
     title: '',
@@ -57,16 +57,20 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
     }
   }, [task])
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!task || !formData.title?.trim()) {
       alert('请输入任务标题')
       return
     }
 
-    const success = await updateTask(task.task_id, formData)
-    if (success) {
-      onOpenChange(false)
-    }
+    updateMutation.mutate(
+      { taskId: task.task_id, data: formData },
+      {
+        onSuccess: () => {
+          onOpenChange(false)
+        }
+      }
+    )
   }
 
   const handleAddTag = () => {
@@ -188,8 +192,8 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             取消
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? '保存中...' : '保存'}
+          <Button onClick={handleSubmit} disabled={updateMutation.isPending}>
+            {updateMutation.isPending ? '保存中...' : '保存'}
           </Button>
         </DialogFooter>
       </DialogContent>
