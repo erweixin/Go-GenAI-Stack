@@ -1,8 +1,10 @@
 # Go-GenAI-Stack Frontend (Web)
 
-**技术栈**: React + TypeScript + Vite + TailwindCSS + Zustand
+**技术栈**: React + TypeScript + Vite + TailwindCSS + Zustand + TanStack Query
 
 **架构模式**: Feature-First + Domain-Driven Design (Vibe-Coding-Friendly)
+
+**数据管理**: TanStack Query (React Query) + Zustand
 
 **测试框架**: Vitest + React Testing Library
 
@@ -430,6 +432,218 @@ Page 组件（重新渲染）
 7. Hook 调用 `taskStore.addTask(newTask)` 更新状态
 8. Store 更新触发 `TaskList` 重新渲染
 9. 新任务显示在列表中
+
+---
+
+## 💾 数据缓存和状态管理
+
+### TanStack Query (React Query) ⭐
+
+**推荐使用 React Query 进行服务器状态管理**。
+
+#### 为什么使用 React Query？
+
+1. **自动缓存管理**
+   - 无需手动管理 loading/error 状态
+   - 自动缓存数据，减少不必要的请求
+   - 智能的后台刷新
+
+2. **更好的用户体验**
+   - 乐观更新（Optimistic Updates）
+   - 自动重试
+   - 窗口聚焦时自动刷新
+   - 网络重连时自动刷新
+
+3. **开发者体验**
+   - 更少的样板代码
+   - React Query Devtools
+   - TypeScript 支持
+
+#### 基本用法
+
+**查询数据（Query）**:
+```typescript
+import { useTasksQuery } from '@/features/task/hooks'
+
+function TasksPage() {
+  // ✅ 使用 React Query
+  const { data: tasks = [], isLoading } = useTasksQuery()
+
+  return (
+    <div>
+      {isLoading ? <Spinner /> : <TaskList tasks={tasks} />}
+    </div>
+  )
+}
+```
+
+**修改数据（Mutation）**:
+```typescript
+import { useTaskCreateMutation } from '@/features/task/hooks'
+
+function CreateTaskButton() {
+  const createMutation = useTaskCreateMutation()
+
+  const handleCreate = () => {
+    createMutation.mutate({
+      title: 'New Task',
+      description: 'Task description'
+    })
+  }
+
+  return (
+    <Button onClick={handleCreate} disabled={createMutation.isPending}>
+      创建任务
+    </Button>
+  )
+}
+```
+
+#### React Query 的数据流向
+
+```
+用户操作
+   ↓
+Feature Hook（useTasksQuery/useTaskMutation）
+   ↓
+React Query Cache（自动管理）
+   ↓
+Feature API（如需重新获取）
+   ↓
+Backend API
+   ↓
+React Query Cache（自动更新）
+   ↓
+Page 组件（自动重新渲染）
+```
+
+#### Query Keys 管理
+
+所有 Query Keys 应统一管理：
+
+```typescript
+// features/task/hooks/useTasks.query.ts
+export const taskKeys = {
+  all: ['tasks'],
+  lists: () => [...taskKeys.all, 'list'],
+  list: (filters) => [...taskKeys.lists(), filters],
+  details: () => [...taskKeys.all, 'detail'],
+  detail: (id) => [...taskKeys.details(), id],
+}
+```
+
+#### 缓存失效
+
+Mutation 后自动使相关查询失效：
+
+```typescript
+export function useTaskCreateMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: taskApi.create,
+    onSuccess: () => {
+      // 使所有任务列表查询失效，触发重新获取
+      queryClient.invalidateQueries({
+        queryKey: taskKeys.lists()
+      })
+    },
+  })
+}
+```
+
+#### React Query Devtools
+
+开发环境下可以使用 Devtools 查看：
+- 所有 Query 的状态
+- 缓存数据
+- 请求时间线
+
+在浏览器中按下浮动按钮即可打开。
+
+#### 配置
+
+全局配置在 `src/lib/query-client.ts`：
+
+```typescript
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,     // 5 分钟
+      gcTime: 1000 * 60 * 30,       // 30 分钟
+      retry: 2,                      // 重试 2 次
+      refetchOnWindowFocus: true,    // 窗口聚焦时刷新
+    },
+  },
+})
+```
+
+#### 完整示例
+
+见 `src/features/task/pages/TasksPageWithQuery.tsx` 查看完整的使用示例。
+
+**详细文档**: 请阅读 [REACT_QUERY_GUIDE.md](./REACT_QUERY_GUIDE.md)
+
+### Zustand (客户端状态管理)
+
+**用于管理客户端状态**（如 UI 状态、用户偏好等）。
+
+#### 使用场景
+
+- ✅ 认证状态（token, user info）
+- ✅ UI 状态（模态框打开/关闭、侧边栏展开/收起）
+- ✅ 用户偏好（主题、语言）
+- ❌ 服务器数据（推荐使用 React Query）
+
+#### 基本用法
+
+```typescript
+// features/auth/stores/auth.store.ts
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+interface AuthState {
+  isAuthenticated: boolean
+  user: User | null
+  login: (data: LoginRequest) => Promise<void>
+  logout: () => void
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      isAuthenticated: false,
+      user: null,
+      login: async (data) => { /* ... */ },
+      logout: () => set({ isAuthenticated: false, user: null }),
+    }),
+    {
+      name: 'auth-storage',
+    }
+  )
+)
+```
+
+### 状态管理决策树
+
+```
+需要管理的状态是什么？
+│
+├─ 服务器数据（API 数据）
+│  ├─ 列表数据 → React Query (useQuery)
+│  ├─ 详情数据 → React Query (useQuery)
+│  └─ 创建/更新/删除 → React Query (useMutation)
+│
+├─ 认证状态
+│  └─ Token、User Info → Zustand + LocalStorage
+│
+├─ UI 状态
+│  ├─ 全局 UI 状态 → Zustand
+│  └─ 局部 UI 状态 → useState
+│
+└─ 表单状态
+   └─ React Hook Form
+```
 
 ---
 
