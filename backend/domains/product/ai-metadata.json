@@ -1,0 +1,160 @@
+{
+  "domain": "product",
+  "version": "1.0",
+  "description": "积分商城商品管理领域",
+  "last_updated": "2025-12-01",
+  "ai_friendly": true,
+  "vibe_coding_ready": true,
+  
+  "core_concepts": {
+    "aggregate_root": "Product",
+    "value_objects": ["ProductStatus", "CoinType"],
+    "entities": [],
+    "repositories": ["ProductRepository"],
+    "services": ["ProductService"]
+  },
+  
+  "business_capabilities": [
+    "商品创建和管理",
+    "商品上下架控制",
+    "库存管理和扣减",
+    "财务数据跟踪",
+    "商品查询和筛选"
+  ],
+  
+  "use_cases": [
+    {
+      "name": "CreateProduct",
+      "complexity": "low",
+      "frequency": "medium",
+      "priority": "high"
+    },
+    {
+      "name": "ListProducts",
+      "complexity": "medium",
+      "frequency": "high",
+      "priority": "high"
+    },
+    {
+      "name": "ShelveProduct",
+      "complexity": "medium",
+      "frequency": "medium",
+      "priority": "high"
+    },
+    {
+      "name": "DeductInventory",
+      "complexity": "high",
+      "frequency": "high",
+      "priority": "critical"
+    }
+  ],
+  
+  "technical_decisions": {
+    "database": "PostgreSQL",
+    "orm": "none - using database/sql",
+    "caching": "Redis (optional)",
+    "event_bus": "In-memory (extensible)",
+    "validation": "validator/v10"
+  },
+  
+  "architecture_patterns": {
+    "style": "Vibe-Coding-Friendly DDD",
+    "layers": ["Handler (thin)", "Service (thick)", "Repository", "Model"],
+    "dependencies": "Handler -> Service -> Repository -> Database"
+  },
+  
+  "integration_points": {
+    "upstream": ["User Domain (operator information)"],
+    "downstream": [],
+    "events_published": [
+      "ProductCreated",
+      "ProductUpdated",
+      "ProductShelved",
+      "ProductUnshelved",
+      "InventoryDeducted",
+      "ProductSoldOut",
+      "ProductDeleted"
+    ],
+    "events_subscribed": []
+  },
+  
+  "data_model": {
+    "tables": ["products"],
+    "views": [],
+    "indexes": [
+      "idx_products_status",
+      "idx_products_created_at",
+      "idx_products_coin_type",
+      "idx_products_operator_id"
+    ]
+  },
+  
+  "api_endpoints": [
+    "POST /api/products - 创建商品",
+    "GET /api/products - 列出商品",
+    "GET /api/products/:id - 获取商品详情",
+    "PUT /api/products/:id - 更新商品",
+    "DELETE /api/products/:id - 删除商品",
+    "POST /api/products/:id/shelve - 上架商品",
+    "POST /api/products/:id/unshelve - 下架商品",
+    "POST /api/products/:id/deduct - 扣减库存（内部）"
+  ],
+  
+  "business_rules": {
+    "critical": [
+      "商品名称不能为空",
+      "初始金币必须大于 0",
+      "库存不能为负数",
+      "已兑换数量不能超过总库存",
+      "下架状态不能兑换"
+    ],
+    "important": [
+      "上架数量不能超过可用库存",
+      "库存扣减使用行锁保证并发安全",
+      "只有下架且未兑换的商品才能删除"
+    ]
+  },
+  
+  "performance_considerations": {
+    "high_frequency_operations": ["ListProducts", "DeductInventory"],
+    "caching_strategy": "缓存商品详情和列表",
+    "indexing": "status, created_at, coin_type 建立索引",
+    "concurrency_control": "DeductInventory 使用 SELECT FOR UPDATE"
+  },
+  
+  "testing_strategy": {
+    "unit_tests": "Model 层业务规则测试",
+    "integration_tests": "Repository 层数据库操作测试",
+    "handler_tests": "Handler 层 HTTP 请求测试",
+    "e2e_tests": "完整业务流程测试"
+  },
+  
+  "extension_points": [
+    "商品分类（Category）",
+    "商品规格（SKU）",
+    "定时上下架",
+    "库存预警",
+    "批量导入/导出"
+  ],
+  
+  "ai_assistant_notes": {
+    "code_generation": "参考 usecases.yaml 生成 Handler 和 Service",
+    "error_handling": "使用统一错误码格式：ERROR_CODE: message",
+    "naming_convention": "文件名小写+下划线，接口名 PascalCase",
+    "handler_pattern": "薄层，只做 HTTP 适配，不包含业务逻辑",
+    "service_pattern": "厚层，实现完整业务用例，协调多个 Repository",
+    "repository_pattern": "使用 database/sql，手写 SQL，不使用 ORM"
+  },
+  
+  "documentation_quality": {
+    "readme": "完整，包含领域概述和快速开始",
+    "glossary": "详细，定义所有术语",
+    "rules": "全面，覆盖所有业务规则",
+    "events": "清晰，包含事件负载和订阅者",
+    "usecases": "声明式，AI 可读"
+  },
+  
+  "maturity_level": "production-ready",
+  "maintenance_priority": "high"
+}
+

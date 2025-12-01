@@ -210,3 +210,85 @@ FROM tasks
 GROUP BY status, priority;
 
 COMMENT ON VIEW task_statistics IS 'Task statistics by status and priority';
+
+-- ============================================
+-- Product Domain Tables
+-- ============================================
+
+-- products 表：存储积分商城商品
+CREATE TABLE products (
+    id UUID PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    image_url TEXT,
+    description TEXT,
+    
+    -- 金币相关
+    initial_coins INT NOT NULL,
+    coin_type VARCHAR(20) NOT NULL DEFAULT 'gold' CHECK (coin_type IN ('gold', 'silver')),
+    
+    -- 库存管理
+    stock INT NOT NULL DEFAULT 0,
+    listed_quantity INT NOT NULL DEFAULT 0,
+    listed_limit INT,
+    redeemed_count INT NOT NULL DEFAULT 0,
+    available_quantity INT NOT NULL DEFAULT 0,
+    
+    -- 销售数据
+    sales_count INT NOT NULL DEFAULT 0,
+    purchase_limit INT,
+    
+    -- 财务数据
+    cost DECIMAL(10, 2),
+    revenue DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    
+    -- 状态
+    status VARCHAR(20) NOT NULL DEFAULT 'off_shelf' CHECK (status IN ('on_shelf', 'off_shelf')),
+    
+    -- 元数据
+    operator_id UUID REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    
+    -- 约束
+    CONSTRAINT products_name_not_empty CHECK (LENGTH(TRIM(name)) > 0),
+    CONSTRAINT products_stock_non_negative CHECK (stock >= 0),
+    CONSTRAINT products_initial_coins_positive CHECK (initial_coins > 0),
+    CONSTRAINT products_redeemed_lte_stock CHECK (redeemed_count <= stock),
+    CONSTRAINT products_listed_lte_stock CHECK (listed_quantity <= stock),
+    CONSTRAINT products_available_calculation CHECK (available_quantity = listed_quantity - redeemed_count)
+);
+
+-- 索引
+CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_products_created_at ON products(created_at DESC);
+CREATE INDEX idx_products_coin_type ON products(coin_type);
+CREATE INDEX idx_products_operator_id ON products(operator_id);
+CREATE INDEX idx_products_name ON products(name);
+
+-- 注释
+COMMENT ON TABLE products IS 'Product domain - stores points mall products';
+COMMENT ON COLUMN products.id IS 'Product ID (UUID)';
+COMMENT ON COLUMN products.name IS 'Product name (required, max 200 chars)';
+COMMENT ON COLUMN products.image_url IS 'Product image URL (optional)';
+COMMENT ON COLUMN products.description IS 'Product description (optional)';
+COMMENT ON COLUMN products.initial_coins IS 'Coins required for redemption (must be > 0)';
+COMMENT ON COLUMN products.coin_type IS 'Coin type: gold, silver';
+COMMENT ON COLUMN products.stock IS 'Total stock';
+COMMENT ON COLUMN products.listed_quantity IS 'Listed quantity (on shelf)';
+COMMENT ON COLUMN products.listed_limit IS 'Listed limit per batch (NULL = no limit)';
+COMMENT ON COLUMN products.redeemed_count IS 'Total redeemed count';
+COMMENT ON COLUMN products.available_quantity IS 'Available quantity (listed_quantity - redeemed_count)';
+COMMENT ON COLUMN products.sales_count IS 'Total sales count (equals redeemed_count)';
+COMMENT ON COLUMN products.purchase_limit IS 'Purchase limit per user (NULL = no limit)';
+COMMENT ON COLUMN products.cost IS 'Cost price (CNY)';
+COMMENT ON COLUMN products.revenue IS 'Total revenue from redeemed products';
+COMMENT ON COLUMN products.status IS 'Product status: on_shelf, off_shelf';
+COMMENT ON COLUMN products.operator_id IS 'Operator ID (foreign key to users table)';
+COMMENT ON COLUMN products.created_at IS 'Creation timestamp';
+COMMENT ON COLUMN products.updated_at IS 'Last update timestamp';
+
+-- 触发器：自动更新 updated_at
+CREATE TRIGGER update_products_updated_at
+    BEFORE UPDATE ON products
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

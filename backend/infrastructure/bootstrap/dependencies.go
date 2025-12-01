@@ -5,6 +5,9 @@ import (
 
 	authhandlers "github.com/erweixin/go-genai-stack/backend/domains/auth/handlers"
 	authservice "github.com/erweixin/go-genai-stack/backend/domains/auth/service"
+	producthandlers "github.com/erweixin/go-genai-stack/backend/domains/product/handlers"
+	productrepo "github.com/erweixin/go-genai-stack/backend/domains/product/repository"
+	productservice "github.com/erweixin/go-genai-stack/backend/domains/product/service"
 	taskhandlers "github.com/erweixin/go-genai-stack/backend/domains/task/handlers"
 	taskrepo "github.com/erweixin/go-genai-stack/backend/domains/task/repository"
 	taskservice "github.com/erweixin/go-genai-stack/backend/domains/task/service"
@@ -41,6 +44,9 @@ type AppContainer struct {
 
 	// Task 领域
 	TaskHandlerDeps *taskhandlers.HandlerDependencies
+
+	// Product 领域
+	ProductHandlerDeps *producthandlers.HandlerDependencies
 
 	// Extension points: 添加更多领域
 	// LLMHandlerDeps  *llmhandlers.HandlerDependencies
@@ -121,6 +127,19 @@ func InitDependencies(
 	taskHandlerDeps := taskhandlers.NewHandlerDependencies(taskService)
 
 	// ============================================
+	// Product 领域依赖注入（三层架构）
+	// ============================================
+
+	// 1. Repository Layer（基础设施层）
+	productRepo := productrepo.NewProductRepository(db)
+
+	// 2. Domain Service Layer（领域层）
+	productService := productservice.NewProductService(productRepo)
+
+	// 3. Handler Dependencies（Handler 层）
+	productHandlerDeps := producthandlers.NewHandlerDependencies(productService)
+
+	// ============================================
 	// Extension point: 其他领域依赖注入
 	// ============================================
 	// 示例：添加 LLM 领域
@@ -130,10 +149,11 @@ func InitDependencies(
 	// llmHandlerDeps := llmhandlers.NewHandlerDependencies(llmService)
 
 	return &AppContainer{
-		AuthHandlerDeps: authHandlerDeps,
-		AuthMiddleware:  authMiddleware,
-		UserHandlerDeps: userHandlerDeps,
-		TaskHandlerDeps: taskHandlerDeps,
+		AuthHandlerDeps:    authHandlerDeps,
+		AuthMiddleware:     authMiddleware,
+		UserHandlerDeps:    userHandlerDeps,
+		TaskHandlerDeps:    taskHandlerDeps,
+		ProductHandlerDeps: productHandlerDeps,
 	}
 }
 
@@ -165,10 +185,16 @@ func InitDependenciesFromDB(db *sql.DB, redisConn *redis.Connection, cfg *config
 	taskService := taskservice.NewTaskService(taskRepo)
 	taskHandlerDeps := taskhandlers.NewHandlerDependencies(taskService)
 
+	// Product 领域（三层架构）
+	productRepo := productrepo.NewProductRepository(db)
+	productService := productservice.NewProductService(productRepo)
+	productHandlerDeps := producthandlers.NewHandlerDependencies(productService)
+
 	return &AppContainer{
-		AuthHandlerDeps: authHandlerDeps,
-		AuthMiddleware:  authMiddleware,
-		UserHandlerDeps: userHandlerDeps,
-		TaskHandlerDeps: taskHandlerDeps,
+		AuthHandlerDeps:    authHandlerDeps,
+		AuthMiddleware:     authMiddleware,
+		UserHandlerDeps:    userHandlerDeps,
+		TaskHandlerDeps:    taskHandlerDeps,
+		ProductHandlerDeps: productHandlerDeps,
 	}
 }

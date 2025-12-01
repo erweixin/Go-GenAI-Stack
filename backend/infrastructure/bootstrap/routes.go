@@ -7,6 +7,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	authhttp "github.com/erweixin/go-genai-stack/backend/domains/auth/http"
+	producthttp "github.com/erweixin/go-genai-stack/backend/domains/product/http"
 	taskhttp "github.com/erweixin/go-genai-stack/backend/domains/task/http"
 	userhttp "github.com/erweixin/go-genai-stack/backend/domains/user/http"
 	"github.com/erweixin/go-genai-stack/backend/infrastructure/monitoring/health"
@@ -32,6 +33,9 @@ func RegisterRoutes(h *server.Hertz, container *AppContainer) {
 
 		// 注册 Task 领域路由（需要认证）
 		taskhttp.RegisterRoutes(api, container.TaskHandlerDeps, container.AuthMiddleware)
+
+		// 注册 Product 领域路由（需要认证，可选）
+		producthttp.RegisterRoutes(h, container.ProductHandlerDeps, container.AuthMiddleware)
 
 		// Extension point: 注册其他领域路由
 		// llmhttp.RegisterRoutes(api, container.LLMHandlerDeps)

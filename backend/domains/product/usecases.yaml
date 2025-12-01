@@ -1,0 +1,793 @@
+# Product Domain Use Cases
+# 用例声明文件 - AI 可读，用于自动生成 Handler 代码
+
+version: "1.0"
+domain: product
+
+usecases:
+  # ========================================
+  # 用例 1: 创建商品
+  # ========================================
+  CreateProduct:
+    description: "创建一个新的商品"
+    sensitivity: low
+    http:
+      method: POST
+      path: /api/products
+    
+    input:
+      name:
+        type: string
+        required: true
+        validation: "max=200,min=1"
+        description: "商品名称"
+      image_url:
+        type: string
+        required: false
+        validation: "omitempty,url"
+        description: "商品图片 URL"
+      description:
+        type: string
+        required: false
+        validation: "max=5000"
+        description: "商品描述"
+      initial_coins:
+        type: int
+        required: true
+        validation: "gt=0"
+        description: "兑换所需金币数"
+      coin_type:
+        type: string
+        required: false
+        default: "gold"
+        validation: "oneof=gold silver"
+        description: "金币类型"
+      stock:
+        type: int
+        required: true
+        validation: "gte=0"
+        description: "总库存"
+      purchase_limit:
+        type: int
+        required: false
+        validation: "omitempty,gt=0"
+        description: "每人购买限制"
+      cost:
+        type: float64
+        required: false
+        validation: "omitempty,gte=0"
+        description: "成本（元）"
+      operator_id:
+        type: string
+        required: true
+        source: auth
+        description: "操作人 ID（从认证上下文获取）"
+    
+    output:
+      product_id:
+        type: string
+        description: "商品 ID"
+      name:
+        type: string
+        description: "商品名称"
+      status:
+        type: string
+        description: "商品状态 (off_shelf)"
+      created_at:
+        type: string
+        description: "创建时间 (ISO 8601)"
+    
+    steps:
+      - name: ValidateInput
+        type: sync
+        description: "验证输入参数"
+        on_fail: abort
+        
+      - name: GenerateProductID
+        type: sync
+        description: "生成唯一的商品 ID"
+        
+      - name: CreateProductEntity
+        type: sync
+        description: "创建商品实体"
+        
+      - name: SaveProduct
+        type: sync
+        description: "保存商品到数据库"
+        on_fail: abort
+        
+      - name: PublishProductCreatedEvent
+        type: event
+        event_type: ProductCreated
+        description: "发布商品创建事件"
+        on_fail: log
+    
+    errors:
+      - code: PRODUCT_NAME_EMPTY
+        message: "商品名称不能为空"
+        http_status: 400
+      - code: INVALID_COINS
+        message: "初始金币必须大于 0"
+        http_status: 400
+      - code: INVALID_COIN_TYPE
+        message: "金币类型无效，必须是 gold 或 silver"
+        http_status: 400
+      - code: INVALID_STOCK
+        message: "库存不能为负数"
+        http_status: 400
+      - code: CREATION_FAILED
+        message: "创建商品失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 2: 更新商品
+  # ========================================
+  UpdateProduct:
+    description: "更新商品的属性"
+    sensitivity: low
+    http:
+      method: PUT
+      path: /api/products/:id
+    
+    input:
+      product_id:
+        type: string
+        required: true
+        source: path
+        description: "商品 ID"
+      name:
+        type: string
+        required: false
+        validation: "omitempty,max=200,min=1"
+        description: "商品名称"
+      image_url:
+        type: string
+        required: false
+        validation: "omitempty,url"
+        description: "商品图片 URL"
+      description:
+        type: string
+        required: false
+        validation: "max=5000"
+        description: "商品描述"
+      initial_coins:
+        type: int
+        required: false
+        validation: "omitempty,gt=0"
+        description: "兑换所需金币数"
+      stock:
+        type: int
+        required: false
+        validation: "omitempty,gte=0"
+        description: "总库存"
+      purchase_limit:
+        type: int
+        required: false
+        validation: "omitempty,gt=0"
+        description: "每人购买限制"
+      cost:
+        type: float64
+        required: false
+        validation: "omitempty,gte=0"
+        description: "成本（元）"
+      operator_id:
+        type: string
+        required: true
+        source: auth
+        description: "操作人 ID"
+    
+    output:
+      product_id:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    
+    steps:
+      - name: ValidateInput
+        type: sync
+        on_fail: abort
+        
+      - name: GetProduct
+        type: sync
+        description: "获取商品"
+        on_fail: abort
+        error: PRODUCT_NOT_FOUND
+        
+      - name: ValidateStockUpdate
+        type: sync
+        description: "验证库存更新（不能小于已兑换数量）"
+        on_fail: abort
+        error: INVALID_STOCK_UPDATE
+        
+      - name: UpdateProductFields
+        type: sync
+        description: "更新商品字段"
+        
+      - name: SaveProduct
+        type: sync
+        description: "保存商品"
+        on_fail: abort
+        
+      - name: PublishProductUpdatedEvent
+        type: event
+        event_type: ProductUpdated
+        on_fail: log
+    
+    errors:
+      - code: PRODUCT_NOT_FOUND
+        message: "商品不存在"
+        http_status: 404
+      - code: INVALID_STOCK_UPDATE
+        message: "库存不能小于已兑换数量"
+        http_status: 400
+      - code: UPDATE_FAILED
+        message: "更新商品失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 3: 上架商品
+  # ========================================
+  ShelveProduct:
+    description: "将商品上架到商城"
+    sensitivity: medium
+    http:
+      method: POST
+      path: /api/products/:id/shelve
+    
+    input:
+      product_id:
+        type: string
+        required: true
+        source: path
+        description: "商品 ID"
+      quantity:
+        type: int
+        required: true
+        validation: "gt=0"
+        description: "上架数量"
+      operator_id:
+        type: string
+        required: true
+        source: auth
+        description: "操作人 ID"
+    
+    output:
+      product_id:
+        type: string
+      status:
+        type: string
+        description: "商品状态 (on_shelf)"
+      listed_quantity:
+        type: int
+        description: "上架数量"
+      shelved_at:
+        type: string
+        description: "上架时间"
+    
+    steps:
+      - name: GetProduct
+        type: sync
+        description: "获取商品"
+        on_fail: abort
+        error: PRODUCT_NOT_FOUND
+        
+      - name: CheckStatus
+        type: sync
+        description: "检查商品状态"
+        on_fail: abort
+        error: ALREADY_ON_SHELF
+        
+      - name: ValidateStock
+        type: sync
+        description: "验证库存充足"
+        on_fail: abort
+        error: INSUFFICIENT_STOCK_TO_SHELVE
+        
+      - name: MarkAsShelved
+        type: sync
+        description: "标记为上架"
+        
+      - name: UpdateListedQuantity
+        type: sync
+        description: "更新上架数量"
+        
+      - name: SaveProduct
+        type: sync
+        description: "保存商品"
+        on_fail: abort
+        
+      - name: PublishProductShelvedEvent
+        type: event
+        event_type: ProductShelved
+        on_fail: log
+    
+    errors:
+      - code: PRODUCT_NOT_FOUND
+        message: "商品不存在"
+        http_status: 404
+      - code: ALREADY_ON_SHELF
+        message: "商品已上架"
+        http_status: 400
+      - code: INSUFFICIENT_STOCK_TO_SHELVE
+        message: "库存不足，无法上架"
+        http_status: 400
+      - code: INVALID_SHELVE_QUANTITY
+        message: "上架数量无效"
+        http_status: 400
+      - code: SHELVE_FAILED
+        message: "上架失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 4: 下架商品
+  # ========================================
+  UnshelveProduct:
+    description: "将商品从商城下架"
+    sensitivity: medium
+    http:
+      method: POST
+      path: /api/products/:id/unshelve
+    
+    input:
+      product_id:
+        type: string
+        required: true
+        source: path
+        description: "商品 ID"
+      operator_id:
+        type: string
+        required: true
+        source: auth
+        description: "操作人 ID"
+    
+    output:
+      product_id:
+        type: string
+      status:
+        type: string
+        description: "商品状态 (off_shelf)"
+      unshelved_at:
+        type: string
+        description: "下架时间"
+    
+    steps:
+      - name: GetProduct
+        type: sync
+        description: "获取商品"
+        on_fail: abort
+        error: PRODUCT_NOT_FOUND
+        
+      - name: CheckStatus
+        type: sync
+        description: "检查商品状态"
+        on_fail: abort
+        error: ALREADY_OFF_SHELF
+        
+      - name: MarkAsUnshelved
+        type: sync
+        description: "标记为下架"
+        
+      - name: SaveProduct
+        type: sync
+        description: "保存商品"
+        on_fail: abort
+        
+      - name: PublishProductUnshelvedEvent
+        type: event
+        event_type: ProductUnshelved
+        on_fail: log
+    
+    errors:
+      - code: PRODUCT_NOT_FOUND
+        message: "商品不存在"
+        http_status: 404
+      - code: ALREADY_OFF_SHELF
+        message: "商品已下架"
+        http_status: 400
+      - code: UNSHELVE_FAILED
+        message: "下架失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 5: 获取商品详情
+  # ========================================
+  GetProduct:
+    description: "获取商品的详细信息"
+    sensitivity: low
+    http:
+      method: GET
+      path: /api/products/:id
+    
+    input:
+      product_id:
+        type: string
+        required: true
+        source: path
+        description: "商品 ID"
+    
+    output:
+      product_id:
+        type: string
+      name:
+        type: string
+      image_url:
+        type: string
+      description:
+        type: string
+      initial_coins:
+        type: int
+      coin_type:
+        type: string
+      stock:
+        type: int
+      listed_quantity:
+        type: int
+      redeemed_count:
+        type: int
+      available_quantity:
+        type: int
+      status:
+        type: string
+      created_at:
+        type: string
+      updated_at:
+        type: string
+    
+    steps:
+      - name: GetProduct
+        type: sync
+        description: "从数据库获取商品"
+        on_fail: abort
+        error: PRODUCT_NOT_FOUND
+        
+      - name: FormatResponse
+        type: sync
+        description: "格式化响应数据"
+    
+    errors:
+      - code: PRODUCT_NOT_FOUND
+        message: "商品不存在"
+        http_status: 404
+
+  # ========================================
+  # 用例 6: 列出商品
+  # ========================================
+  ListProducts:
+    description: "获取商品列表，支持筛选、排序和分页"
+    sensitivity: low
+    http:
+      method: GET
+      path: /api/products
+    
+    input:
+      # 筛选参数
+      status:
+        type: string
+        required: false
+        validation: "omitempty,oneof=on_shelf off_shelf"
+        source: query
+        description: "按状态筛选"
+      keyword:
+        type: string
+        required: false
+        validation: "omitempty,max=100"
+        source: query
+        description: "关键词搜索（商品名称）"
+      
+      # 排序参数
+      sort_by:
+        type: string
+        required: false
+        default: "created_at"
+        validation: "omitempty,oneof=created_at initial_coins redeemed_count"
+        source: query
+        description: "排序字段"
+      sort_order:
+        type: string
+        required: false
+        default: "desc"
+        validation: "omitempty,oneof=asc desc"
+        source: query
+        description: "排序方向"
+      
+      # 分页参数
+      page:
+        type: int
+        required: false
+        default: 1
+        validation: "omitempty,min=1"
+        source: query
+        description: "页码"
+      limit:
+        type: int
+        required: false
+        default: 20
+        validation: "omitempty,min=1,max=100"
+        source: query
+        description: "每页数量"
+    
+    output:
+      products:
+        type: array
+        items:
+          product_id: string
+          name: string
+          image_url: string
+          initial_coins: int
+          coin_type: string
+          stock: int
+          redeemed_count: int
+          available_quantity: int
+          status: string
+          created_at: string
+      total_count:
+        type: int
+        description: "总商品数"
+      page:
+        type: int
+        description: "当前页码"
+      limit:
+        type: int
+        description: "每页数量"
+      has_more:
+        type: bool
+        description: "是否还有更多"
+    
+    steps:
+      - name: ValidateQueryParams
+        type: sync
+        description: "验证查询参数"
+        on_fail: abort
+        
+      - name: BuildQuery
+        type: sync
+        description: "构建查询条件"
+        
+      - name: QueryProducts
+        type: sync
+        description: "查询商品列表"
+        on_fail: abort
+        
+      - name: CountTotalProducts
+        type: sync
+        description: "统计总数"
+        on_fail: log
+        
+      - name: FormatResponse
+        type: sync
+        description: "格式化响应"
+    
+    errors:
+      - code: INVALID_FILTER
+        message: "筛选参数无效"
+        http_status: 400
+      - code: INVALID_PAGINATION
+        message: "分页参数无效"
+        http_status: 400
+      - code: QUERY_FAILED
+        message: "查询失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 7: 扣减库存（内部调用）
+  # ========================================
+  DeductInventory:
+    description: "扣减商品库存（用户兑换时调用）"
+    sensitivity: high
+    http:
+      method: POST
+      path: /api/products/:id/deduct
+      internal: true
+    
+    input:
+      product_id:
+        type: string
+        required: true
+        source: path
+        description: "商品 ID"
+      quantity:
+        type: int
+        required: true
+        validation: "gt=0"
+        description: "扣减数量"
+      user_id:
+        type: string
+        required: true
+        description: "用户 ID"
+      redemption_id:
+        type: string
+        required: true
+        description: "兑换订单 ID"
+    
+    output:
+      product_id:
+        type: string
+      redeemed_count:
+        type: int
+        description: "已兑换数量"
+      available_quantity:
+        type: int
+        description: "线上剩余"
+      deducted_at:
+        type: string
+        description: "扣减时间"
+    
+    steps:
+      - name: LockProduct
+        type: sync
+        description: "锁定商品记录（SELECT FOR UPDATE）"
+        on_fail: abort
+        
+      - name: GetProduct
+        type: sync
+        description: "获取商品"
+        on_fail: abort
+        error: PRODUCT_NOT_FOUND
+        
+      - name: CheckStatus
+        type: sync
+        description: "检查商品状态"
+        on_fail: abort
+        error: PRODUCT_OFF_SHELF
+        
+      - name: ValidateStock
+        type: sync
+        description: "验证库存充足"
+        on_fail: abort
+        error: INSUFFICIENT_STOCK
+        
+      - name: DeductStock
+        type: sync
+        description: "扣减库存"
+        
+      - name: UpdateRedeemedCount
+        type: sync
+        description: "更新已兑换数量"
+        
+      - name: UpdateRevenue
+        type: sync
+        description: "更新收益"
+        
+      - name: SaveProduct
+        type: sync
+        description: "保存商品"
+        on_fail: abort
+        
+      - name: PublishInventoryDeductedEvent
+        type: event
+        event_type: InventoryDeducted
+        on_fail: log
+    
+    errors:
+      - code: PRODUCT_NOT_FOUND
+        message: "商品不存在"
+        http_status: 404
+      - code: PRODUCT_OFF_SHELF
+        message: "商品已下架，无法兑换"
+        http_status: 400
+      - code: INSUFFICIENT_STOCK
+        message: "库存不足"
+        http_status: 400
+      - code: DEDUCT_FAILED
+        message: "扣减库存失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 8: 删除商品
+  # ========================================
+  DeleteProduct:
+    description: "删除商品"
+    sensitivity: high
+    http:
+      method: DELETE
+      path: /api/products/:id
+    
+    input:
+      product_id:
+        type: string
+        required: true
+        source: path
+        description: "商品 ID"
+      operator_id:
+        type: string
+        required: true
+        source: auth
+        description: "操作人 ID"
+    
+    output:
+      success:
+        type: bool
+        description: "是否删除成功"
+      deleted_at:
+        type: string
+        description: "删除时间"
+    
+    steps:
+      - name: GetProduct
+        type: sync
+        description: "获取商品"
+        on_fail: abort
+        error: PRODUCT_NOT_FOUND
+        
+      - name: ValidateDeletion
+        type: sync
+        description: "验证是否可以删除（已下架且未兑换）"
+        on_fail: abort
+        error: CANNOT_DELETE_PRODUCT
+        
+      - name: DeleteProductRecord
+        type: sync
+        description: "删除商品记录"
+        on_fail: abort
+        
+      - name: PublishProductDeletedEvent
+        type: event
+        event_type: ProductDeleted
+        on_fail: log
+    
+    errors:
+      - code: PRODUCT_NOT_FOUND
+        message: "商品不存在"
+        http_status: 404
+      - code: CANNOT_DELETE_PRODUCT
+        message: "无法删除商品（必须已下架且未兑换）"
+        http_status: 400
+      - code: DELETION_FAILED
+        message: "删除商品失败"
+        http_status: 500
+
+# ========================================
+# 全局配置
+# ========================================
+config:
+  default_timeout: 30s
+  max_retries: 3
+  enable_tracing: true
+  enable_metrics: true
+
+# ========================================
+# 依赖关系
+# ========================================
+dependencies:
+  external: []
+  
+  infrastructure:
+    - name: database
+      type: PostgreSQL
+      description: "商品存储"
+    - name: cache
+      type: Redis
+      description: "缓存和限流（可选）"
+      required: false
+    - name: eventBus
+      type: InMemory
+      description: "事件总线（可扩展到 Kafka/Redis）"
+
+# ========================================
+# 扩展点
+# ========================================
+extensions:
+  - name: Product Categories
+    description: "商品分类功能"
+    status: not_implemented
+    
+  - name: Product SKU
+    description: "商品规格（颜色、尺码等）"
+    status: not_implemented
+    
+  - name: Scheduled Shelving
+    description: "定时上下架"
+    status: not_implemented
+    
+  - name: Inventory Alert
+    description: "库存预警和自动补货"
+    status: not_implemented
+    
+  - name: Batch Import/Export
+    description: "批量导入导出商品"
+    status: not_implemented
+

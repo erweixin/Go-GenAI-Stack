@@ -26,11 +26,12 @@ const ShowcasePage = lazy(() => import('@/pages/ShowcasePage'))
 // 受保护的页面
 const HomePage = lazy(() => import('@/pages/HomePage'))
 const TasksPage = lazy(() => import('@/pages/TasksPage'))
+const ProductListPage = lazy(() => import('@/features/product/pages/ProductListPage'))
 
 // ==================== 路由辅助函数 ====================
 
 /**
- * 包装页面组件，添加 Suspense 和可选的权限保护
+ * 包装页面组件，添加 Suspense 和可选的权限保护 
  */
 function wrapPage(
   Component: React.LazyExoticComponent<React.ComponentType>,
@@ -91,6 +92,11 @@ export const router = createBrowserRouter([
     //   })
     //   return null
     // },
+  },
+  {
+    path: '/products',
+    element: wrapPage(ProductListPage, { protected: true }),
+    errorElement: <ErrorPage />,
   },
 
   // ==================== 404 处理 ====================

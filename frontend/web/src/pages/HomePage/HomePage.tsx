@@ -3,7 +3,7 @@ import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { CheckSquare, LogOut, User, Palette } from 'lucide-react'
+import { CheckSquare, LogOut, User, Palette, ShoppingBag } from 'lucide-react'
 
 /**
  * 首页（Dashboard）
@@ -93,6 +93,26 @@ export default function HomePage() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 创建、编辑和跟踪任务，设置优先级和截止日期。
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* 商品管理 */}
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/products')}>
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-500/10 rounded-lg">
+                  <ShoppingBag className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <CardTitle>商品管理</CardTitle>
+                  <CardDescription>管理积分商城商品</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                创建、编辑商品，管理库存、上架和兑换。
               </p>
             </CardContent>
           </Card>
