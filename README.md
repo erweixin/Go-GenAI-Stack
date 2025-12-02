@@ -4,14 +4,39 @@
 
 ### 为 AI 时代设计的全栈开发框架
 
-**让 AI 真正理解你的代码，让开发回归"说出想法即可实现"的本质**
+**AI 友好的代码结构，让想法直接变成代码**
 
 [![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/erweixin/Go-GenAI-Stack/pulls)
 
-[快速开始](#-快速开始) • [核心特性](#-核心特性) • [架构设计](#-架构亮点) • [文档](#-文档) • [贡献指南](#-贡献指南)
+[快速开始](#-快速开始) • [核心特性](#核心特性) • [架构设计](#架构亮点) • [文档导航](#文档导航) • [贡献指南](#贡献指南)
+
+</div>
+
+---
+
+<div align="center">
+
+### ⚠️ **项目状态说明**
+
+> **🚧 本项目目前处于非常非常早期开发阶段，代码随时换结构，但目标会是一个大型商业项目生产完备的 starter**  
+> **🎯 这是一个 AI 友好软件结构的实验性尝试**  
+> **💡 探索如何让代码结构更易于 AI 理解和生成**
+
+**欢迎参与讨论和贡献，共同探索 AI 时代的软件开发最佳实践！**
+
+</div>
+
+---
+
+<div align="center">
+
+### 📖 **核心思想来源**
+
+> **本项目的核心思想和实现思路来源于：**  
+> **[《讨论下 AI 时代的软件架构与协作关系的几个可能的变化》](https://github.com/erweixin/blog/blob/main/%E8%AE%A8%E8%AE%BA%E4%B8%8B%20AI%20%E6%97%B6%E4%BB%A3%E7%9A%84%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8D%8F%E4%BD%9C%E5%85%B3%E7%B3%BB%E7%9A%84%E5%87%A0%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E5%8F%98%E5%8C%96.md)**  
 
 </div>
 
@@ -104,7 +129,7 @@ Go-GenAI-Stack/
 
 ---
 
-## ✨ 核心特性
+## 核心特性
 
 ### 🎯 Vibe-Coding-Friendly DDD（核心亮点）
 
@@ -165,7 +190,7 @@ CreateTask:
 
 ---
 
-### 🏗️ 架构亮点
+### 架构亮点
 
 #### 1️⃣ **领域优先**（Domain-First）
 
@@ -495,7 +520,7 @@ git commit -m "feat(task): add feature"
 
 ---
 
-## 📖 文档导航
+## 文档导航
 
 <table>
 <tr>
@@ -742,7 +767,7 @@ Product、Order、Customer...
 
 ---
 
-## 🤝 贡献指南
+## 贡献指南
 
 我们欢迎所有形式的贡献！⭐ **Star** 本项目表示支持。
 
@@ -769,7 +794,7 @@ Product、Order、Customer...
 
 ```bash
 # 1. Fork 并克隆
-git clone https://github.com/YOUR_NAME/Go-GenAI-Stack.git
+git clone https://github.com/erweixin/Go-GenAI-Stack.git
 
 # 2. 创建分支
 git checkout -b feat/amazing-feature
@@ -806,7 +831,7 @@ chore:            构建/工具链
 <tr>
 <td align="center" width="25%">
 <h3>🎯 测试覆盖率</h3>
-<h2>≥ 60%</h2>
+<h2>≥ 10%</h2>
 <small>持续提升中</small>
 </td>
 <td align="center" width="25%">
@@ -816,12 +841,12 @@ chore:            构建/工具链
 </td>
 <td align="center" width="25%">
 <h3>📚 结构完整性</h3>
-<h2>6/6</h2>
+<h2>1/6</h2>
 <small>必需文件齐全</small>
 </td>
 <td align="center" width="25%">
 <h3>🤖 AI 友好性</h3>
-<h2>≥ 90%</h2>
+<h2>≥ 10%</h2>
 <small>usecases.yaml 覆盖</small>
 </td>
 </tr>
@@ -877,6 +902,7 @@ chore:            构建/工具链
 
 ### 灵感来源
 
+- **[《讨论下 AI 时代的软件架构与协作关系的几个可能的变化》](https://github.com/erweixin/blog/blob/main/%E8%AE%A8%E8%AE%BA%E4%B8%8B%20AI%20%E6%97%B6%E4%BB%A3%E7%9A%84%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8D%8F%E4%BD%9C%E5%85%B3%E7%B3%BB%E7%9A%84%E5%87%A0%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E5%8F%98%E5%8C%96.md)** ⭐ - **核心思想来源**：从"生产力决定生产关系"的视角探讨 AI 时代的软件架构，提出了领域优先、自包含、显式知识等核心理念
 - **[Coze Studio](https://www.coze.com/)** - LLM 编排平台，启发了本项目的声明式工作流设计
 - **[Bluesky Social App](https://github.com/bluesky-social/social-app)** - React Native 最佳实践参考
 
@@ -901,10 +927,10 @@ chore:            构建/工具链
 
 Made with ❤️ by Go-GenAI-Stack Team
 
-[⬆ 回到顶部](#-go-genai-stack)
+[⬆ 回到顶部](#go-genai-stack)
 
 ---
 
-**版本**：v0.1.0 | **状态**：🚀 Active Development | **最后更新**：2025-12-01
+**版本**：v0.1.0 | **状态**：🚀 Active Development | **最后更新**：2025-12-02
 
 </div>
