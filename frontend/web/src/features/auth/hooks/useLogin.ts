@@ -3,7 +3,7 @@ import type { LoginRequest } from '@go-genai-stack/types'
 
 /**
  * 登录 Hook
- * 
+ *
  * 用例：Login
  */
 export function useLogin() {
@@ -20,4 +20,3 @@ export function useLogin() {
     error,
   }
 }
-

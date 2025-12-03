@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-background: oklch(1 0 0);
@@ -91,7 +91,9 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
   }
 }
 
@@ -99,44 +101,44 @@
   .text-balance {
     text-wrap: balance;
   }
-  
+
   /* Animation utilities */
   .animate-in {
     animation-name: enter;
     animation-duration: 150ms;
     animation-timing-function: ease-out;
   }
-  
+
   .animate-out {
     animation-name: exit;
     animation-duration: 150ms;
     animation-timing-function: ease-in;
   }
-  
+
   .fade-in {
     animation: fadeIn 200ms ease-in;
   }
-  
+
   .fade-out {
     animation: fadeOut 200ms ease-out;
   }
-  
+
   .slide-in-from-top {
     animation: slideInFromTop 200ms ease-out;
   }
-  
+
   .slide-in-from-bottom {
     animation: slideInFromBottom 200ms ease-out;
   }
-  
+
   .slide-in-from-left {
     animation: slideInFromLeft 200ms ease-out;
   }
-  
+
   .slide-in-from-right {
     animation: slideInFromRight 200ms ease-out;
   }
-  
+
   .scale-in {
     animation: scaleIn 200ms ease-out;
   }

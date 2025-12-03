@@ -28,12 +28,12 @@ interface TaskCreateDialogProps {
 
 /**
  * 创建任务对话框（使用 React Query）
- * 
+ *
  * 用例：CreateTask
  */
 export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) {
   const createMutation = useTaskCreateMutation()
-  
+
   const [formData, setFormData] = useState<CreateTaskRequest>({
     title: '',
     description: '',
@@ -60,7 +60,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
         })
         setTagInput('')
         onOpenChange(false)
-      }
+      },
     })
   }
 
@@ -77,7 +77,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
-      tags: formData.tags?.filter(tag => tag !== tagToRemove) || [],
+      tags: formData.tags?.filter((tag) => tag !== tagToRemove) || [],
     })
   }
 
@@ -86,9 +86,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>新建任务</DialogTitle>
-          <DialogDescription>
-            创建一个新的任务，设置标题、描述、优先级等信息
-          </DialogDescription>
+          <DialogDescription>创建一个新的任务，设置标题、描述、优先级等信息</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -120,7 +118,9 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
             <Label htmlFor="priority">优先级</Label>
             <Select
               value={formData.priority}
-              onValueChange={(value) => setFormData({ ...formData, priority: value as TaskPriority })}
+              onValueChange={(value) =>
+                setFormData({ ...formData, priority: value as TaskPriority })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="选择优先级" />
@@ -189,4 +189,3 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
     </Dialog>
   )
 }
-

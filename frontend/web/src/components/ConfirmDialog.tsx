@@ -23,13 +23,13 @@ interface ConfirmDialogProps {
 
 /**
  * 可复用的确认对话框组件
- * 
+ *
  * 替代原生 window.confirm()，提供更好的用户体验
- * 
+ *
  * @example
  * ```tsx
  * const [isOpen, setIsOpen] = useState(false)
- * 
+ *
  * <ConfirmDialog
  *   open={isOpen}
  *   onOpenChange={setIsOpen}
@@ -61,14 +61,10 @@ export function ConfirmDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          {description && (
-            <AlertDialogDescription>{description}</AlertDialogDescription>
-          )}
+          {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>
-            {cancelText}
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={loading}
@@ -85,4 +81,3 @@ export function ConfirmDialog({
     </AlertDialog>
   )
 }
-

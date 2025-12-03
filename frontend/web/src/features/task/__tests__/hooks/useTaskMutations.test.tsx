@@ -39,9 +39,7 @@ function createTestQueryClient() {
 function createWrapper() {
   const queryClient = createTestQueryClient()
   return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
 }
 
@@ -141,4 +139,3 @@ describe('Task Mutations', () => {
     })
   })
 })
-

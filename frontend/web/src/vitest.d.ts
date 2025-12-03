@@ -6,4 +6,3 @@ declare module 'vitest' {
   interface Assertion<T = unknown> extends TestingLibraryMatchers<T, void> {}
   interface AsymmetricMatchersContaining extends TestingLibraryMatchers<unknown, void> {}
 }
-

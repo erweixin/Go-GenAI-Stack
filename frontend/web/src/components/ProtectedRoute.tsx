@@ -3,7 +3,7 @@ import { useAuthStore } from '@/features/auth/stores/auth.store'
 
 /**
  * 受保护的路由组件
- * 
+ *
  * 用于需要登录才能访问的页面
  * 未登录用户会被重定向到登录页
  */
@@ -19,4 +19,3 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>
 }
-

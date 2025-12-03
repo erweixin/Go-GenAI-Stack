@@ -11,9 +11,9 @@ import { useTaskStore } from '../stores/task.store'
 
 /**
  * 任务筛选器组件
- * 
+ *
  * 用例：ListTasks（带筛选条件）
- * 
+ *
  * 提供状态、优先级、标签、关键词筛选
  */
 export function TaskFilters() {
@@ -50,10 +50,7 @@ export function TaskFilters() {
         {/* 状态筛选 */}
         <div className="flex-1 min-w-[150px]">
           <label className="text-sm font-medium mb-2 block">状态</label>
-          <Select
-            value={filters.status || 'all'}
-            onValueChange={handleStatusChange}
-          >
+          <Select value={filters.status || 'all'} onValueChange={handleStatusChange}>
             <SelectTrigger>
               <SelectValue placeholder="所有状态" />
             </SelectTrigger>
@@ -68,10 +65,7 @@ export function TaskFilters() {
         {/* 优先级筛选 */}
         <div className="flex-1 min-w-[150px]">
           <label className="text-sm font-medium mb-2 block">优先级</label>
-          <Select
-            value={filters.priority || 'all'}
-            onValueChange={handlePriorityChange}
-          >
+          <Select value={filters.priority || 'all'} onValueChange={handlePriorityChange}>
             <SelectTrigger>
               <SelectValue placeholder="所有优先级" />
             </SelectTrigger>
@@ -102,4 +96,3 @@ export function TaskFilters() {
     </div>
   )
 }
-

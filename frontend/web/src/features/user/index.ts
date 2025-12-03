@@ -8,4 +8,3 @@ export { useUserProfile } from './hooks/useUserProfile'
 
 // Stores
 export { useUserStore } from './stores/user.store'
-

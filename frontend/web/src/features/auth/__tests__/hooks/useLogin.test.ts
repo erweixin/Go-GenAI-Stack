@@ -26,7 +26,7 @@ describe('useLogin', () => {
     // Arrange
     const mockRequest: LoginRequest = {
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
     }
 
     const mockResponse = {
@@ -34,7 +34,7 @@ describe('useLogin', () => {
       email: 'test@example.com',
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',
-      expires_in: 3600
+      expires_in: 3600,
     }
 
     vi.mocked(authApi.login).mockResolvedValue(mockResponse)
@@ -71,12 +71,12 @@ describe('useLogin', () => {
     // Arrange
     const mockRequest: LoginRequest = {
       email: 'test@example.com',
-      password: 'wrong-password'
+      password: 'wrong-password',
     }
 
     const errorMessage = 'Invalid credentials'
     vi.mocked(authApi.login).mockRejectedValue({
-      response: { data: { message: errorMessage } }
+      response: { data: { message: errorMessage } },
     })
 
     // Act
@@ -113,7 +113,7 @@ describe('useLogin', () => {
 
     const mockRequest: LoginRequest = {
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
     }
 
     vi.mocked(authApi.login).mockResolvedValue({
@@ -121,7 +121,7 @@ describe('useLogin', () => {
       email: 'test@example.com',
       access_token: 'token',
       refresh_token: 'refresh',
-      expires_in: 3600
+      expires_in: 3600,
     })
 
     // Act
@@ -139,20 +139,25 @@ describe('useLogin', () => {
     // Arrange
     const mockRequest: LoginRequest = {
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
     }
 
     // 模拟延迟响应
-    vi.mocked(authApi.login).mockImplementation(() =>
-      new Promise((resolve) =>
-        setTimeout(() => resolve({
-          user_id: 'user-1',
-          email: 'test@example.com',
-          access_token: 'token',
-          refresh_token: 'refresh',
-          expires_in: 3600
-        }), 100)
-      )
+    vi.mocked(authApi.login).mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                user_id: 'user-1',
+                email: 'test@example.com',
+                access_token: 'token',
+                refresh_token: 'refresh',
+                expires_in: 3600,
+              }),
+            100
+          )
+        )
     )
 
     // Act
@@ -175,4 +180,3 @@ describe('useLogin', () => {
     })
   })
 })
-

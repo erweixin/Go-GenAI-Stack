@@ -29,12 +29,12 @@ interface TaskEditDialogProps {
 
 /**
  * 编辑任务对话框（使用 React Query）
- * 
+ *
  * 用例：UpdateTask
  */
 export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps) {
   const updateMutation = useTaskUpdateMutation()
-  
+
   const [formData, setFormData] = useState<UpdateTaskRequest>({
     title: '',
     description: '',
@@ -68,7 +68,7 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
       {
         onSuccess: () => {
           onOpenChange(false)
-        }
+        },
       }
     )
   }
@@ -86,7 +86,7 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
   const handleRemoveTag = (tagToRemove: string) => {
     setFormData({
       ...formData,
-      tags: formData.tags?.filter(tag => tag !== tagToRemove) || [],
+      tags: formData.tags?.filter((tag) => tag !== tagToRemove) || [],
     })
   }
 
@@ -97,9 +97,7 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>编辑任务</DialogTitle>
-          <DialogDescription>
-            修改任务的标题、描述、优先级等信息
-          </DialogDescription>
+          <DialogDescription>修改任务的标题、描述、优先级等信息</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -131,7 +129,9 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
             <Label htmlFor="edit-priority">优先级</Label>
             <Select
               value={formData.priority}
-              onValueChange={(value) => setFormData({ ...formData, priority: value as TaskPriority })}
+              onValueChange={(value) =>
+                setFormData({ ...formData, priority: value as TaskPriority })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="选择优先级" />
@@ -200,4 +200,3 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
     </Dialog>
   )
 }
-

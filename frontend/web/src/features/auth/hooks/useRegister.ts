@@ -3,7 +3,7 @@ import type { RegisterRequest } from '@go-genai-stack/types'
 
 /**
  * 注册 Hook
- * 
+ *
  * 用例：Register
  */
 export function useRegister() {
@@ -20,4 +20,3 @@ export function useRegister() {
     error,
   }
 }
-

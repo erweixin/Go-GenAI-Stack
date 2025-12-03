@@ -1,12 +1,19 @@
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Home, RefreshCw } from 'lucide-react'
 
 /**
  * 路由错误页面
- * 
+ *
  * 用于捕获和显示路由级别的错误
  * 支持 React Router 的 errorElement
  */
@@ -46,9 +53,7 @@ export function ErrorPage() {
               <AlertCircle className="h-6 w-6 text-destructive" />
             </div>
             <div>
-              <CardTitle>
-                {errorStatus ? `错误 ${errorStatus}` : '出错了'}
-              </CardTitle>
+              <CardTitle>{errorStatus ? `错误 ${errorStatus}` : '出错了'}</CardTitle>
               <CardDescription>页面加载失败</CardDescription>
             </div>
           </div>
@@ -57,12 +62,10 @@ export function ErrorPage() {
           <Alert variant="destructive">
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
-          
+
           {import.meta.env.MODE === 'development' && error instanceof Error && (
             <div className="mt-4 p-4 bg-muted rounded-md">
-              <p className="text-xs font-mono text-muted-foreground">
-                {error.stack}
-              </p>
+              <p className="text-xs font-mono text-muted-foreground">{error.stack}</p>
             </div>
           )}
         </CardContent>
@@ -80,4 +83,3 @@ export function ErrorPage() {
     </div>
   )
 }
-

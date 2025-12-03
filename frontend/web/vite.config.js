@@ -20,44 +20,46 @@ logVersionInfo(versionInfo)
 export default defineConfig({
   // 定义全局常量（注入到前端代码）
   define: getVersionDefines(versionInfo),
-  
+
   plugins: [
     react(),
     tailwindcss(),
-    
+
     // Sentry 插件（仅在生产构建时启用）
-    !versionInfo.isDev && process.env.VITE_SENTRY_AUTH_TOKEN && sentryVitePlugin({
-      org: process.env.VITE_SENTRY_ORG || 'go-genai-stack',
-      project: process.env.VITE_SENTRY_PROJECT || 'web',
-      authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
-      
-      // Source Map 上传配置
-      sourcemaps: {
-        assets: './dist/**',
-        ignore: ['node_modules'],
-        filesToDeleteAfterUpload: ['**/*.js.map'], // 上传后删除 source map 文件
-      },
-      
-      // Release 配置
-      release: {
-        name: `go-genai-stack-web@${versionInfo.releaseName}`,
-        cleanArtifacts: true,
-        setCommits: {
-          auto: true,
-          ignoreMissing: true,
+    !versionInfo.isDev &&
+      process.env.VITE_SENTRY_AUTH_TOKEN &&
+      sentryVitePlugin({
+        org: process.env.VITE_SENTRY_ORG || 'go-genai-stack',
+        project: process.env.VITE_SENTRY_PROJECT || 'web',
+        authToken: process.env.VITE_SENTRY_AUTH_TOKEN,
+
+        // Source Map 上传配置
+        sourcemaps: {
+          assets: './dist/**',
+          ignore: ['node_modules'],
+          filesToDeleteAfterUpload: ['**/*.js.map'], // 上传后删除 source map 文件
         },
-      },
-      
-      // 调试配置
-      debug: false,
-      silent: false,
-    }),
+
+        // Release 配置
+        release: {
+          name: `go-genai-stack-web@${versionInfo.releaseName}`,
+          cleanArtifacts: true,
+          setCommits: {
+            auto: true,
+            ignoreMissing: true,
+          },
+        },
+
+        // 调试配置
+        debug: false,
+        silent: false,
+      }),
   ].filter(Boolean),
-  
+
   build: {
     // 生成 Source Map（生产环境）
     sourcemap: true,
-    
+
     // Rollup 配置
     rollupOptions: {
       output: {
@@ -66,13 +68,13 @@ export default defineConfig({
       },
     },
   },
-  
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-  
+
   server: {
     proxy: {
       '/api': {

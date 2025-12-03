@@ -26,7 +26,7 @@ describe('useRegister', () => {
       email: 'newuser@example.com',
       password: 'password123',
       username: 'newuser',
-      full_name: 'New User'
+      full_name: 'New User',
     }
 
     const mockResponse = {
@@ -34,7 +34,7 @@ describe('useRegister', () => {
       email: 'newuser@example.com',
       access_token: 'mock-access-token',
       refresh_token: 'mock-refresh-token',
-      expires_in: 3600
+      expires_in: 3600,
     }
 
     vi.mocked(authApi.register).mockResolvedValue(mockResponse)
@@ -71,12 +71,12 @@ describe('useRegister', () => {
     // Arrange
     const mockRequest: RegisterRequest = {
       email: 'existing@example.com',
-      password: 'password123'
+      password: 'password123',
     }
 
     const errorMessage = 'Email already exists'
     vi.mocked(authApi.register).mockRejectedValue({
-      response: { data: { message: errorMessage } }
+      response: { data: { message: errorMessage } },
     })
 
     // Act
@@ -112,7 +112,7 @@ describe('useRegister', () => {
 
     const mockRequest: RegisterRequest = {
       email: 'test@example.com',
-      password: 'password123'
+      password: 'password123',
     }
 
     vi.mocked(authApi.register).mockResolvedValue({
@@ -120,7 +120,7 @@ describe('useRegister', () => {
       email: 'test@example.com',
       access_token: 'token',
       refresh_token: 'refresh',
-      expires_in: 3600
+      expires_in: 3600,
     })
 
     // Act
@@ -134,4 +134,3 @@ describe('useRegister', () => {
     })
   })
 })
-

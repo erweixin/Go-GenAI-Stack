@@ -13,14 +13,14 @@ import type {
 
 /**
  * Task API
- * 
+ *
  * 对齐后端 backend/domains/task
  * API Prefix: /api/tasks
  */
 export const taskApi = {
   /**
    * 创建任务
-   * 
+   *
    * @param data 创建任务请求
    * @returns 创建任务响应
    */
@@ -30,7 +30,7 @@ export const taskApi = {
 
   /**
    * 获取任务列表
-   * 
+   *
    * @param params 查询参数（可选）
    * @returns 任务列表响应
    */
@@ -40,7 +40,7 @@ export const taskApi = {
 
   /**
    * 获取任务详情
-   * 
+   *
    * @param taskId 任务 ID
    * @returns 任务详情响应
    */
@@ -50,7 +50,7 @@ export const taskApi = {
 
   /**
    * 更新任务
-   * 
+   *
    * @param taskId 任务 ID
    * @param data 更新任务请求
    * @returns 更新任务响应
@@ -61,7 +61,7 @@ export const taskApi = {
 
   /**
    * 完成任务
-   * 
+   *
    * @param taskId 任务 ID
    * @returns 完成任务响应
    */
@@ -71,7 +71,7 @@ export const taskApi = {
 
   /**
    * 删除任务
-   * 
+   *
    * @param taskId 任务 ID
    * @returns 删除任务响应
    */
@@ -79,4 +79,3 @@ export const taskApi = {
     return api.delete<DeleteTaskResponse>(`/api/tasks/${taskId}`)
   },
 }
-

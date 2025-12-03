@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react'
 
 /**
  * 页面加载指示器
- * 
+ *
  * 用于路由切换和懒加载时的加载状态
  */
 export function PageLoader() {
@@ -15,4 +15,3 @@ export function PageLoader() {
     </div>
   )
 }
-

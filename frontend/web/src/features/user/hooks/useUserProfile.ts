@@ -5,9 +5,9 @@ import { useAuthStore } from '@/features/auth/stores/auth.store'
 
 /**
  * 用户资料 Hook
- * 
+ *
  * 用例：GetUserProfile
- * 
+ *
  * 自动加载当前登录用户的资料
  */
 export function useUserProfile() {
@@ -44,4 +44,3 @@ export function useUserProfile() {
     refresh: loadProfile,
   }
 }
-

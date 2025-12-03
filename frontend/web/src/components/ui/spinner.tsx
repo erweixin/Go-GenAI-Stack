@@ -13,9 +13,7 @@ const sizeClasses = {
 }
 
 export function Spinner({ className, size = 'md' }: SpinnerProps) {
-  return (
-    <Loader2 className={cn('animate-spin text-primary', sizeClasses[size], className)} />
-  )
+  return <Loader2 className={cn('animate-spin text-primary', sizeClasses[size], className)} />
 }
 
 interface LoadingProps {
@@ -31,4 +29,3 @@ export function Loading({ className, text = '加载中...' }: LoadingProps) {
     </div>
   )
 }
-

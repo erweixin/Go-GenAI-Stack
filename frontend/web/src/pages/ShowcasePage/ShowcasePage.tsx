@@ -6,7 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -14,13 +21,38 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Checkbox } from '@/components/ui/checkbox'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
 import { Loading } from '@/components/ui/spinner'
@@ -42,22 +74,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Home, Info, Plus, Settings, User } from 'lucide-react'
 
 /**
  * 组件展示页面
- * 
+ *
  * 展示所有已安装的 shadcn/ui 组件和主题系统
  */
 export default function ShowcasePage() {
@@ -214,8 +237,12 @@ export default function ShowcasePage() {
                 </div>
                 <Progress value={progress} />
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => setProgress(Math.max(0, progress - 10))}>-10</Button>
-                  <Button size="sm" onClick={() => setProgress(Math.min(100, progress + 10))}>+10</Button>
+                  <Button size="sm" onClick={() => setProgress(Math.max(0, progress - 10))}>
+                    -10
+                  </Button>
+                  <Button size="sm" onClick={() => setProgress(Math.min(100, progress + 10))}>
+                    +10
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -295,9 +322,7 @@ export default function ShowcasePage() {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Dialog Title</DialogTitle>
-                    <DialogDescription>
-                      This is a dialog description.
-                    </DialogDescription>
+                    <DialogDescription>This is a dialog description.</DialogDescription>
                   </DialogHeader>
                   <div className="py-4">Dialog content goes here.</div>
                   <DialogFooter>
@@ -314,9 +339,7 @@ export default function ShowcasePage() {
                 <PopoverContent>
                   <div className="space-y-2">
                     <h4 className="font-medium">Popover</h4>
-                    <p className="text-sm text-muted-foreground">
-                      This is a popover content.
-                    </p>
+                    <p className="text-sm text-muted-foreground">This is a popover content.</p>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -441,7 +464,9 @@ export default function ShowcasePage() {
                     <TableCell>john@example.com</TableCell>
                     <TableCell>Admin</TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost">Edit</Button>
+                      <Button size="sm" variant="ghost">
+                        Edit
+                      </Button>
                     </TableCell>
                   </TableRow>
                   <TableRow>
@@ -449,7 +474,9 @@ export default function ShowcasePage() {
                     <TableCell>jane@example.com</TableCell>
                     <TableCell>User</TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost">Edit</Button>
+                      <Button size="sm" variant="ghost">
+                        Edit
+                      </Button>
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -583,4 +610,3 @@ function ColorDemo({ color, label }: { color: string; label: string }) {
     </div>
   )
 }
-

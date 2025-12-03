@@ -12,22 +12,17 @@ interface TaskItemProps {
 
 /**
  * 任务项组件
- * 
+ *
  * 展示单个任务的信息和操作按钮
- * 
+ *
  * @param task 任务对象
  * @param onEdit 编辑回调
  * @param onDelete 删除回调
  * @param onComplete 完成回调
  */
-export function TaskItemComponent({ 
-  task, 
-  onEdit, 
-  onDelete, 
-  onComplete 
-}: TaskItemProps) {
+export function TaskItemComponent({ task, onEdit, onDelete, onComplete }: TaskItemProps) {
   const isCompleted = task.status === 'completed'
-  
+
   const priorityColors = {
     low: 'bg-green-500/10 text-green-600 dark:text-green-400',
     medium: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
@@ -53,7 +48,7 @@ export function TaskItemComponent({
                   <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
                 )}
               </button>
-              <h3 
+              <h3
                 data-test-id={`task-title-${task.task_id}`}
                 className={`text-lg font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}
               >
@@ -63,15 +58,15 @@ export function TaskItemComponent({
 
             {/* 描述 */}
             {task.description && (
-              <p className="text-muted-foreground text-sm ml-8 mb-2">
-                {task.description}
-              </p>
+              <p className="text-muted-foreground text-sm ml-8 mb-2">{task.description}</p>
             )}
 
             {/* 标签和信息 */}
             <div className="flex items-center gap-3 ml-8">
               {/* 优先级 */}
-              <span className={`px-2 py-1 rounded text-xs font-medium ${priorityColors[task.priority as keyof typeof priorityColors]}`}>
+              <span
+                className={`px-2 py-1 rounded text-xs font-medium ${priorityColors[task.priority as keyof typeof priorityColors]}`}
+              >
                 {task.priority}
               </span>
 
@@ -87,7 +82,10 @@ export function TaskItemComponent({
               {task.tags && task.tags.length > 0 && (
                 <div className="flex gap-1">
                   {task.tags.map((tag, index) => (
-                    <span key={index} className="px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs">
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs"
+                    >
                       {tag}
                     </span>
                   ))}
@@ -122,4 +120,3 @@ export function TaskItemComponent({
     </Card>
   )
 }
-

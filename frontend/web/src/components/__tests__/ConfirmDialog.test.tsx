@@ -156,4 +156,3 @@ describe('ConfirmDialog', () => {
     expect(description).toBeNull()
   })
 })
-

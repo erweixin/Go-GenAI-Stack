@@ -9,7 +9,7 @@ import type {
 
 /**
  * User API
- * 
+ *
  * 对齐后端 backend/domains/user
  * API Prefix: /api/users
  */
@@ -35,4 +35,3 @@ export const userApi = {
     return api.post<ChangePasswordResponse>('/api/users/me/change-password', data)
   },
 }
-

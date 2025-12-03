@@ -4,7 +4,7 @@ import type { TaskItem } from '@go-genai-stack/types'
 
 /**
  * Task Store 测试（UI 状态管理）
- * 
+ *
  * 注意：服务器数据管理已迁移到 React Query
  * 此测试仅覆盖 UI 状态（selectedTask, filters）
  */
@@ -22,7 +22,7 @@ describe('TaskStore (UI State)', () => {
         status: 'pending',
         priority: 'high',
         tags: [],
-        created_at: '2025-11-27T10:00:00Z'
+        created_at: '2025-11-27T10:00:00Z',
       }
 
       useTaskStore.getState().setSelectedTask(mockTask)
@@ -38,7 +38,7 @@ describe('TaskStore (UI State)', () => {
         status: 'pending',
         priority: 'high',
         tags: [],
-        created_at: '2025-11-27T10:00:00Z'
+        created_at: '2025-11-27T10:00:00Z',
       }
 
       useTaskStore.getState().setSelectedTask(mockTask)
@@ -53,7 +53,7 @@ describe('TaskStore (UI State)', () => {
     it('应该能够设置筛选条件', () => {
       useTaskStore.getState().setFilters({
         status: 'completed',
-        priority: 'high'
+        priority: 'high',
       })
 
       const store = useTaskStore.getState()
@@ -63,7 +63,7 @@ describe('TaskStore (UI State)', () => {
 
     it('应该能够设置关键词筛选', () => {
       useTaskStore.getState().setFilters({
-        keyword: 'search term'
+        keyword: 'search term',
       })
 
       const store = useTaskStore.getState()
@@ -73,7 +73,7 @@ describe('TaskStore (UI State)', () => {
     it('应该能够清空筛选条件', () => {
       useTaskStore.getState().setFilters({
         status: 'completed',
-        priority: 'high'
+        priority: 'high',
       })
 
       useTaskStore.getState().setFilters({})
@@ -93,7 +93,7 @@ describe('TaskStore (UI State)', () => {
         status: 'pending',
         priority: 'high',
         tags: [],
-        created_at: '2025-11-27T10:00:00Z'
+        created_at: '2025-11-27T10:00:00Z',
       }
 
       // 修改状态
@@ -109,4 +109,3 @@ describe('TaskStore (UI State)', () => {
     })
   })
 })
-

@@ -4,28 +4,35 @@ import { useRegister } from '@/features/auth/hooks/useRegister'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { RegisterRequest } from '@go-genai-stack/types'
 
 /**
  * 注册页面
- * 
+ *
  * 职责：
  * - 注册表单展示和提交
  * - 页面布局
  * - 路由导航
- * 
+ *
  * 不包含：
  * - 认证逻辑（在 features/auth/hooks/useRegister 中）
- * 
+ *
  * 对应后端领域：auth
  */
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { register, loading, error } = useRegister()
-  
+
   const [formData, setFormData] = useState<RegisterRequest>({
     email: '',
     password: '',
@@ -35,7 +42,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       await register(formData)
       navigate('/tasks')
@@ -52,11 +59,9 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>注册</CardTitle>
-          <CardDescription>
-            创建一个新账号来使用 Go GenAI Stack
-          </CardDescription>
+          <CardDescription>创建一个新账号来使用 Go GenAI Stack</CardDescription>
         </CardHeader>
-        
+
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
@@ -139,4 +144,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-

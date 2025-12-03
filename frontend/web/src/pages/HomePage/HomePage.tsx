@@ -7,11 +7,11 @@ import { CheckSquare, LogOut, User, Palette } from 'lucide-react'
 
 /**
  * 首页（Dashboard）
- * 
+ *
  * 职责：
  * - 功能导航
  * - 用户欢迎信息
- * 
+ *
  * 跨领域页面（不对应单一后端领域）
  */
 export default function HomePage() {
@@ -32,13 +32,13 @@ export default function HomePage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Go GenAI Stack</CardTitle>
-            <CardDescription>
-              基于 Go + AI 的现代化全栈应用框架
-            </CardDescription>
+            <CardDescription>基于 Go + AI 的现代化全栈应用框架</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Button onClick={() => navigate('/login')}>登录</Button>
-            <Button variant="outline" onClick={() => navigate('/register')}>注册</Button>
+            <Button variant="outline" onClick={() => navigate('/register')}>
+              注册
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -53,9 +53,7 @@ export default function HomePage() {
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Go GenAI Stack</h1>
             <div className="flex gap-2 items-center">
-              <span className="text-sm text-muted-foreground">
-                {user?.email || '用户'}
-              </span>
+              <span className="text-sm text-muted-foreground">{user?.email || '用户'}</span>
               <ThemeToggle />
               <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
                 <User className="mr-2 h-4 w-4" /> 个人资料
@@ -78,7 +76,10 @@ export default function HomePage() {
         {/* 功能卡片网格 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* 任务管理 */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/tasks')}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate('/tasks')}
+          >
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-primary/10 rounded-lg">
@@ -98,7 +99,10 @@ export default function HomePage() {
           </Card>
 
           {/* UI 组件展示 */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/showcase')}>
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigate('/showcase')}
+          >
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-purple-500/10 rounded-lg">
@@ -123,4 +127,3 @@ export default function HomePage() {
     </div>
   )
 }
-

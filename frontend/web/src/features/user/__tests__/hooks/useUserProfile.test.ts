@@ -26,7 +26,7 @@ describe('useUserProfile', () => {
       status: 'active' as const,
       email_verified: true,
       created_at: '2025-11-27T10:00:00Z',
-      updated_at: '2025-11-27T10:00:00Z'
+      updated_at: '2025-11-27T10:00:00Z',
     }
 
     vi.mocked(userApi.getProfile).mockResolvedValue(mockProfile)
@@ -91,7 +91,7 @@ describe('useUserProfile', () => {
       status: 'active' as const,
       email_verified: true,
       created_at: '2025-11-27T10:00:00Z',
-      updated_at: '2025-11-27T10:00:00Z'
+      updated_at: '2025-11-27T10:00:00Z',
     }
 
     vi.mocked(userApi.getProfile).mockResolvedValue(mockProfile)
@@ -118,4 +118,3 @@ describe('useUserProfile', () => {
     })
   })
 })
-

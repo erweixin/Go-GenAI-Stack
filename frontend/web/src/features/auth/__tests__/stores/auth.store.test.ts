@@ -26,7 +26,7 @@ describe('AuthStore', () => {
         email: 'test@example.com',
         access_token: 'access-token',
         refresh_token: 'refresh-token',
-        expires_in: 3600
+        expires_in: 3600,
       }
 
       vi.mocked(authApi.login).mockResolvedValue(mockResponse)
@@ -34,7 +34,7 @@ describe('AuthStore', () => {
       // Act
       await useAuthStore.getState().login({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       })
 
       // Assert
@@ -57,14 +57,14 @@ describe('AuthStore', () => {
       // Arrange
       const errorMessage = 'Invalid credentials'
       vi.mocked(authApi.login).mockRejectedValue({
-        response: { data: { message: errorMessage } }
+        response: { data: { message: errorMessage } },
       })
 
       // Act
       try {
         await useAuthStore.getState().login({
           email: 'test@example.com',
-          password: 'wrong'
+          password: 'wrong',
         })
       } catch (error) {
         // Expected to throw
@@ -86,7 +86,7 @@ describe('AuthStore', () => {
         email: 'newuser@example.com',
         access_token: 'access-token',
         refresh_token: 'refresh-token',
-        expires_in: 3600
+        expires_in: 3600,
       }
 
       vi.mocked(authApi.register).mockResolvedValue(mockResponse)
@@ -94,7 +94,7 @@ describe('AuthStore', () => {
       // Act
       await useAuthStore.getState().register({
         email: 'newuser@example.com',
-        password: 'password123'
+        password: 'password123',
       })
 
       // Assert
@@ -110,14 +110,14 @@ describe('AuthStore', () => {
       // Arrange
       const errorMessage = 'Email already exists'
       vi.mocked(authApi.register).mockRejectedValue({
-        response: { data: { message: errorMessage } }
+        response: { data: { message: errorMessage } },
       })
 
       // Act
       try {
         await useAuthStore.getState().register({
           email: 'existing@example.com',
-          password: 'password123'
+          password: 'password123',
         })
       } catch (error) {
         // Expected to throw
@@ -139,12 +139,12 @@ describe('AuthStore', () => {
         email: 'test@example.com',
         access_token: 'access-token',
         refresh_token: 'refresh-token',
-        expires_in: 3600
+        expires_in: 3600,
       })
 
       await useAuthStore.getState().login({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       })
 
       expect(useAuthStore.getState().isAuthenticated).toBe(true)
@@ -177,7 +177,7 @@ describe('AuthStore', () => {
         user_id: 'user-1',
         email: 'test@example.com',
         username: 'testuser',
-        full_name: 'Test User'
+        full_name: 'Test User',
       }
 
       // Act
@@ -203,4 +203,3 @@ describe('AuthStore', () => {
     })
   })
 })
-

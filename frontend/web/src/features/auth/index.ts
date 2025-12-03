@@ -9,4 +9,3 @@ export { useRegister } from './hooks/useRegister'
 
 // Stores
 export { useAuthStore } from './stores/auth.store'
-

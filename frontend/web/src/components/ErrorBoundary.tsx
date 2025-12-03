@@ -1,6 +1,6 @@
 /**
  * 错误边界组件
- * 
+ *
  * 捕获 React 组件树中的 JavaScript 错误
  * 并显示友好的错误页面
  */
@@ -8,7 +8,14 @@
 import * as Sentry from '@sentry/react'
 import { Component, ErrorInfo, ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle, Home, RefreshCw } from 'lucide-react'
 
@@ -25,7 +32,7 @@ interface State {
 
 /**
  * 错误边界组件
- * 
+ *
  * 用法：
  * ```tsx
  * <ErrorBoundary>
@@ -54,13 +61,13 @@ class ErrorBoundaryClass extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // 记录错误详情
     console.error('Error caught by boundary:', error, errorInfo)
-    
+
     // 更新状态
     this.setState({
       error,
       errorInfo,
     })
-    
+
     // 上报到 Sentry
     Sentry.withScope((scope) => {
       scope.setExtra('componentStack', errorInfo.componentStack)
@@ -105,9 +112,7 @@ class ErrorBoundaryClass extends Component<Props, State> {
                 </div>
                 <div>
                   <CardTitle>页面出错了</CardTitle>
-                  <CardDescription>
-                    抱歉，应用遇到了一个意外错误
-                  </CardDescription>
+                  <CardDescription>抱歉，应用遇到了一个意外错误</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -166,7 +171,7 @@ class ErrorBoundaryClass extends Component<Props, State> {
 export const ErrorBoundary = Sentry.withErrorBoundary(ErrorBoundaryClass, {
   fallback: ({ error, resetError }) => {
     const errorMessage = error instanceof Error ? error.message : '发生了未知错误'
-    
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
@@ -190,9 +195,7 @@ export const ErrorBoundary = Sentry.withErrorBoundary(ErrorBoundaryClass, {
             <Button onClick={resetError} variant="outline">
               重试
             </Button>
-            <Button onClick={() => window.location.reload()}>
-              刷新页面
-            </Button>
+            <Button onClick={() => window.location.reload()}>刷新页面</Button>
           </CardFooter>
         </Card>
       </div>
@@ -202,4 +205,3 @@ export const ErrorBoundary = Sentry.withErrorBoundary(ErrorBoundaryClass, {
 })
 
 export default ErrorBoundary
-

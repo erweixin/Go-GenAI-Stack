@@ -6,9 +6,9 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 /**
  * 路由配置
- * 
+ *
  * 使用 React Router v7 的数据路由模式（createBrowserRouter）
- * 
+ *
  * 特性：
  * - 懒加载：按需加载页面组件
  * - 错误处理：每个路由都有 errorElement
@@ -102,16 +102,15 @@ export const router = createBrowserRouter([
 
 /**
  * 路由导出说明
- * 
+ *
  * 使用方式（在 App.tsx 中）：
- * 
+ *
  * ```tsx
  * import { RouterProvider } from 'react-router-dom'
  * import { router } from './router'
- * 
+ *
  * function App() {
  *   return <RouterProvider router={router} />
  * }
  * ```
  */
-

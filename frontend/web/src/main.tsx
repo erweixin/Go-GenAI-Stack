@@ -25,6 +25,5 @@ createRoot(document.getElementById('root')!).render(
       {/* React Query Devtools（仅在开发环境显示）*/}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  </StrictMode>,
+  </StrictMode>
 )
-

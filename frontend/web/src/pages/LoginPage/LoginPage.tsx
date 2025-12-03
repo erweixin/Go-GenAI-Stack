@@ -4,28 +4,35 @@ import { useLogin } from '@/features/auth/hooks/useLogin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { LoginRequest } from '@go-genai-stack/types'
 
 /**
  * 登录页面
- * 
+ *
  * 职责：
  * - 登录表单展示和提交
  * - 页面布局
  * - 路由导航
- * 
+ *
  * 不包含：
  * - 认证逻辑（在 features/auth/hooks/useLogin 中）
- * 
+ *
  * 对应后端领域：auth
  */
 export default function LoginPage() {
   const navigate = useNavigate()
   const { login, loading, error } = useLogin()
-  
+
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: '',
@@ -33,7 +40,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     try {
       await login(formData)
       navigate('/tasks')
@@ -50,11 +57,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>登录</CardTitle>
-          <CardDescription>
-            使用您的账号登录到 Go GenAI Stack
-          </CardDescription>
+          <CardDescription>使用您的账号登录到 Go GenAI Stack</CardDescription>
         </CardHeader>
-        
+
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
@@ -113,4 +118,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

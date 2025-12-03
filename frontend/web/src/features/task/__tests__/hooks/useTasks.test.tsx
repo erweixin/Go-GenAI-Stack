@@ -25,9 +25,7 @@ function createTestQueryClient() {
 function createWrapper() {
   const queryClient = createTestQueryClient()
   return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
 }
 
@@ -45,7 +43,7 @@ describe('useTasks (React Query 版本)', () => {
         status: 'pending' as const,
         priority: 'high' as const,
         tags: ['urgent'],
-        created_at: '2025-11-27T10:00:00Z'
+        created_at: '2025-11-27T10:00:00Z',
       },
       {
         task_id: '2',
@@ -53,8 +51,8 @@ describe('useTasks (React Query 版本)', () => {
         status: 'completed' as const,
         priority: 'low' as const,
         tags: [],
-        created_at: '2025-11-27T09:00:00Z'
-      }
+        created_at: '2025-11-27T09:00:00Z',
+      },
     ]
 
     vi.mocked(taskApi.list).mockResolvedValue({
@@ -62,12 +60,12 @@ describe('useTasks (React Query 版本)', () => {
       total_count: 2,
       page: 1,
       limit: 10,
-      has_more: false
+      has_more: false,
     })
 
     // Act
     const { result } = renderHook(() => useTasksQuery(), {
-      wrapper: createWrapper()
+      wrapper: createWrapper(),
     })
 
     // Assert
@@ -91,7 +89,7 @@ describe('useTasks (React Query 版本)', () => {
 
     // Act
     const { result } = renderHook(() => useTasksQuery(), {
-      wrapper: createWrapper()
+      wrapper: createWrapper(),
     })
 
     // Assert
@@ -112,8 +110,8 @@ describe('useTasks (React Query 版本)', () => {
         status: 'pending' as const,
         priority: 'medium' as const,
         tags: [],
-        created_at: '2025-11-27T10:00:00Z'
-      }
+        created_at: '2025-11-27T10:00:00Z',
+      },
     ]
 
     vi.mocked(taskApi.list).mockResolvedValue({
@@ -121,12 +119,12 @@ describe('useTasks (React Query 版本)', () => {
       total_count: 1,
       page: 1,
       limit: 10,
-      has_more: false
+      has_more: false,
     })
 
     // Act
     const { result } = renderHook(() => useTasksQuery(), {
-      wrapper: createWrapper()
+      wrapper: createWrapper(),
     })
 
     // 等待初始加载完成
@@ -153,18 +151,15 @@ describe('useTasks (React Query 版本)', () => {
       total_count: 0,
       page: 1,
       limit: 10,
-      has_more: false
+      has_more: false,
     })
 
     let filters: ListTasksRequest | undefined = undefined
 
     // Act - 先不带筛选条件
-    const { result, rerender } = renderHook(
-      () => useTasksQuery(filters),
-      {
-        wrapper: createWrapper(),
-      }
-    )
+    const { result, rerender } = renderHook(() => useTasksQuery(filters), {
+      wrapper: createWrapper(),
+    })
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true)
@@ -181,8 +176,7 @@ describe('useTasks (React Query 版本)', () => {
     await waitFor(() => {
       expect(taskApi.list).toHaveBeenCalledTimes(2)
     })
-    
+
     expect(taskApi.list).toHaveBeenLastCalledWith({ status: 'completed' })
   })
 })
-

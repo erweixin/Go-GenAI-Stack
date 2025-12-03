@@ -10,7 +10,7 @@ import type {
 
 /**
  * Auth API
- * 
+ *
  * 对齐后端 backend/domains/auth
  * API Prefix: /api/auth
  */
@@ -43,4 +43,3 @@ export const authApi = {
     return api.post('/api/auth/logout')
   },
 }
-

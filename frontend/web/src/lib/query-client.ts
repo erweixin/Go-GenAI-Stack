@@ -3,9 +3,9 @@ import { captureException } from '@/lib/monitoring/sentry'
 
 /**
  * React Query Client 配置
- * 
+ *
  * 用于数据缓存、自动重试、后台更新等
- * 
+ *
  * @see https://tanstack.com/query/latest/docs/react/reference/QueryClient
  */
 export const queryClient = new QueryClient({
@@ -58,4 +58,3 @@ export const queryClient = new QueryClient({
     },
   },
 })
-

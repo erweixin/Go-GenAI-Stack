@@ -35,7 +35,7 @@ const initialState = {
 
 /**
  * User Store
- * 
+ *
  * 用户状态管理
  */
 export const useUserStore = create<UserState>((set) => ({
@@ -43,9 +43,10 @@ export const useUserStore = create<UserState>((set) => ({
 
   setProfile: (profile) => set({ profile }),
 
-  updateProfile: (updatedProfile) => set((state) => ({
-    profile: state.profile ? { ...state.profile, ...updatedProfile } : null,
-  })),
+  updateProfile: (updatedProfile) =>
+    set((state) => ({
+      profile: state.profile ? { ...state.profile, ...updatedProfile } : null,
+    })),
 
   setLoading: (loading) => set({ loading }),
 
@@ -53,4 +54,3 @@ export const useUserStore = create<UserState>((set) => ({
 
   reset: () => set(initialState),
 }))
-

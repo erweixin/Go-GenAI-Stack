@@ -18,7 +18,7 @@ describe('UserStore', () => {
         status: 'active' as const,
         email_verified: true,
         created_at: '2025-11-27T10:00:00Z',
-        updated_at: '2025-11-27T10:00:00Z'
+        updated_at: '2025-11-27T10:00:00Z',
       }
 
       // Act
@@ -41,7 +41,7 @@ describe('UserStore', () => {
         status: 'active' as const,
         email_verified: true,
         created_at: '2025-11-27T10:00:00Z',
-        updated_at: '2025-11-27T10:00:00Z'
+        updated_at: '2025-11-27T10:00:00Z',
       }
 
       useUserStore.getState().setProfile(initialProfile)
@@ -49,7 +49,7 @@ describe('UserStore', () => {
       // Act
       useUserStore.getState().updateProfile({
         username: 'newusername',
-        full_name: 'New Name'
+        full_name: 'New Name',
       })
 
       // Assert
@@ -63,7 +63,7 @@ describe('UserStore', () => {
       // Act & Assert
       expect(() => {
         useUserStore.getState().updateProfile({
-          username: 'newusername'
+          username: 'newusername',
         })
       }).not.toThrow()
 
@@ -126,7 +126,7 @@ describe('UserStore', () => {
         status: 'active' as const,
         email_verified: true,
         created_at: '2025-11-27T10:00:00Z',
-        updated_at: '2025-11-27T10:00:00Z'
+        updated_at: '2025-11-27T10:00:00Z',
       })
       store.setLoading(true)
       store.setError('Error')
@@ -141,4 +141,3 @@ describe('UserStore', () => {
     })
   })
 })
-

@@ -2,23 +2,20 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { taskApi } from '../api/task.api'
 import { taskKeys } from './useTasks.query'
-import type {
-  CreateTaskRequest,
-  UpdateTaskRequest,
-} from '@go-genai-stack/types'
+import type { CreateTaskRequest, UpdateTaskRequest } from '@go-genai-stack/types'
 
 /**
  * 创建任务 Hook (React Query 版本)
- * 
+ *
  * 用例：CreateTask
- * 
+ *
  * 使用 TanStack Query Mutation 处理任务创建
  * 成功后自动刷新任务列表
- * 
+ *
  * @example
  * ```tsx
  * const { mutate: createTask, isPending } = useTaskCreateMutation()
- * 
+ *
  * const handleCreate = () => {
  *   createTask({
  *     title: 'New Task',
@@ -32,7 +29,7 @@ export function useTaskCreateMutation() {
 
   return useMutation({
     mutationFn: (data: CreateTaskRequest) => taskApi.create(data),
-    
+
     onSuccess: (response) => {
       // 使所有任务列表查询失效，触发重新获取
       queryClient.invalidateQueries({
@@ -54,13 +51,13 @@ export function useTaskCreateMutation() {
 
 /**
  * 更新任务 Hook (React Query 版本)
- * 
+ *
  * 用例：UpdateTask
- * 
+ *
  * @example
  * ```tsx
  * const { mutate: updateTask } = useTaskUpdateMutation()
- * 
+ *
  * const handleUpdate = () => {
  *   updateTask({
  *     taskId: 'task-123',
@@ -100,13 +97,13 @@ export function useTaskUpdateMutation() {
 
 /**
  * 完成任务 Hook (React Query 版本)
- * 
+ *
  * 用例：CompleteTask
- * 
+ *
  * @example
  * ```tsx
  * const { mutate: completeTask } = useTaskCompleteMutation()
- * 
+ *
  * const handleComplete = () => {
  *   completeTask('task-123')
  * }
@@ -174,13 +171,13 @@ export function useTaskCompleteMutation() {
 
 /**
  * 删除任务 Hook (React Query 版本)
- * 
+ *
  * 用例：DeleteTask
- * 
+ *
  * @example
  * ```tsx
  * const { mutate: deleteTask } = useTaskDeleteMutation()
- * 
+ *
  * const handleDelete = () => {
  *   deleteTask('task-123')
  * }
@@ -213,4 +210,3 @@ export function useTaskDeleteMutation() {
     },
   })
 }
-

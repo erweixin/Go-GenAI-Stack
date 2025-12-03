@@ -31,7 +31,7 @@ interface AuthState {
 
 /**
  * Auth Store
- * 
+ *
  * 认证状态管理（Zustand + LocalStorage）
  */
 export const useAuthStore = create<AuthState>()(
@@ -50,14 +50,14 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
         try {
           const response = await authApi.login(data)
-          
+
           // 保存 Token
           localStorage.setItem('access_token', response.access_token)
           localStorage.setItem('refresh_token', response.refresh_token)
           localStorage.setItem('user_id', response.user_id)
 
           // 更新状态
-          set({ 
+          set({
             isAuthenticated: true,
             accessToken: response.access_token,
             refreshToken: response.refresh_token,
@@ -79,7 +79,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null })
         try {
           const response = await authApi.register(data)
-          
+
           // 保存 Token
           localStorage.setItem('access_token', response.access_token)
           localStorage.setItem('refresh_token', response.refresh_token)
@@ -90,15 +90,15 @@ export const useAuthStore = create<AuthState>()(
             user_id: response.user_id,
             email: response.email,
           }
-          
-          set({ 
+
+          set({
             isAuthenticated: true,
             accessToken: response.access_token,
             refreshToken: response.refresh_token,
             user,
             isLoading: false,
           })
-          
+
           // 设置 Sentry 用户上下文
           setSentryUser({
             id: user.user_id,
@@ -118,15 +118,15 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout error:', error)
         }
-        
+
         // 清除 Token
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user_id')
-        
+
         // 清除 Sentry 用户上下文
         clearSentryUser()
-        
+
         set({
           isAuthenticated: false,
           user: null,
@@ -152,4 +152,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 )
-
