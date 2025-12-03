@@ -35,13 +35,14 @@ export function TaskItemComponent({
   }
 
   return (
-    <Card className={isCompleted ? 'opacity-60' : ''}>
+    <Card className={isCompleted ? 'opacity-60' : ''} data-test-id={`task-card-${task.task_id}`}>
       <CardContent className="pt-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             {/* 标题和状态图标 */}
             <div className="flex items-center gap-3 mb-2">
               <button
+                data-test-id={`task-complete-${task.task_id}`}
                 onClick={() => !isCompleted && onComplete?.(task.task_id)}
                 disabled={isCompleted}
                 className="focus:outline-none"
@@ -52,7 +53,10 @@ export function TaskItemComponent({
                   <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
                 )}
               </button>
-              <h3 className={`text-lg font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}>
+              <h3 
+                data-test-id={`task-title-${task.task_id}`}
+                className={`text-lg font-medium ${isCompleted ? 'line-through text-muted-foreground' : ''}`}
+              >
                 {task.title}
               </h3>
             </div>
@@ -96,6 +100,7 @@ export function TaskItemComponent({
           <div className="flex gap-2">
             {!isCompleted && (
               <Button
+                data-test-id={`task-edit-${task.task_id}`}
                 variant="ghost"
                 size="sm"
                 onClick={() => onEdit?.(task)}
@@ -104,6 +109,7 @@ export function TaskItemComponent({
               </Button>
             )}
             <Button
+              data-test-id={`task-delete-${task.task_id}`}
               variant="ghost"
               size="sm"
               onClick={() => onDelete?.(task.task_id)}
