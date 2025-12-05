@@ -46,23 +46,19 @@ export const API_ENDPOINTS = {
     profile: '/api/user/profile',
     settings: '/api/user/settings',
   },
-} as const;
+} as const
 
 /**
  * 构建带参数的 URL
- * 
+ *
  * @example
  * buildUrl(API_ENDPOINTS.chat.deleteConversation, { id: 'conv-123' })
  * // "/api/chat/conversations/conv-123/delete"
  */
-export function buildUrl(
-  template: string,
-  params: Record<string, string | number>
-): string {
-  let url = template;
+export function buildUrl(template: string, params: Record<string, string | number>): string {
+  let url = template
   for (const [key, value] of Object.entries(params)) {
-    url = url.replace(`:${key}`, String(value));
+    url = url.replace(`:${key}`, String(value))
   }
-  return url;
+  return url
 }
-

@@ -1,6 +1,6 @@
 /**
  * 版本管理工具
- * 
+ *
  * 功能：
  * - 读取 package.json 版本号
  * - 获取 Git 信息（commit hash, branch）
@@ -33,7 +33,7 @@ export function getPackageVersion() {
 
 /**
  * 获取 Git 信息
- * 
+ *
  * @returns {{ commitHash: string, branch: string, hasGit: boolean }}
  */
 export function getGitInfo() {
@@ -41,33 +41,33 @@ export function getGitInfo() {
     const commitHash = execSync('git rev-parse --short HEAD', {
       cwd: rootDir,
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim()
-    
+
     const branch = execSync('git rev-parse --abbrev-ref HEAD', {
       cwd: rootDir,
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
     }).trim()
-    
+
     return {
       commitHash,
       branch,
-      hasGit: true
+      hasGit: true,
     }
   } catch (error) {
     // Git 不可用或不在仓库中
     return {
       commitHash: 'unknown',
       branch: 'unknown',
-      hasGit: false
+      hasGit: false,
     }
   }
 }
 
 /**
  * 生成 Release 名称
- * 
+ *
  * @param {Object} options
  * @param {string} options.version - 版本号
  * @param {string} options.commitHash - Git commit hash
@@ -80,67 +80,67 @@ export function generateReleaseName({ version, commitHash, isDev, useGitHash }) 
   if (isDev) {
     return `${version}-dev-${commitHash}`
   }
-  
+
   // 生产环境（包含 Git Hash）：1.0.0-abc123
   if (useGitHash) {
     return `${version}-${commitHash}`
   }
-  
+
   // 生产环境（纯版本号）：1.0.0
   return version
 }
 
 /**
  * 获取完整的版本信息
- * 
+ *
  * @param {Object} env - 环境变量
  * @returns {Object} 版本信息对象
  */
 export function getVersionInfo(env = {}) {
   const version = getPackageVersion()
   const gitInfo = getGitInfo()
-  
+
   const isDev = env.NODE_ENV !== 'production'
   const useGitHash = env.VITE_USE_GIT_HASH !== 'false'
-  
+
   const releaseName = generateReleaseName({
     version,
     commitHash: gitInfo.commitHash,
     isDev,
-    useGitHash
+    useGitHash,
   })
-  
+
   return {
     version,
     releaseName,
     gitCommitHash: gitInfo.commitHash,
     gitBranch: gitInfo.branch,
     hasGit: gitInfo.hasGit,
-    isDev
+    isDev,
   }
 }
 
 /**
  * 打印版本信息到控制台
- * 
+ *
  * @param {Object} versionInfo - 版本信息对象
  */
 export function logVersionInfo(versionInfo) {
   console.log(`[Version] Package: ${versionInfo.version}`)
   console.log(`[Version] Release: ${versionInfo.releaseName}`)
-  
+
   if (versionInfo.hasGit) {
     console.log(`[Version] Git: ${versionInfo.gitBranch}@${versionInfo.gitCommitHash}`)
   } else {
     console.warn('[Version] Git information not available')
   }
-  
+
   console.log(`[Version] Environment: ${versionInfo.isDev ? 'development' : 'production'}`)
 }
 
 /**
  * 获取用于 Vite define 的版本变量
- * 
+ *
  * @param {Object} versionInfo - 版本信息对象
  * @returns {Object} Vite define 对象
  */
@@ -152,4 +152,3 @@ export function getVersionDefines(versionInfo) {
     'import.meta.env.VITE_PACKAGE_VERSION': JSON.stringify(versionInfo.version),
   }
 }
-

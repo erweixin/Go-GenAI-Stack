@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import {
@@ -69,7 +69,10 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
         tags: task.tags || [],
         due_date: task.due_date || undefined,
       })
-      setTagInput('')
+      // 重置标签输入（使用 setTimeout 避免在 effect 中同步调用 setState）
+      setTimeout(() => {
+        setTagInput('')
+      }, 0)
     }
   }, [task, form])
 
@@ -91,7 +94,7 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
           toast.success('任务更新成功')
           onOpenChange(false)
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
           toast.error(error?.message || '更新任务失败，请重试')
         },
       }
@@ -122,10 +125,13 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
 
   const handleRemoveTag = (tagToRemove: string) => {
     const currentTags = form.getValues('tags') || []
-    form.setValue('tags', currentTags.filter((tag) => tag !== tagToRemove))
+    form.setValue(
+      'tags',
+      currentTags.filter((tag) => tag !== tagToRemove)
+    )
   }
 
-  const tags = form.watch('tags') || []
+  const tags = useWatch({ control: form.control, name: 'tags' }) || []
 
   if (!task) return null
 
@@ -147,7 +153,11 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                 <FormItem>
                   <FormLabel>任务标题 *</FormLabel>
                   <FormControl>
-                    <Input placeholder="输入任务标题" {...field} data-test-id="task-edit-title-input" />
+                    <Input
+                      placeholder="输入任务标题"
+                      {...field}
+                      data-test-id="task-edit-title-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -162,7 +172,12 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                 <FormItem>
                   <FormLabel>任务描述</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="输入任务描述" rows={3} {...field} data-test-id="task-edit-description-input" />
+                    <Textarea
+                      placeholder="输入任务描述"
+                      rows={3}
+                      {...field}
+                      data-test-id="task-edit-description-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -228,7 +243,12 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                   placeholder="输入标签后回车"
                   data-test-id="task-edit-tag-input"
                 />
-                <Button type="button" onClick={handleAddTag} variant="outline" data-test-id="task-edit-tag-add-button">
+                <Button
+                  type="button"
+                  onClick={handleAddTag}
+                  variant="outline"
+                  data-test-id="task-edit-tag-add-button"
+                >
                   添加
                 </Button>
               </div>
@@ -266,7 +286,11 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
               >
                 取消
               </Button>
-              <Button type="submit" disabled={updateMutation.isPending} data-test-id="task-edit-submit-button">
+              <Button
+                type="submit"
+                disabled={updateMutation.isPending}
+                data-test-id="task-edit-submit-button"
+              >
                 {updateMutation.isPending ? '保存中...' : '保存'}
               </Button>
             </DialogFooter>

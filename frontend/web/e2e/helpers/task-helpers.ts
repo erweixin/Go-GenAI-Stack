@@ -18,28 +18,28 @@ export async function createTask(
 ) {
   // 点击"新建任务"按钮
   await page.click('button:has-text("新建任务")')
-  
+
   // 等待对话框出现
   await page.waitForSelector('input[id="title"]')
-  
+
   // 填写表单
   await page.fill('input[id="title"]', taskData.title)
-  
+
   if (taskData.description) {
     await page.fill('textarea[id="description"]', taskData.description)
   }
-  
+
   if (taskData.priority) {
     // 选择优先级
     await page.click('button[role="combobox"]')
     const priorityMap = {
       low: '低',
       medium: '中',
-      high: '高'
+      high: '高',
     }
     await page.click(`text=${priorityMap[taskData.priority]}`)
   }
-  
+
   // 添加标签
   if (taskData.tags) {
     for (const tag of taskData.tags) {
@@ -47,13 +47,13 @@ export async function createTask(
       await page.click('button:has-text("添加")')
     }
   }
-  
+
   // 提交表单
   await page.click('button:has-text("创建")')
-  
+
   // 等待对话框关闭
   await page.waitForSelector('input[id="title"]', { state: 'hidden' })
-  
+
   // 验证任务出现在列表中
   await expect(page.locator(`text=${taskData.title}`)).toBeVisible()
 }
@@ -70,11 +70,11 @@ export async function findTask(page: Page, title: string) {
  */
 export async function completeTask(page: Page, title: string) {
   const taskLocator = await findTask(page, title)
-  
+
   // 找到任务对应的完成按钮（Circle 图标）
   const taskCard = taskLocator.locator('..')
   await taskCard.locator('button[class*="focus:outline-none"]').first().click()
-  
+
   // 验证任务状态变为完成（有删除线）
   await expect(page.locator(`text=${title}`).locator('..')).toHaveClass(/line-through/)
 }
@@ -84,11 +84,11 @@ export async function completeTask(page: Page, title: string) {
  */
 export async function deleteTask(page: Page, title: string) {
   const taskLocator = await findTask(page, title)
-  
+
   // 找到删除按钮
   const taskCard = taskLocator.locator('..')
   await taskCard.locator('button:has(svg.lucide-trash-2)').click()
-  
+
   // 等待任务从列表消失
   await expect(page.locator(`text=${title}`)).not.toBeVisible()
 }
@@ -101,4 +101,3 @@ export async function getTaskCount(page: Page): Promise<number> {
   const match = countText?.match(/共 (\d+) 个任务/)
   return match ? parseInt(match[1], 10) : 0
 }
-

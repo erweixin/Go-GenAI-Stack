@@ -1,0 +1,127 @@
+#!/bin/bash
+
+# Pre-commit hook: Auto-format Go and Frontend code
+# 在提交前自动格式化 Go 和前端代码
+
+set -e
+
+# 获取项目根目录
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT_DIR"
+
+echo "🔧 Auto-formatting code before commit..."
+echo ""
+
+# 获取暂存的文件
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+    echo "✅ No staged files to format"
+    exit 0
+fi
+
+HAS_GO_FILES=false
+HAS_FRONTEND_FILES=false
+
+# 检查是否有 Go 文件
+for file in $STAGED_FILES; do
+    if [[ "$file" == *.go ]]; then
+        HAS_GO_FILES=true
+        break
+    fi
+done
+
+# 检查是否有前端文件
+for file in $STAGED_FILES; do
+    if [[ "$file" == frontend/* ]] && [[ "$file" =~ \.(ts|tsx|js|jsx|json|css)$ ]]; then
+        HAS_FRONTEND_FILES=true
+        break
+    fi
+done
+
+# 格式化 Go 代码
+if [ "$HAS_GO_FILES" = true ]; then
+    echo "📐 Formatting Go code..."
+    
+    # 收集需要格式化的 Go 文件
+    GO_FILES=()
+    for file in $STAGED_FILES; do
+        if [[ "$file" == *.go ]] && [ -f "$ROOT_DIR/$file" ]; then
+            GO_FILES+=("$ROOT_DIR/$file")
+        fi
+    done
+    
+    if [ ${#GO_FILES[@]} -gt 0 ]; then
+        # 格式化文件
+        for file in "${GO_FILES[@]}"; do
+            echo "  Formatting: ${file#$ROOT_DIR/}"
+            if command -v goimports >/dev/null 2>&1; then
+                goimports -w "$file"
+            else
+                gofmt -w "$file"
+            fi
+        done
+        
+        # 重新添加格式化后的文件到暂存区
+        for file in "${GO_FILES[@]}"; do
+            REL_PATH="${file#$ROOT_DIR/}"
+            git add "$REL_PATH" 2>/dev/null || true
+        done
+        
+        echo "✅ Go code formatted"
+    fi
+    echo ""
+fi
+
+# 格式化前端代码
+if [ "$HAS_FRONTEND_FILES" = true ]; then
+    echo "💅 Formatting frontend code..."
+    
+    # 检查是否有 pnpm
+    if ! command -v pnpm >/dev/null 2>&1; then
+        echo "⚠️  pnpm not found, skipping frontend formatting"
+        echo "   Install with: npm install -g pnpm"
+    else
+        cd "$ROOT_DIR/frontend"
+        
+        # 收集需要格式化的前端文件
+        FRONTEND_FILES=()
+        for file in $STAGED_FILES; do
+            if [[ "$file" == frontend/* ]] && [[ "$file" =~ \.(ts|tsx|js|jsx|json|css)$ ]]; then
+                REL_PATH="${file#frontend/}"
+                if [ -f "$ROOT_DIR/frontend/$REL_PATH" ]; then
+                    FRONTEND_FILES+=("$REL_PATH")
+                fi
+            fi
+        done
+        
+        if [ ${#FRONTEND_FILES[@]} -gt 0 ]; then
+            # 使用 prettier 格式化文件
+            if command -v prettier >/dev/null 2>&1; then
+                for file in "${FRONTEND_FILES[@]}"; do
+                    echo "  Formatting: $file"
+                    prettier --write "$file" 2>/dev/null || true
+                done
+            else
+                # 尝试使用 pnpm format（会格式化整个项目）
+                pnpm format 2>/dev/null || true
+            fi
+            
+            # 重新添加格式化后的文件到暂存区
+            cd "$ROOT_DIR"
+            for file in "${FRONTEND_FILES[@]}"; do
+                git add "frontend/$file" 2>/dev/null || true
+            done
+            
+            echo "✅ Frontend code formatted"
+        fi
+        
+        cd "$ROOT_DIR"
+    fi
+    echo ""
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Code formatting complete!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+

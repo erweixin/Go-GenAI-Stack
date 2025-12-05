@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import {
@@ -46,6 +46,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
   const createMutation = useTaskCreateMutation()
 
   const form = useForm<CreateTaskFormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(createTaskSchema) as any,
     defaultValues: {
       title: '',
@@ -74,7 +75,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
         setTagInput('')
         onOpenChange(false)
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         toast.error(error?.message || '创建任务失败，请重试')
       },
     })
@@ -104,10 +105,13 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
 
   const handleRemoveTag = (tagToRemove: string) => {
     const currentTags = form.getValues('tags') || []
-    form.setValue('tags', currentTags.filter((tag) => tag !== tagToRemove))
+    form.setValue(
+      'tags',
+      currentTags.filter((tag) => tag !== tagToRemove)
+    )
   }
 
-  const tags = form.watch('tags') || []
+  const tags = useWatch({ control: form.control, name: 'tags' }) || []
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -127,7 +131,11 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                 <FormItem>
                   <FormLabel>任务标题 *</FormLabel>
                   <FormControl>
-                    <Input placeholder="输入任务标题" {...field} data-test-id="task-create-title-input" />
+                    <Input
+                      placeholder="输入任务标题"
+                      {...field}
+                      data-test-id="task-create-title-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -142,7 +150,12 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                 <FormItem>
                   <FormLabel>任务描述</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="输入任务描述" rows={3} {...field} data-test-id="task-create-description-input" />
+                    <Textarea
+                      placeholder="输入任务描述"
+                      rows={3}
+                      {...field}
+                      data-test-id="task-create-description-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -208,7 +221,12 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                   placeholder="输入标签后回车"
                   data-test-id="task-create-tag-input"
                 />
-                <Button type="button" onClick={handleAddTag} variant="outline" data-test-id="task-create-tag-add-button">
+                <Button
+                  type="button"
+                  onClick={handleAddTag}
+                  variant="outline"
+                  data-test-id="task-create-tag-add-button"
+                >
                   添加
                 </Button>
               </div>
@@ -246,7 +264,11 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
               >
                 取消
               </Button>
-              <Button type="submit" disabled={createMutation.isPending} data-test-id="task-create-submit-button">
+              <Button
+                type="submit"
+                disabled={createMutation.isPending}
+                data-test-id="task-create-submit-button"
+              >
                 {createMutation.isPending ? '创建中...' : '创建'}
               </Button>
             </DialogFooter>

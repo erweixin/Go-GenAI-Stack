@@ -11,7 +11,7 @@ export default defineConfig({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
-      '**/e2e/**',  // 排除 Playwright E2E 测试
+      '**/e2e/**', // 排除 Playwright E2E 测试
       '**/.{idea,git,cache,output,temp}/**',
     ],
     globals: true,
@@ -46,4 +46,3 @@ export default defineConfig({
     },
   },
 })
-

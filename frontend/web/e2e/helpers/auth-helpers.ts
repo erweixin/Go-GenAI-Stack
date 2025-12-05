@@ -10,14 +10,14 @@ import { testUsers } from '../fixtures/test-data'
  */
 export async function loginAsTestUser(page: Page) {
   await page.goto('/login')
-  
+
   // 填写登录表单
   await page.fill('input[id="email"]', testUsers.validUser.email)
   await page.fill('input[id="password"]', testUsers.validUser.password)
-  
+
   // 点击登录按钮
   await page.click('button[type="submit"]:has-text("登录")')
-  
+
   // 等待跳转到任务页面
   await page.waitForURL('/tasks', { timeout: 10000 })
 }
@@ -25,21 +25,18 @@ export async function loginAsTestUser(page: Page) {
 /**
  * 注册新用户
  */
-export async function registerNewUser(
-  page: Page,
-  userData = testUsers.newUser
-) {
+export async function registerNewUser(page: Page, userData = testUsers.newUser) {
   await page.goto('/register')
-  
+
   // 填写注册表单
   await page.fill('input[id="email"]', userData.email)
   await page.fill('input[id="username"]', userData.username || '')
   await page.fill('input[id="full_name"]', userData.full_name || '')
   await page.fill('input[id="password"]', userData.password)
-  
+
   // 点击注册按钮
   await page.click('button[type="submit"]:has-text("注册")')
-  
+
   // 等待跳转到任务页面
   await page.waitForURL('/tasks', { timeout: 10000 })
 }
@@ -50,7 +47,7 @@ export async function registerNewUser(
 export async function logout(page: Page) {
   // 查找并点击登出按钮
   await page.click('button:has-text("登出")')
-  
+
   // 等待跳转到登录页面
   await page.waitForURL('/login')
 }
@@ -77,4 +74,3 @@ export async function ensureLoggedIn(page: Page) {
     await loginAsTestUser(page)
   }
 }
-

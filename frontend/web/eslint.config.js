@@ -58,5 +58,5 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
       'prettier/prettier': 'warn',
     },
-  },
+  }
 )
