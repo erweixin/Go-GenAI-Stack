@@ -147,7 +147,7 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                 <FormItem>
                   <FormLabel>任务标题 *</FormLabel>
                   <FormControl>
-                    <Input placeholder="输入任务标题" {...field} />
+                    <Input placeholder="输入任务标题" {...field} data-test-id="task-edit-title-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -162,7 +162,7 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                 <FormItem>
                   <FormLabel>任务描述</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="输入任务描述" rows={3} {...field} />
+                    <Textarea placeholder="输入任务描述" rows={3} {...field} data-test-id="task-edit-description-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -178,7 +178,7 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                   <FormLabel>优先级</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger data-test-id="task-edit-priority-select">
                         <SelectValue placeholder="选择优先级" />
                       </SelectTrigger>
                     </FormControl>
@@ -226,8 +226,9 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                     }
                   }}
                   placeholder="输入标签后回车"
+                  data-test-id="task-edit-tag-input"
                 />
-                <Button type="button" onClick={handleAddTag} variant="outline">
+                <Button type="button" onClick={handleAddTag} variant="outline" data-test-id="task-edit-tag-add-button">
                   添加
                 </Button>
               </div>
@@ -261,10 +262,11 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
                   setTagInput('')
                   onOpenChange(false)
                 }}
+                data-test-id="task-edit-cancel-button"
               >
                 取消
               </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
+              <Button type="submit" disabled={updateMutation.isPending} data-test-id="task-edit-submit-button">
                 {updateMutation.isPending ? '保存中...' : '保存'}
               </Button>
             </DialogFooter>

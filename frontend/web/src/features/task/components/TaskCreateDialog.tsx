@@ -127,7 +127,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                 <FormItem>
                   <FormLabel>任务标题 *</FormLabel>
                   <FormControl>
-                    <Input placeholder="输入任务标题" {...field} />
+                    <Input placeholder="输入任务标题" {...field} data-test-id="task-create-title-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -142,7 +142,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                 <FormItem>
                   <FormLabel>任务描述</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="输入任务描述" rows={3} {...field} />
+                    <Textarea placeholder="输入任务描述" rows={3} {...field} data-test-id="task-create-description-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -158,7 +158,7 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                   <FormLabel>优先级</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger data-test-id="task-create-priority-select">
                         <SelectValue placeholder="选择优先级" />
                       </SelectTrigger>
                     </FormControl>
@@ -206,8 +206,9 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                     }
                   }}
                   placeholder="输入标签后回车"
+                  data-test-id="task-create-tag-input"
                 />
-                <Button type="button" onClick={handleAddTag} variant="outline">
+                <Button type="button" onClick={handleAddTag} variant="outline" data-test-id="task-create-tag-add-button">
                   添加
                 </Button>
               </div>
@@ -241,10 +242,11 @@ export function TaskCreateDialog({ open, onOpenChange }: TaskCreateDialogProps) 
                   setTagInput('')
                   onOpenChange(false)
                 }}
+                data-test-id="task-create-cancel-button"
               >
                 取消
               </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
+              <Button type="submit" disabled={createMutation.isPending} data-test-id="task-create-submit-button">
                 {createMutation.isPending ? '创建中...' : '创建'}
               </Button>
             </DialogFooter>

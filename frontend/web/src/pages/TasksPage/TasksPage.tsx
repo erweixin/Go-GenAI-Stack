@@ -95,7 +95,7 @@ export default function TasksPage() {
         {/* 操作栏 */}
         <div className="flex justify-between items-center mb-6">
           <div className="text-muted-foreground">共 {tasks.length} 个任务</div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button onClick={() => setIsCreateDialogOpen(true)} data-test-id="task-create-button">
             <Plus className="mr-2 h-4 w-4" /> 新建任务
           </Button>
         </div>

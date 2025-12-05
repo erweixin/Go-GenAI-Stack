@@ -64,10 +64,13 @@ export function ConfirmDialog({
           {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading} data-test-id="confirm-dialog-cancel-button">
+            {cancelText}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             disabled={loading}
+            data-test-id="confirm-dialog-confirm-button"
             className={
               variant === 'destructive'
                 ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'

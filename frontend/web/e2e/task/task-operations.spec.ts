@@ -11,9 +11,9 @@ test.describe('任务操作', () => {
     const taskTitle = `Task to Complete ${Date.now()}`
 
     // 先创建一个任务
-    await page.click('button:has-text("新建任务")')
-    await page.fill('input[id="title"]', taskTitle)
-    await page.click('button:has-text("创建")')
+    await page.locator('[data-test-id="task-create-button"]').click()
+    await page.locator('[data-test-id="task-create-title-input"]').fill(taskTitle)
+    await page.locator('[data-test-id="task-create-submit-button"]').click()
 
     // 等待任务创建成功
     const taskHeading = page.locator(`h3:has-text("${taskTitle}")`)
@@ -37,9 +37,9 @@ test.describe('任务操作', () => {
     const taskTitle = `Task to Delete ${Date.now()}`
 
     // 先创建一个任务
-    await page.click('button:has-text("新建任务")')
-    await page.fill('input[id="title"]', taskTitle)
-    await page.click('button:has-text("创建")')
+    await page.locator('[data-test-id="task-create-button"]').click()
+    await page.locator('[data-test-id="task-create-title-input"]').fill(taskTitle)
+    await page.locator('[data-test-id="task-create-submit-button"]').click()
 
     // 等待任务创建成功
     const taskHeading = page.locator(`h3:has-text("${taskTitle}")`)
@@ -57,7 +57,7 @@ test.describe('任务操作', () => {
     await expect(page.getByText('确认删除')).toBeVisible()
 
     // 点击确认删除按钮
-    await page.click('button:has-text("删除")')
+    await page.locator('[data-test-id="confirm-dialog-confirm-button"]').click()
 
     // 等待删除完成（增加等待时间）
     await page.waitForTimeout(2000)
@@ -71,9 +71,9 @@ test.describe('任务操作', () => {
     const updatedTitle = `Updated Task Title ${Date.now()}`
 
     // 先创建一个任务
-    await page.click('button:has-text("新建任务")')
-    await page.fill('input[id="title"]', originalTitle)
-    await page.click('button:has-text("创建")')
+    await page.locator('[data-test-id="task-create-button"]').click()
+    await page.locator('[data-test-id="task-create-title-input"]').fill(originalTitle)
+    await page.locator('[data-test-id="task-create-submit-button"]').click()
 
     // 等待任务创建成功
     const taskHeading = page.locator(`h3:has-text("${originalTitle}")`)
@@ -90,10 +90,10 @@ test.describe('任务操作', () => {
     await expect(page.getByRole('heading', { name: '编辑任务' })).toBeVisible()
 
     // 修改标题
-    await page.fill('input[id="edit-title"]', updatedTitle)
+    await page.locator('[data-test-id="task-edit-title-input"]').fill(updatedTitle)
 
     // 保存
-    await page.click('button:has-text("保存")')
+    await page.locator('[data-test-id="task-edit-submit-button"]').click()
 
     // 等待更新完成
     await page.waitForTimeout(1000)
@@ -108,22 +108,20 @@ test.describe('任务操作', () => {
     const lowPriorityTask = `Low Priority Task ${Date.now() + 1}`
 
     // 创建高优先级任务
-    await page.click('button:has-text("新建任务")')
-    await page.fill('input[id="title"]', highPriorityTask)
+    await page.locator('[data-test-id="task-create-button"]').click()
+    await page.locator('[data-test-id="task-create-title-input"]').fill(highPriorityTask)
     // 优先级选择器使用 Select 组件
-    const dialog1 = page.locator('[role="dialog"]')
-    await dialog1.locator('button[role="combobox"]').click()
+    await page.locator('[data-test-id="task-create-priority-select"]').click()
     await page.locator('[role="option"]:has-text("高")').click()
-    await page.click('button:has-text("创建")')
+    await page.locator('[data-test-id="task-create-submit-button"]').click()
     await expect(page.locator(`h3:has-text("${highPriorityTask}")`)).toBeVisible({ timeout: 5000 })
 
     // 创建低优先级任务
-    await page.click('button:has-text("新建任务")')
-    await page.fill('input[id="title"]', lowPriorityTask)
-    const dialog2 = page.locator('[role="dialog"]')
-    await dialog2.locator('button[role="combobox"]').click()
+    await page.locator('[data-test-id="task-create-button"]').click()
+    await page.locator('[data-test-id="task-create-title-input"]').fill(lowPriorityTask)
+    await page.locator('[data-test-id="task-create-priority-select"]').click()
     await page.locator('[role="option"]:has-text("低")').click()
-    await page.click('button:has-text("创建")')
+    await page.locator('[data-test-id="task-create-submit-button"]').click()
     await expect(page.locator(`h3:has-text("${lowPriorityTask}")`)).toBeVisible({ timeout: 5000 })
 
     // 验证两个任务都显示

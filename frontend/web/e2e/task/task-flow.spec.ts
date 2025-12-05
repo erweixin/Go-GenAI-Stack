@@ -11,10 +11,12 @@ test.describe('任务完整流程', () => {
     await page.goto('/tasks')
 
     // 2. 创建任务
-    await page.click('button:has-text("新建任务")')
-    await page.fill('input[id="title"]', originalTitle)
-    await page.fill('textarea[id="description"]', 'This task will go through full lifecycle')
-    await page.click('button:has-text("创建")')
+    await page.locator('[data-test-id="task-create-button"]').click()
+    await page.locator('[data-test-id="task-create-title-input"]').fill(originalTitle)
+    await page
+      .locator('[data-test-id="task-create-description-input"]')
+      .fill('This task will go through full lifecycle')
+    await page.locator('[data-test-id="task-create-submit-button"]').click()
 
     // 验证任务创建成功
     const originalTaskHeading = page.locator(`h3:has-text("${originalTitle}")`)
@@ -29,9 +31,9 @@ test.describe('任务完整流程', () => {
     await page.locator(`[data-test-id="task-edit-${taskId}"]`).click()
 
     await expect(page.getByRole('heading', { name: '编辑任务' })).toBeVisible()
-    await page.fill('input[id="edit-title"]', updatedTitle)
-    await page.fill('textarea[id="edit-description"]', 'Updated description')
-    await page.click('button:has-text("保存")')
+    await page.locator('[data-test-id="task-edit-title-input"]').fill(updatedTitle)
+    await page.locator('[data-test-id="task-edit-description-input"]').fill('Updated description')
+    await page.locator('[data-test-id="task-edit-submit-button"]').click()
 
     // 等待更新完成
     await page.waitForTimeout(1000)
@@ -63,7 +65,7 @@ test.describe('任务完整流程', () => {
     await expect(page.getByText('确认删除')).toBeVisible()
 
     // 点击确认删除按钮
-    await page.click('button:has-text("删除")')
+    await page.locator('[data-test-id="confirm-dialog-confirm-button"]').click()
 
     // 等待删除完成
     await page.waitForTimeout(2000)
