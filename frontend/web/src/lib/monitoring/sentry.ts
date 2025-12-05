@@ -41,6 +41,13 @@ export function initSentry() {
       ...Sentry.getDefaultIntegrations({}),
 
       // 浏览器追踪（性能监控）
+      // 注意：browserTracingIntegration 已自动包含 Web Vitals 监控
+      // 自动追踪的指标包括：
+      // - FCP: First Contentful Paint
+      // - LCP: Largest Contentful Paint
+      // - CLS: Cumulative Layout Shift
+      // - FID: First Input Delay
+      // - TTFB: Time to First Byte
       Sentry.browserTracingIntegration(),
 
       // 会话重放（可选，用于重现用户操作）
@@ -83,7 +90,7 @@ export function initSentry() {
       if (event.request?.data) {
         const data = event.request.data
         if (typeof data === 'object' && data !== null) {
-          const dataObj = data as Record<string, any>
+          const dataObj = data as Record<string, unknown>
           delete dataObj.password
           delete dataObj.oldPassword
           delete dataObj.newPassword
@@ -204,7 +211,7 @@ export function setTag(key: string, value: string) {
  *
  * 用于提供更多调试信息
  */
-export function setContext(name: string, context: Record<string, any>) {
+export function setContext(name: string, context: Record<string, unknown>) {
   Sentry.setContext(name, context)
 }
 
@@ -213,7 +220,7 @@ export function setContext(name: string, context: Record<string, any>) {
  *
  * 用于 try-catch 中的错误上报
  */
-export function captureException(error: Error, context?: Record<string, any>) {
+export function captureException(error: Error, context?: Record<string, unknown>) {
   if (context) {
     Sentry.withScope((scope) => {
       Object.entries(context).forEach(([key, value]) => {
@@ -244,7 +251,7 @@ export function addBreadcrumb(breadcrumb: {
   message: string
   category?: string
   level?: 'info' | 'warning' | 'error'
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 }) {
   Sentry.addBreadcrumb(breadcrumb)
 }

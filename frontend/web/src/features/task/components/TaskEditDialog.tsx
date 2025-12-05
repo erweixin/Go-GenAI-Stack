@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
@@ -9,7 +12,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -18,8 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { useTaskUpdateMutation } from '../hooks'
-import type { TaskItem, UpdateTaskRequest, TaskPriority } from '@go-genai-stack/types'
+import { updateTaskSchema, type UpdateTaskFormData } from '../schemas/task.schema'
+import type { TaskItem, UpdateTaskRequest } from '@go-genai-stack/types'
 
 interface TaskEditDialogProps {
   open: boolean
@@ -28,18 +39,22 @@ interface TaskEditDialogProps {
 }
 
 /**
- * 编辑任务对话框（使用 React Query）
+ * 编辑任务对话框（使用 React Hook Form + Zod + React Query）
  *
  * 用例：UpdateTask
  */
 export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps) {
   const updateMutation = useTaskUpdateMutation()
 
-  const [formData, setFormData] = useState<UpdateTaskRequest>({
-    title: '',
-    description: '',
-    priority: 'medium',
-    tags: [],
+  const form = useForm<UpdateTaskFormData>({
+    resolver: zodResolver(updateTaskSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      priority: 'medium',
+      tags: [],
+      due_date: undefined,
+    },
   })
 
   const [tagInput, setTagInput] = useState('')
@@ -47,48 +62,70 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
   // 当 task 变化时更新表单
   useEffect(() => {
     if (task) {
-      setFormData({
+      form.reset({
         title: task.title,
         description: task.description || '',
         priority: task.priority,
         tags: task.tags || [],
-        due_date: task.due_date,
+        due_date: task.due_date || undefined,
       })
+      setTagInput('')
     }
-  }, [task])
+  }, [task, form])
 
-  const handleSubmit = () => {
-    if (!task || !formData.title?.trim()) {
-      alert('请输入任务标题')
-      return
+  const onSubmit = (data: UpdateTaskFormData) => {
+    if (!task) return
+
+    const request: UpdateTaskRequest = {
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      tags: data.tags,
+      due_date: data.due_date,
     }
 
     updateMutation.mutate(
-      { taskId: task.task_id, data: formData },
+      { taskId: task.task_id, data: request },
       {
         onSuccess: () => {
+          toast.success('任务更新成功')
           onOpenChange(false)
+        },
+        onError: (error: any) => {
+          toast.error(error?.message || '更新任务失败，请重试')
         },
       }
     )
   }
 
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags?.includes(tagInput.trim())) {
-      setFormData({
-        ...formData,
-        tags: [...(formData.tags || []), tagInput.trim()],
-      })
-      setTagInput('')
+    const trimmedTag = tagInput.trim()
+    if (!trimmedTag) {
+      toast.warning('请输入标签')
+      return
     }
+
+    const currentTags = form.getValues('tags') || []
+    if (currentTags.includes(trimmedTag)) {
+      toast.warning('标签已存在')
+      return
+    }
+
+    if (trimmedTag.length > 50) {
+      toast.warning('标签长度不能超过 50 个字符')
+      return
+    }
+
+    form.setValue('tags', [...currentTags, trimmedTag])
+    setTagInput('')
   }
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setFormData({
-      ...formData,
-      tags: formData.tags?.filter((tag) => tag !== tagToRemove) || [],
-    })
+    const currentTags = form.getValues('tags') || []
+    form.setValue('tags', currentTags.filter((tag) => tag !== tagToRemove))
   }
+
+  const tags = form.watch('tags') || []
 
   if (!task) return null
 
@@ -100,102 +137,139 @@ export function TaskEditDialog({ open, onOpenChange, task }: TaskEditDialogProps
           <DialogDescription>修改任务的标题、描述、优先级等信息</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* 标题 */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-title">任务标题 *</Label>
-            <Input
-              id="edit-title"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="输入任务标题"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            {/* 标题 */}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>任务标题 *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="输入任务标题" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          {/* 描述 */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-description">任务描述</Label>
-            <Textarea
-              id="edit-description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="输入任务描述"
-              rows={3}
+            {/* 描述 */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>任务描述</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="输入任务描述" rows={3} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          {/* 优先级 */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-priority">优先级</Label>
-            <Select
-              value={formData.priority}
-              onValueChange={(value) =>
-                setFormData({ ...formData, priority: value as TaskPriority })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择优先级" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="low">低</SelectItem>
-                <SelectItem value="medium">中</SelectItem>
-                <SelectItem value="high">高</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 截止日期 */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-due_date">截止日期</Label>
-            <Input
-              id="edit-due_date"
-              type="datetime-local"
-              value={formData.due_date || ''}
-              onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+            {/* 优先级 */}
+            <FormField
+              control={form.control}
+              name="priority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>优先级</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择优先级" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">低</SelectItem>
+                      <SelectItem value="medium">中</SelectItem>
+                      <SelectItem value="high">高</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          {/* 标签 */}
-          <div className="space-y-2">
-            <Label>标签</Label>
-            <div className="flex gap-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                placeholder="输入标签后回车"
-              />
-              <Button type="button" onClick={handleAddTag} variant="outline">
-                添加
+            {/* 截止日期 */}
+            <FormField
+              control={form.control}
+              name="due_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>截止日期</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="datetime-local"
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(e.target.value || undefined)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* 标签 */}
+            <div className="space-y-2">
+              <FormLabel>标签</FormLabel>
+              <div className="flex gap-2">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAddTag()
+                    }
+                  }}
+                  placeholder="输入标签后回车"
+                />
+                <Button type="button" onClick={handleAddTag} variant="outline">
+                  添加
+                </Button>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm flex items-center gap-1"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset()
+                  setTagInput('')
+                  onOpenChange(false)
+                }}
+              >
+                取消
               </Button>
-            </div>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {formData.tags?.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 bg-gray-100 rounded text-sm flex items-center gap-1"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            取消
-          </Button>
-          <Button onClick={handleSubmit} disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? '保存中...' : '保存'}
-          </Button>
-        </DialogFooter>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? '保存中...' : '保存'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )
