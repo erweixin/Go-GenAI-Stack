@@ -2,16 +2,18 @@
 
 # 🚀 Go-GenAI-Stack
 
-### 为 AI 时代设计的全栈开发框架
+### A Full-Stack Development Framework Designed for the AI Era
 
-**AI 友好的代码结构，让想法直接变成代码**
+**AI-friendly code structure that turns ideas directly into code**
+
+**[English](README.md) | [中文](README.zh.md)**
 
 [![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/erweixin/Go-GenAI-Stack/pulls)
 
-[快速开始](#-快速开始) • [核心特性](#核心特性) • [架构设计](#架构亮点) • [文档导航](#文档导航) • [贡献指南](#贡献指南)
+[Quick Start](#-quick-start) • [Core Features](#core-features) • [Architecture](#architecture-highlights) • [Documentation](#documentation) • [Contributing](#contributing)
 
 </div>
 
@@ -19,13 +21,13 @@
 
 <div align="center">
 
-### ⚠️ **项目状态说明**
+### ⚠️ **Project Status**
 
-> **🚧 本项目目前处于非常非常早期开发阶段，代码随时换结构，但目标会是一个大型商业项目生产完备的 starter**  
-> **🎯 这是一个 AI 友好软件结构的实验性尝试**  
-> **💡 探索如何让代码结构更易于 AI 理解和生成**
+> **🚧 This project is currently in very early development stage. Code structure may change at any time, but the goal is to be a production-ready starter for large commercial projects**  
+> **🎯 This is an experimental attempt at AI-friendly software architecture**  
+> **💡 Exploring how to make code structure more understandable and generatable by AI**
 
-**欢迎参与讨论和贡献，共同探索 AI 时代的软件开发最佳实践！**
+**Welcome to discuss and contribute, let's explore best practices for software development in the AI era together!**
 
 </div>
 
@@ -33,135 +35,135 @@
 
 <div align="center">
 
-### 📖 **核心思想来源**
+### 📖 **Core Philosophy**
 
-> **本项目的核心思想和实现思路来源于：**  
-> **[《讨论下 AI 时代的软件架构与协作关系的几个可能的变化》](https://github.com/erweixin/blog/blob/main/%E8%AE%A8%E8%AE%BA%E4%B8%8B%20AI%20%E6%97%B6%E4%BB%A3%E7%9A%84%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8D%8F%E4%BD%9C%E5%85%B3%E7%B3%BB%E7%9A%84%E5%87%A0%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E5%8F%98%E5%8C%96.md)**  
+> **The core ideas and implementation approach of this project come from:**  
+> **[《Discussion on Possible Changes in Software Architecture and Collaboration Relationships in the AI Era》](https://github.com/erweixin/blog/blob/main/%E8%AE%A8%E8%AE%BA%E4%B8%8B%20AI%20%E6%97%B6%E4%BB%A3%E7%9A%84%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8D%8F%E4%BD%9C%E5%85%B3%E7%B3%BB%E7%9A%84%E5%87%A0%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E5%8F%98%E5%8C%96.md)** ⭐
 
 </div>
 
 ---
 
-## 💡 为什么选择 Go-GenAI-Stack？
+## 💡 Why Choose Go-GenAI-Stack?
 
-在 AI 编程时代，传统的项目架构面临挑战：
-- ❌ **业务规则散落在代码各处**，AI 需要读海量代码才能理解意图
-- ❌ **横向分层架构**让 AI 难以定位功能边界
-- ❌ **隐式的领域知识**需要人工反复解释
+In the era of AI programming, traditional project architectures face challenges:
+- ❌ **Business rules scattered across code**, AI needs to read massive amounts of code to understand intent
+- ❌ **Horizontal layered architecture** makes it difficult for AI to locate functional boundaries
+- ❌ **Implicit domain knowledge** requires repeated manual explanations
 
-**Go-GenAI-Stack 重新思考了代码的组织方式**：
+**Go-GenAI-Stack rethinks how code is organized**:
 
-| 传统架构 | Go-GenAI-Stack (Vibe-Coding-Friendly) |
+| Traditional Architecture | Go-GenAI-Stack (Vibe-Coding-Friendly) |
 |---------|--------------------------------------|
-| 业务规则藏在代码里 | **显式知识文件**（rules.md, glossary.md） |
-| 按技术栈分层 | **按业务领域垂直切分** |
-| 用代码描述流程 | **用 YAML 声明用例**（usecases.yaml） |
-| AI 需要读数千行代码 | **AI 读几个结构化文件即可理解** |
-| 前后端类型手动同步 | **Go → TypeScript 自动同步** |
+| Business rules hidden in code | **Explicit knowledge files** (rules.md, glossary.md) |
+| Layered by tech stack | **Vertically split by business domain** |
+| Describe flow with code | **Declare use cases with YAML** (usecases.yaml) |
+| AI needs to read thousands of lines | **AI reads a few structured files to understand** |
+| Manual frontend-backend type sync | **Go → TypeScript automatic sync** |
 
-> 💡 **Vibe Coding**：说出想法，AI 理解业务逻辑，直接生成符合规则的代码。
+> 💡 **Vibe Coding**: Express your ideas, AI understands business logic, directly generates code that follows rules.
 >
-> 本项目让 AI 成为真正的编程伙伴，而不仅仅是代码补全工具。
+> This project makes AI a true programming partner, not just a code completion tool.
 
 ---
 
-## 🎯 项目定位
+## 🎯 Project Positioning
 
-**这是一个生产级全栈 Starter**，内置完整的 **Task 领域** 作为最佳实践示例：
+**This is a production-ready full-stack Starter** with a complete **Task domain** as a best practice example:
 
-- ✅ **可直接使用**：如果你需要任务管理功能
-- ✅ **可作为模板**：映射到你的业务（Product、Order、Article...）
-- ✅ **可作为学习**：理解如何构建 AI 友好的架构
+- ✅ **Ready to use**: If you need task management functionality
+- ✅ **Use as template**: Map to your business (Product, Order, Article...)
+- ✅ **Learn from it**: Understand how to build AI-friendly architecture
 
-### 🌟 站在巨人的肩膀上
+### 🌟 Standing on the Shoulders of Giants
 
-- **后端架构** 参考 [Coze Studio](https://www.coze.com/)：
-  - 以 LLM 编排为核心的领域驱动设计
-  - 插件化和扩展性优先
-  - 声明式工作流（usecases.yaml）
+- **Backend Architecture** inspired by [Coze Studio](https://www.coze.com/):
+  - Domain-Driven Design centered on LLM orchestration
+  - Plugin-first and extensibility priority
+  - Declarative workflows (usecases.yaml)
 
-- **移动端架构** 参考 [Bluesky Social App](https://github.com/bluesky-social/social-app)：
-  - React Native 的最佳实践
-  - 原生级性能优化
-  - 跨平台组件设计
+- **Mobile Architecture** inspired by [Bluesky Social App](https://github.com/bluesky-social/social-app):
+  - React Native best practices
+  - Native-level performance optimization
+  - Cross-platform component design
 
 ---
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 Go-GenAI-Stack/
-├── backend/              # 后端（Go + Hertz + DDD）
-│   ├── cmd/              # 程序入口
-│   │   └── server/       # HTTP Server 入口
-│   ├── domains/          # 领域层（Domain-First）
-│   │   ├── task/         # Task 领域（示例实现）★
-│   │   │   ├── handlers/ # HTTP 适配层
-│   │   │   ├── service/  # 业务逻辑层
-│   │   │   ├── model/    # 领域模型
-│   │   │   └── ...       # 其他组件
-│   │   └── shared/       # 共享组件
-│   ├── infrastructure/   # 基础设施层
-│   │   ├── bootstrap/    # 启动引导
-│   │   ├── persistence/  # 持久化（Postgres, Redis）
-│   │   ├── middleware/   # 中间件
-│   │   ├── config/       # 配置管理
-│   │   └── database/     # 数据库 Schema
-│   ├── pkg/              # 可复用工具包
-│   │   └── validator/    # 验证器
-│   ├── migrations/       # 数据库迁移
-│   │   ├── atlas/        # Atlas 迁移文件 & 配置
-│   │   └── seed/         # 种子数据
-│   ├── shared/           # 共享代码
-│   │   └── errors/       # 错误定义
-│   └── scripts/          # 开发脚本
-├── frontend/             # 前端 Monorepo
-│   ├── web/              # React Web 应用
-│   ├── mobile/           # React Native 移动应用
-│   └── shared/           # 前端共享代码
-│       ├── types/        # TypeScript 类型定义
-│       ├── utils/        # 工具函数
-│       └── constants/    # 常量
-├── docs/                 # 项目文档
-├── docker/               # Docker 配置
-└── scripts/              # 项目级脚本
+├── backend/              # Backend (Go + Hertz + DDD)
+│   ├── cmd/              # Application entry
+│   │   └── server/       # HTTP Server entry
+│   ├── domains/          # Domain layer (Domain-First)
+│   │   ├── task/         # Task domain (example implementation) ★
+│   │   │   ├── handlers/ # HTTP adapter layer
+│   │   │   ├── service/  # Business logic layer
+│   │   │   ├── model/    # Domain model
+│   │   │   └── ...       # Other components
+│   │   └── shared/       # Shared components
+│   ├── infrastructure/   # Infrastructure layer
+│   │   ├── bootstrap/    # Bootstrap
+│   │   ├── persistence/  # Persistence (Postgres, Redis)
+│   │   ├── middleware/   # Middleware
+│   │   ├── config/       # Configuration management
+│   │   └── database/     # Database Schema
+│   ├── pkg/              # Reusable packages
+│   │   └── validator/    # Validator
+│   ├── migrations/       # Database migrations
+│   │   ├── atlas/        # Atlas migration files & config
+│   │   └── seed/         # Seed data
+│   ├── shared/           # Shared code
+│   │   └── errors/       # Error definitions
+│   └── scripts/          # Development scripts
+├── frontend/             # Frontend Monorepo
+│   ├── web/              # React Web application
+│   ├── mobile/           # React Native mobile application
+│   └── shared/           # Frontend shared code
+│       ├── types/        # TypeScript type definitions
+│       ├── utils/        # Utility functions
+│       └── constants/    # Constants
+├── docs/                 # Project documentation
+├── docker/               # Docker configuration
+└── scripts/              # Project-level scripts
 ```
 
 ---
 
-## 核心特性
+## Core Features
 
-### 🎯 Vibe-Coding-Friendly DDD（核心亮点）
+### 🎯 Vibe-Coding-Friendly DDD (Core Highlight)
 
 <table>
 <tr>
 <td width="50%">
 
-#### 📚 显式知识文件（AI 可直接理解）
+#### 📚 Explicit Knowledge Files (AI can directly understand)
 
-每个领域必备 **6 个结构化文件**：
+Each domain requires **6 structured files**:
 
 ```
 domains/task/
-├── 📄 README.md          # 领域概览
-├── 📄 glossary.md        # 术语表
-├── 📄 rules.md           # 业务规则
-├── 📄 events.md          # 领域事件
-├── 📄 usecases.yaml      # 用例声明 ⭐
-└── 📄 ai-metadata.json   # AI 元数据
+├── 📄 README.md          # Domain overview
+├── 📄 glossary.md        # Glossary
+├── 📄 rules.md           # Business rules
+├── 📄 events.md          # Domain events
+├── 📄 usecases.yaml      # Use case declarations ⭐
+└── 📄 ai-metadata.json   # AI metadata
 ```
 
-**AI 只需读这 6 个文件，就能理解完整业务逻辑！**
+**AI only needs to read these 6 files to understand complete business logic!**
 
 </td>
 <td width="50%">
 
-#### 🎭 声明式用例（一句话生成代码）
+#### 🎭 Declarative Use Cases (Generate code with one sentence)
 
 ```yaml
 # usecases.yaml
 CreateTask:
-  description: "创建新任务"
+  description: "Create new task"
   steps:
     - ValidateInput
     - GenerateTaskID
@@ -172,72 +174,72 @@ CreateTask:
     - TASK_ALREADY_EXISTS
 ```
 
-**AI 读取 YAML → 自动生成 Handler + 测试**
+**AI reads YAML → Automatically generates Handler + Tests**
 
 </td>
 </tr>
 </table>
 
-#### ✅ Vibe-Coding-Friendly 的优势
+#### ✅ Vibe-Coding-Friendly Advantages
 
-| 特性 | 传统 DDD | Vibe-Coding-Friendly DDD | 提升 |
+| Feature | Traditional DDD | Vibe-Coding-Friendly DDD | Improvement |
 |-----|---------|--------------------------|------|
-| **AI 理解速度** | 需读数千行代码 | 只读 6 个结构化文件 | **10x** ⚡ |
-| **新人上手** | 2-3 天 | 30 分钟（从 README 开始） | **5x** 🚀 |
-| **维护成本** | 跨多个目录查找 | 自包含（一个目录搞定） | **-70%** 💰 |
-| **用例修改** | 手动改代码 + 测试 | 改 YAML → AI 自动生成 | **3x** ⚡ |
-| **类型安全** | 手动同步前后端 | Go → TS 自动同步 | **100%** ✅ |
+| **AI Understanding Speed** | Need to read thousands of lines | Only read 6 structured files | **10x** ⚡ |
+| **Onboarding Time** | 2-3 days | 30 minutes (starting from README) | **5x** 🚀 |
+| **Maintenance Cost** | Search across multiple directories | Self-contained (one directory) | **-70%** 💰 |
+| **Use Case Changes** | Manually change code + tests | Change YAML → AI auto-generates | **3x** ⚡ |
+| **Type Safety** | Manual frontend-backend sync | Go → TS automatic sync | **100%** ✅ |
 
 ---
 
-### 架构亮点
+### Architecture Highlights
 
-#### 1️⃣ **领域优先**（Domain-First）
+#### 1️⃣ **Domain-First**
 
 ```
-✅ domains/task/        # 按业务领域组织
-   ├── model/           # 领域模型
-   ├── service/         # 业务逻辑
-   ├── repository/      # 数据访问
-   ├── handlers/        # HTTP 适配层
-   └── tests/           # 测试
+✅ domains/task/        # Organized by business domain
+   ├── model/           # Domain model
+   ├── service/         # Business logic
+   ├── repository/      # Data access
+   ├── handlers/        # HTTP adapter layer
+   └── tests/           # Tests
 
-❌ 传统分层（难以定位功能）:
-   ├── controllers/     # 所有领域混在一起
-   ├── services/        # 所有服务混在一起
-   └── repositories/    # 所有仓储混在一起
+❌ Traditional layering (hard to locate functionality):
+   ├── controllers/     # All domains mixed together
+   ├── services/        # All services mixed together
+   └── repositories/    # All repositories mixed together
 ```
 
-#### 2️⃣ **自包含**（Self-Contained）
+#### 2️⃣ **Self-Contained**
 
-每个领域是**独立的**：
-- ✅ 可以单独理解、修改、测试
-- ✅ 降低认知负担（专注一个领域）
-- ✅ 易于并行开发（不同团队负责不同领域）
+Each domain is **independent**:
+- ✅ Can be understood, modified, and tested separately
+- ✅ Reduces cognitive load (focus on one domain)
+- ✅ Easy parallel development (different teams for different domains)
 
-#### 3️⃣ **三层架构**（清晰分层）
+#### 3️⃣ **Three-Layer Architecture** (Clear Layering)
 
 ```go
-// Handler 层（薄）：只做 HTTP 适配
+// Handler layer (thin): Only HTTP adaptation
 func CreateTaskHandler(c *app.RequestContext) {
     var req dto.CreateTaskRequest
     c.BindAndValidate(&req)
     
-    // 调用 Service 层
+    // Call Service layer
     output, err := taskService.CreateTask(ctx, input)
     
     c.JSON(200, response)
 }
 
-// Service 层（厚）：业务逻辑 ⭐
+// Service layer (thick): Business logic ⭐
 func (s *TaskService) CreateTask(input CreateTaskInput) {
-    // 1. 验证业务规则
-    // 2. 创建领域对象
-    // 3. 持久化
-    // 4. 发布事件
+    // 1. Validate business rules
+    // 2. Create domain object
+    // 3. Persist
+    // 4. Publish event
 }
 
-// Repository 层：数据访问（database/sql，无 ORM）
+// Repository layer: Data access (database/sql, no ORM)
 func (r *TaskRepo) Create(task *Task) error {
     query := `INSERT INTO tasks (...) VALUES (...)`
     _, err := r.db.ExecContext(ctx, query, ...)
@@ -247,272 +249,272 @@ func (r *TaskRepo) Create(task *Task) error {
 
 ---
 
-### 🤖 AI 辅助开发工作流
+### 🤖 AI-Assisted Development Workflow
 
 ```bash
-# 1️⃣ 你：在 usecases.yaml 添加新用例
+# 1️⃣ You: Add new use case in usecases.yaml
 vim backend/domains/task/usecases.yaml
 
-# 2️⃣ AI：读取显式知识文件
-# - README.md（理解领域边界）
-# - glossary.md（理解术语）
-# - rules.md（理解业务规则）
-# - usecases.yaml（理解用例流程）
+# 2️⃣ AI: Reads explicit knowledge files
+# - README.md (understand domain boundaries)
+# - glossary.md (understand terminology)
+# - rules.md (understand business rules)
+# - usecases.yaml (understand use case flow)
 
-# 3️⃣ AI：自动生成代码
+# 3️⃣ AI: Auto-generates code
 # ✅ handlers/new_usecase.handler.go
-# ✅ service/task_service.go（新增方法）
+# ✅ service/task_service.go (new method)
 # ✅ http/dto/new_usecase.go
 # ✅ tests/new_usecase.test.go
 
-# 4️⃣ 你：运行测试并提交
+# 4️⃣ You: Run tests and commit
 ./backend/scripts/test_all.sh
 git commit -m "feat(task): add new usecase"
 ```
 
-**真正的 Vibe Coding**：你只需要表达意图，AI 完成实现！
+**True Vibe Coding**: You only need to express intent, AI completes the implementation!
 
 ---
 
-### 🛠️ 完整的开发工具链
+### 🛠️ Complete Development Toolchain
 
-| 工具 | 用途 | 命令 |
+| Tool | Purpose | Command |
 |-----|------|------|
-| **Atlas** | 数据库 Schema 管理 | `cd backend/database && make diff/apply` |
-| **Type Sync** | Go → TypeScript 类型同步 | `./scripts/sync_types.sh all` |
-| **Testing** | 单元 + 集成测试 | `./backend/scripts/test_all.sh` |
-| **Linting** | 代码质量检查 | `./backend/scripts/lint.sh --fix` |
-| **Docker** | 一键启动完整环境 | `./docker/docker-up.sh` |
+| **Atlas** | Database Schema management | `cd backend/database && make diff/apply` |
+| **Type Sync** | Go → TypeScript type sync | `./scripts/sync_types.sh all` |
+| **Testing** | Unit + Integration tests | `./backend/scripts/test_all.sh` |
+| **Linting** | Code quality check | `./backend/scripts/lint.sh --fix` |
+| **Docker** | One-click full environment | `./docker/docker-up.sh` |
 
 ---
 
-### 📊 生产级可观测性
+### 📊 Production-Grade Observability
 
-完整的**三支柱**可观测性方案（支持开关控制）：
+Complete **three pillars** observability solution (with toggle control):
 
 <table>
 <tr>
 <td width="33%">
 
-**🔍 结构化日志**
+**🔍 Structured Logging**
 - uber-go/zap
-- JSON/Console 格式
-- 日志轮转
-- 请求追踪
+- JSON/Console format
+- Log rotation
+- Request tracing
 
 </td>
 <td width="33%">
 
 **📈 Prometheus Metrics**
-- QPS、延迟、错误率
-- 业务指标
-- 系统指标
-- `/metrics` 端点
+- QPS, latency, error rate
+- Business metrics
+- System metrics
+- `/metrics` endpoint
 
 </td>
 <td width="33%">
 
-**🔗 分布式追踪**
+**🔗 Distributed Tracing**
 - OpenTelemetry
 - Jaeger / Tempo
-- 跨服务追踪
-- 性能分析
+- Cross-service tracing
+- Performance profiling
 
 </td>
 </tr>
 </table>
 
 ```go
-// 一键开关（通过配置文件）
+// One-click toggle (via config file)
 observability:
   logging:
-    enabled: true      # 日志
+    enabled: true      # Logging
   metrics:
-    enabled: true      # 指标
+    enabled: true      # Metrics
   tracing:
-    enabled: true      # 追踪
+    enabled: true      # Tracing
 ```
 
-访问：
-- 健康检查：`http://localhost:8080/health`
-- Prometheus：`http://localhost:8080/metrics`
-- Grafana：`http://localhost:3000`（完整监控）
+Access:
+- Health check: `http://localhost:8080/health`
+- Prometheus: `http://localhost:8080/metrics`
+- Grafana: `http://localhost:3000` (full monitoring)
 
-📖 详细文档：[可观测性指南](backend/infrastructure/monitoring/README.md)
+📖 Detailed docs: [Observability Guide](backend/infrastructure/monitoring/README.md)
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### ⚡ 三步上手（推荐）
+### ⚡ Three Steps to Get Started (Recommended)
 
 ```bash
-# 1️⃣ 克隆项目
+# 1️⃣ Clone the project
 git clone https://github.com/erweixin/Go-GenAI-Stack.git
 cd Go-GenAI-Stack
 
-# 2️⃣ 一键启动（Docker）
+# 2️⃣ One-click start (Docker)
 ./docker/docker-up.sh
 
-# 3️⃣ 验证运行
+# 3️⃣ Verify it's running
 curl http://localhost:8080/health
 ```
 
-**访问服务**：
-- 🔗 后端 API：`http://localhost:8080/api`
-- ❤️ 健康检查：`http://localhost:8080/health`
-- 📊 Prometheus：`http://localhost:8080/metrics`
+**Access services**:
+- 🔗 Backend API: `http://localhost:8080/api`
+- ❤️ Health check: `http://localhost:8080/health`
+- 📊 Prometheus: `http://localhost:8080/metrics`
 
-**Docker 启动完整监控栈**（可选）：
+**Docker start full monitoring stack** (optional):
 ```bash
-# 包含 Jaeger、Prometheus、Grafana
+# Includes Jaeger, Prometheus, Grafana
 ./docker/docker-up.sh --full
 
-# 访问监控面板
+# Access monitoring dashboards
 # - Grafana: http://localhost:3000 (admin/admin)
 # - Jaeger:  http://localhost:16686
 ```
 
 ---
 
-### 🛠️ 本地开发模式（无 Docker）
+### 🛠️ Local Development Mode (No Docker)
 
 <details>
-<summary><b>展开查看详细步骤</b></summary>
+<summary><b>Click to expand detailed steps</b></summary>
 
-#### 前置要求
+#### Prerequisites
 
 - Go 1.23+
 - PostgreSQL 16+
 - Redis 7+
-- [Atlas](https://atlasgo.io/) (Schema 管理)
+- [Atlas](https://atlasgo.io/) (Schema management)
 
 ```bash
-# 安装 Atlas
+# Install Atlas
 curl -sSf https://atlasgo.sh | sh
 ```
 
-#### 启动后端
+#### Start Backend
 
 ```bash
-# 1. 启动数据库（仅 PostgreSQL + Redis）
+# 1. Start databases (PostgreSQL + Redis only)
 cd docker
 docker-compose up -d postgres redis
 
-# 2. 应用数据库迁移
+# 2. Apply database migrations
 cd ../backend/database
 make apply
 
-# 3. 启动后端服务
+# 3. Start backend service
 cd ..
 go run cmd/server/main.go
 ```
 
-#### 启动前端
+#### Start Frontend
 
 ```bash
 cd frontend
 
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 启动 Web 应用
+# Start Web application
 cd web
 pnpm dev         # http://localhost:5173
 
-# 或启动 Mobile 应用
+# Or start Mobile application
 cd mobile
 pnpm start
 ```
 
 </details>
 
-📖 **更多启动选项**：[Docker 部署指南](docs/Guides/docker-deployment.md)
+📖 **More startup options**: [Docker Deployment Guide](docs/Guides/docker-deployment.md)
 
 ---
 
-## 📚 开发指南
+## 📚 Development Guide
 
-### 🎯 常见开发任务
+### 🎯 Common Development Tasks
 
 <table>
 <tr>
 <td width="50%">
 
-#### ➕ 添加新用例
+#### ➕ Add New Use Case
 
 ```bash
-# 1. 声明用例
+# 1. Declare use case
 vim backend/domains/task/usecases.yaml
 
-# 2. AI 生成代码（或手动编写）
+# 2. AI generates code (or write manually)
 # - handlers/new_usecase.handler.go
 # - service/task_service.go
 # - http/dto/new_usecase.go
 # - tests/new_usecase.test.go
 
-# 3. 运行测试
+# 3. Run tests
 ./backend/scripts/test_all.sh
 ```
 
-**详细指南**：[快速参考](docs/Guides/quick-reference.md)
+**Detailed guide**: [Quick Reference](docs/Guides/quick-reference.md)
 
 </td>
 <td width="50%">
 
-#### 🗄️ 数据库 Schema 管理
+#### 🗄️ Database Schema Management
 
 ```bash
 cd backend/database
 
-# 生成迁移
+# Generate migration
 make diff NAME=add_field
 
-# 应用迁移
+# Apply migration
 make apply
 
-# 查看状态
+# Check status
 make status
 ```
 
-**详细指南**：[数据库管理](docs/Guides/database.md)
+**Detailed guide**: [Database Management](docs/Guides/database.md)
 
 </td>
 </tr>
 <tr>
 <td width="50%">
 
-#### 🔄 前后端类型同步
+#### 🔄 Frontend-Backend Type Sync
 
 ```bash
-# 同步单个领域
+# Sync single domain
 ./scripts/sync_types.sh task
 
-# 同步所有领域
+# Sync all domains
 ./scripts/sync_types.sh all
 ```
 
-生成的类型：`frontend/shared/types/domains/`
+Generated types: `frontend/shared/types/domains/`
 
-**详细指南**：[类型同步](docs/Guides/type-sync.md)
+**Detailed guide**: [Type Sync](docs/Guides/type-sync.md)
 
 </td>
 <td width="50%">
 
-#### ✅ 提交代码前
+#### ✅ Before Committing Code
 
 ```bash
-# 1. 格式化 + 检查
+# 1. Format + check
 ./backend/scripts/lint.sh --fix
 
-# 2. 运行测试
+# 2. Run tests
 ./backend/scripts/test_all.sh --coverage
 
-# 3. 提交
+# 3. Commit
 git commit -m "feat(task): add feature"
 ```
 
-遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范
+Follow [Conventional Commits](https://www.conventionalcommits.org/) specification
 
 </td>
 </tr>
@@ -520,118 +522,118 @@ git commit -m "feat(task): add feature"
 
 ---
 
-## 文档导航
+## Documentation
 
 <table>
 <tr>
 <td width="50%">
 
-### 🎯 核心概念
+### 🎯 Core Concepts
 
-- 📘 [架构设计概览](docs/Core/architecture-overview.md)
-- 💡 [Vibe-Coding-Friendly 理念](docs/Core/vibe-coding-friendly.md) ⭐
-- ⚡ [快速参考手册](docs/Guides/quick-reference.md)
+- 📘 [Architecture Overview](docs/Core/architecture-overview.md)
+- 💡 [Vibe-Coding-Friendly Philosophy](docs/Core/vibe-coding-friendly.md) ⭐
+- ⚡ [Quick Reference Guide](docs/Guides/quick-reference.md)
 
-### 🛠️ 开发指南
+### 🛠️ Development Guides
 
-- 🗄️ [数据库管理](docs/Guides/database.md) - Atlas Schema 管理
-- 🔄 [类型同步](docs/Guides/type-sync.md) - Go → TypeScript
-- 🐳 [Docker 部署](docs/Guides/docker-deployment.md)
+- 🗄️ [Database Management](docs/Guides/database.md) - Atlas Schema management
+- 🔄 [Type Sync](docs/Guides/type-sync.md) - Go → TypeScript
+- 🐳 [Docker Deployment](docs/Guides/docker-deployment.md)
 
 </td>
 <td width="50%">
 
-### 📊 可观测性
+### 📊 Observability
 
-- 📋 [可观测性总览](backend/infrastructure/monitoring/README.md)
-- 📝 [结构化日志](backend/infrastructure/monitoring/logger/README.md)
+- 📋 [Observability Overview](backend/infrastructure/monitoring/README.md)
+- 📝 [Structured Logging](backend/infrastructure/monitoring/logger/README.md)
 - 📈 [Prometheus Metrics](backend/infrastructure/monitoring/metrics/README.md)
 - 🔗 [OpenTelemetry Tracing](backend/infrastructure/monitoring/tracing/README.md)
 
-### 🔌 扩展指南
+### 🔌 Extension Guides
 
-- 🏗️ [Application 层指南](docs/Extensions/APPLICATION-LAYER-GUIDE.md)
-- 🗃️ [数据库 Provider 切换](docs/Extensions/DATABASE-PROVIDERS.md)
+- 🏗️ [Application Layer Guide](docs/Extensions/APPLICATION-LAYER-GUIDE.md)
+- 🗃️ [Database Provider Switching](docs/Extensions/DATABASE-PROVIDERS.md)
 
 </td>
 </tr>
 </table>
 
-📚 **完整文档索引**：[docs/INDEX.md](docs/INDEX.md)
+📚 **Complete documentation index**: [docs/INDEX.md](docs/INDEX.md)
 
 ---
 
-## 🏗️ 技术栈
+## 🏗️ Tech Stack
 
 <table>
 <tr>
 <td width="33%" valign="top">
 
-### 🔧 后端
+### 🔧 Backend
 
-**语言 & 框架**
+**Language & Framework**
 - ![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go&logoColor=white) Go 1.23+
-- [CloudWeGo Hertz](https://www.cloudwego.io/zh/docs/hertz/) - 高性能 HTTP 框架
-- [Eino](https://github.com/cloudwego/eino) - 字节跳动 LLM 框架
+- [CloudWeGo Hertz](https://www.cloudwego.io/zh/docs/hertz/) - High-performance HTTP framework
+- [Eino](https://github.com/cloudwego/eino) - ByteDance LLM framework
 
-**数据存储**
-- PostgreSQL 16+ (使用 database/sql，无 ORM)
-- Redis 7+ (缓存 + 消息队列)
+**Data Storage**
+- PostgreSQL 16+ (using database/sql, no ORM)
+- Redis 7+ (cache + message queue)
 
-**可观测性**
-- [uber-go/zap](https://github.com/uber-go/zap) - 结构化日志
-- [Prometheus](https://prometheus.io/) - 指标监控
-- [OpenTelemetry](https://opentelemetry.io/) - 分布式追踪
+**Observability**
+- [uber-go/zap](https://github.com/uber-go/zap) - Structured logging
+- [Prometheus](https://prometheus.io/) - Metrics monitoring
+- [OpenTelemetry](https://opentelemetry.io/) - Distributed tracing
 
-**工具链**
-- [Atlas](https://atlasgo.io/) - Schema 管理
-- staticcheck - 代码分析
+**Toolchain**
+- [Atlas](https://atlasgo.io/) - Schema management
+- staticcheck - Code analysis
 
 </td>
 <td width="33%" valign="top">
 
-### 🎨 前端
+### 🎨 Frontend
 
-**Web 应用**
+**Web Application**
 - ![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react&logoColor=black) React 18+
 - ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?logo=typescript&logoColor=white) TypeScript 5.0+
-- Vite - 现代构建工具
-- TanStack Query - 数据获取
+- Vite - Modern build tool
+- TanStack Query - Data fetching
 
-**移动应用**
+**Mobile Application**
 - React Native (Expo)
-- 参考 [Bluesky Social App](https://github.com/bluesky-social/social-app) 架构
-- 原生级性能优化
+- Inspired by [Bluesky Social App](https://github.com/bluesky-social/social-app) architecture
+- Native-level performance optimization
 
 **Monorepo**
 - pnpm workspace
-- 共享 types/utils/constants
-- Go → TypeScript 自动类型同步
+- Shared types/utils/constants
+- Go → TypeScript automatic type sync
 
 </td>
 <td width="33%" valign="top">
 
 ### 🚀 DevOps
 
-**容器化**
+**Containerization**
 - ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) Docker
 - Docker Compose
-- 多环境配置（dev/prod）
+- Multi-environment config (dev/prod)
 
-**监控 & 可观测性**
-- Prometheus - 指标采集
-- Grafana - 可视化
-- Jaeger - 分布式追踪（可选）
+**Monitoring & Observability**
+- Prometheus - Metrics collection
+- Grafana - Visualization
+- Jaeger - Distributed tracing (optional)
 
-**数据库管理**
-- Atlas - 声明式 Schema
-- 自动迁移生成
-- 版本控制
+**Database Management**
+- Atlas - Declarative Schema
+- Automatic migration generation
+- Version control
 
-**开发工具**
-- Air - 热重载
-- golangci-lint - 代码检查
-- Playwright - E2E 测试
+**Development Tools**
+- Air - Hot reload
+- golangci-lint - Code checking
+- Playwright - E2E testing
 
 </td>
 </tr>
@@ -639,41 +641,41 @@ git commit -m "feat(task): add feature"
 
 ---
 
-## 📋 项目状态与路线图
+## 📋 Project Status & Roadmap
 
-### ✅ v0.1 - Starter（已完成）
+### ✅ v0.1 - Starter (Completed)
 
 <table>
 <tr>
 <td width="50%">
 
-**🏗️ 核心架构**
-- ✅ Vibe-Coding-Friendly DDD 架构
-- ✅ Task 领域完整实现（示例）
-- ✅ 三层架构（Handler + Service + Repository）
-- ✅ 6 个显式知识文件齐全
+**🏗️ Core Architecture**
+- ✅ Vibe-Coding-Friendly DDD architecture
+- ✅ Complete Task domain implementation (example)
+- ✅ Three-layer architecture (Handler + Service + Repository)
+- ✅ 6 explicit knowledge files complete
 
-**🔧 基础设施**
-- ✅ Hertz HTTP 框架集成
-- ✅ PostgreSQL + Redis（使用 database/sql，无 ORM）
-- ✅ 完整的中间件（认证、CORS、限流、恢复等）
-- ✅ 配置管理（零第三方依赖）
+**🔧 Infrastructure**
+- ✅ Hertz HTTP framework integration
+- ✅ PostgreSQL + Redis (using database/sql, no ORM)
+- ✅ Complete middleware (auth, CORS, rate limiting, recovery, etc.)
+- ✅ Configuration management (zero third-party dependencies)
 
 </td>
 <td width="50%">
 
-**📊 可观测性**
-- ✅ 结构化日志（uber-go/zap）
+**📊 Observability**
+- ✅ Structured logging (uber-go/zap)
 - ✅ Prometheus Metrics
 - ✅ OpenTelemetry Tracing
-- ✅ 健康检查
+- ✅ Health check
 
-**🛠️ 开发工具**
-- ✅ Atlas Schema 管理
-- ✅ Go → TypeScript 类型同步
-- ✅ 前端 Monorepo（Web + Mobile）
-- ✅ Docker 一键启动
-- ✅ 完整的开发脚本
+**🛠️ Development Tools**
+- ✅ Atlas Schema management
+- ✅ Go → TypeScript type sync
+- ✅ Frontend Monorepo (Web + Mobile)
+- ✅ Docker one-click start
+- ✅ Complete development scripts
 
 </td>
 </tr>
@@ -681,37 +683,37 @@ git commit -m "feat(task): add feature"
 
 ---
 
-### 🎯 使用指南
+### 🎯 Usage Guide
 
-本项目以 **Task 领域** 为示例，你可以：
+This project uses the **Task domain** as an example. You can:
 
 <table>
 <tr>
 <td align="center" width="33%">
 
-### 📦 直接使用
+### 📦 Use Directly
 
-如果需要任务管理功能
+If you need task management functionality
 
-立即部署上线
-
-</td>
-<td align="center" width="33%">
-
-### 📚 学习参考
-
-理解 Vibe-Coding-Friendly DDD
-
-掌握最佳实践
+Deploy immediately
 
 </td>
 <td align="center" width="33%">
 
-### 🔄 映射业务
+### 📚 Learn from It
 
-替换为你的领域
+Understand Vibe-Coding-Friendly DDD
 
-Product、Order、Customer...
+Master best practices
+
+</td>
+<td align="center" width="33%">
+
+### 🔄 Map to Your Business
+
+Replace with your domain
+
+Product, Order, Customer...
 
 </td>
 </tr>
@@ -719,90 +721,90 @@ Product、Order、Customer...
 
 ---
 
-### 🔌 扩展点（Extension Points）
+### 🔌 Extension Points
 
-代码中标注 `Extension point` 的位置可以扩展：
+Locations marked with `Extension point` in code can be extended:
 
-| 扩展点 | 说明 | 状态 |
+| Extension Point | Description | Status |
 |-------|------|-----|
-| **Application 层** | 跨领域编排（多领域协作时需要） | 📖 [指南](docs/Extensions/APPLICATION-LAYER-GUIDE.md) |
-| **LLM 集成** | 集成 OpenAI、Claude 等 | 🔌 预留接口 |
-| **事件总线** | 从内存切换到 Redis/Kafka | 🔌 预留接口 |
-| **JWT 认证** | 完整的 Token 验证和刷新 | 🔌 预留接口 |
-| ~~**分布式追踪**~~ | ~~OpenTelemetry Tracing~~ | ✅ **已完成** |
-| ~~**监控告警**~~ | ~~Prometheus + Grafana~~ | ✅ **已完成** |
+| **Application Layer** | Cross-domain orchestration (needed for multi-domain collaboration) | 📖 [Guide](docs/Extensions/APPLICATION-LAYER-GUIDE.md) |
+| **LLM Integration** | Integrate OpenAI, Claude, etc. | 🔌 Interface reserved |
+| **Event Bus** | Switch from in-memory to Redis/Kafka | 🔌 Interface reserved |
+| **JWT Authentication** | Complete token validation and refresh | 🔌 Interface reserved |
+| ~~**Distributed Tracing**~~ | ~~OpenTelemetry Tracing~~ | ✅ **Completed** |
+| ~~**Monitoring & Alerting**~~ | ~~Prometheus + Grafana~~ | ✅ **Completed** |
 
 ---
 
-### 🗺️ 未来路线图
+### 🗺️ Future Roadmap
 
 <table>
 <tr>
 <td width="50%">
 
-#### 🔜 v0.2 - 增强（规划中）
+#### 🔜 v0.2 - Enhancement (Planned)
 
-- [ ] 真实 LLM 集成示例（Eino）
-- [ ] 事件溯源（Event Sourcing）
-- [ ] CQRS 模式支持
-- [ ] 完整的 E2E 测试
-- [ ] 性能基准测试
+- [ ] Real LLM integration example (Eino)
+- [ ] Event Sourcing
+- [ ] CQRS pattern support
+- [ ] Complete E2E tests
+- [ ] Performance benchmarks
 
 </td>
 <td width="50%">
 
-#### 🚀 v0.3 - 生产（规划中）
+#### 🚀 v0.3 - Production (Planned)
 
-- [ ] Kubernetes 部署配置
-- [ ] CI/CD 流水线
-- [ ] 安全加固（JWT、RBAC）
-- [ ] 多租户支持
-- [ ] API 版本管理
+- [ ] Kubernetes deployment config
+- [ ] CI/CD pipeline
+- [ ] Security hardening (JWT, RBAC)
+- [ ] Multi-tenancy support
+- [ ] API versioning
 
 </td>
 </tr>
 </table>
 
-**欢迎在 [Discussions](https://github.com/erweixin/Go-GenAI-Stack/discussions) 提出你的想法！**
+**Welcome to share your ideas in [Discussions](https://github.com/erweixin/Go-GenAI-Stack/discussions)!**
 
 ---
 
-## 贡献指南
+## Contributing
 
-我们欢迎所有形式的贡献！⭐ **Star** 本项目表示支持。
+We welcome all forms of contributions! ⭐ **Star** this project to show support.
 
-### 💡 如何贡献
+### 💡 How to Contribute
 
 <table>
 <tr>
 <td width="50%">
 
-**🐛 发现问题？**
-- 提交 [Issue](https://github.com/erweixin/Go-GenAI-Stack/issues)
-- 描述问题和复现步骤
-- 附上环境信息
+**🐛 Found an issue?**
+- Submit an [Issue](https://github.com/erweixin/Go-GenAI-Stack/issues)
+- Describe the problem and reproduction steps
+- Include environment information
 
-**💬 有想法？**
-- 在 [Discussions](https://github.com/erweixin/Go-GenAI-Stack/discussions) 讨论
-- 分享你的使用案例
-- 提出功能建议
+**💬 Have an idea?**
+- Discuss in [Discussions](https://github.com/erweixin/Go-GenAI-Stack/discussions)
+- Share your use cases
+- Propose feature suggestions
 
 </td>
 <td width="50%">
 
-**🔧 想要贡献代码？**
+**🔧 Want to contribute code?**
 
 ```bash
-# 1. Fork 并克隆
+# 1. Fork and clone
 git clone https://github.com/erweixin/Go-GenAI-Stack.git
 
-# 2. 创建分支
+# 2. Create branch
 git checkout -b feat/amazing-feature
 
-# 3. 提交（遵循 Conventional Commits）
+# 3. Commit (follow Conventional Commits)
 git commit -m 'feat(task): add amazing feature'
 
-# 4. 推送并创建 PR
+# 4. Push and create PR
 git push origin feat/amazing-feature
 ```
 
@@ -810,44 +812,44 @@ git push origin feat/amazing-feature
 </tr>
 </table>
 
-### 📝 Commit 规范
+### 📝 Commit Convention
 
-使用 [Conventional Commits](https://www.conventionalcommits.org/)：
+Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-feat(domain):     新功能
-fix(domain):      Bug 修复
-docs:             文档更新
-refactor(domain): 重构
-test(domain):     测试
-chore:            构建/工具链
+feat(domain):     New feature
+fix(domain):      Bug fix
+docs:             Documentation update
+refactor(domain): Refactoring
+test(domain):     Test
+chore:            Build/toolchain
 ```
 
 ---
 
-## 📊 项目指标
+## 📊 Project Metrics
 
 <table>
 <tr>
 <td align="center" width="25%">
-<h3>🎯 测试覆盖率</h3>
+<h3>🎯 Test Coverage</h3>
 <h2>≥ 10%</h2>
-<small>持续提升中</small>
+<small>Continuously improving</small>
 </td>
 <td align="center" width="25%">
-<h3>✅ 代码质量</h3>
+<h3>✅ Code Quality</h3>
 <h2>100%</h2>
 <small>go vet + staticcheck</small>
 </td>
 <td align="center" width="25%">
-<h3>📚 结构完整性</h3>
+<h3>📚 Structure Completeness</h3>
 <h2>1/6</h2>
-<small>必需文件齐全</small>
+<small>Required files complete</small>
 </td>
 <td align="center" width="25%">
-<h3>🤖 AI 友好性</h3>
+<h3>🤖 AI Friendliness</h3>
 <h2>≥ 10%</h2>
-<small>usecases.yaml 覆盖</small>
+<small>usecases.yaml coverage</small>
 </td>
 </tr>
 </table>
@@ -856,41 +858,41 @@ chore:            构建/工具链
 
 ## 🌟 Star History
 
-如果这个项目对你有帮助，请点个 ⭐ Star 支持一下！
+If this project helps you, please give it a ⭐ Star!
 
 [![Star History Chart](https://api.star-history.com/svg?repos=erweixin/Go-GenAI-Stack&type=Date)](https://star-history.com/#erweixin/Go-GenAI-Stack&Date)
 
 ---
 
-## 💬 社区与支持
+## 💬 Community & Support
 
 <table>
 <tr>
 <td align="center" width="33%">
 
-### 📖 文档
+### 📖 Documentation
 
-完整的中文文档
+Complete documentation
 
-[查看文档](docs/INDEX.md)
-
-</td>
-<td align="center" width="33%">
-
-### 💡 讨论
-
-分享想法和问题
-
-[参与讨论](https://github.com/erweixin/Go-GenAI-Stack/discussions)
+[View Docs](docs/INDEX.md)
 
 </td>
 <td align="center" width="33%">
 
-### 🐛 问题
+### 💡 Discussions
 
-报告 Bug 和功能请求
+Share ideas and questions
 
-[提交 Issue](https://github.com/erweixin/Go-GenAI-Stack/issues)
+[Join Discussion](https://github.com/erweixin/Go-GenAI-Stack/discussions)
+
+</td>
+<td align="center" width="33%">
+
+### 🐛 Issues
+
+Report bugs and feature requests
+
+[Submit Issue](https://github.com/erweixin/Go-GenAI-Stack/issues)
 
 </td>
 </tr>
@@ -898,39 +900,39 @@ chore:            构建/工具链
 
 ---
 
-## 🔗 参考项目与资源
+## 🔗 References & Resources
 
-### 灵感来源
+### Inspiration
 
-- **[《讨论下 AI 时代的软件架构与协作关系的几个可能的变化》](https://github.com/erweixin/blog/blob/main/%E8%AE%A8%E8%AE%BA%E4%B8%8B%20AI%20%E6%97%B6%E4%BB%A3%E7%9A%84%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8D%8F%E4%BD%9C%E5%85%B3%E7%B3%BB%E7%9A%84%E5%87%A0%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E5%8F%98%E5%8C%96.md)** ⭐ - **核心思想来源**：从"生产力决定生产关系"的视角探讨 AI 时代的软件架构，提出了领域优先、自包含、显式知识等核心理念
-- **[Coze Studio](https://www.coze.com/)** - LLM 编排平台，启发了本项目的声明式工作流设计
-- **[Bluesky Social App](https://github.com/bluesky-social/social-app)** - React Native 最佳实践参考
+- **[《Discussion on Possible Changes in Software Architecture and Collaboration Relationships in the AI Era》](https://github.com/erweixin/blog/blob/main/%E8%AE%A8%E8%AE%BA%E4%B8%8B%20AI%20%E6%97%B6%E4%BB%A3%E7%9A%84%E8%BD%AF%E4%BB%B6%E6%9E%B6%E6%9E%84%E4%B8%8E%E5%8D%8F%E4%BD%9C%E5%85%B3%E7%B3%BB%E7%9A%84%E5%87%A0%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E5%8F%98%E5%8C%96.md)** ⭐ - **Core Philosophy Source**: Discusses AI-era software architecture from the perspective of "productivity determines production relations", proposing core concepts like domain-first, self-contained, and explicit knowledge
+- **[Coze Studio](https://www.coze.com/)** - LLM orchestration platform, inspired the declarative workflow design of this project
+- **[Bluesky Social App](https://github.com/bluesky-social/social-app)** - React Native best practices reference
 
-### 技术文档
+### Technical Documentation
 
-- [CloudWeGo Hertz](https://www.cloudwego.io/zh/docs/hertz/) - 高性能 HTTP 框架
-- [Eino Framework](https://github.com/cloudwego/eino) - 字节跳动 LLM 框架
-- [Atlas](https://atlasgo.io/) - 数据库 Schema 管理
-- [Domain-Driven Design](https://domainlanguage.com/ddd/) - 领域驱动设计
+- [CloudWeGo Hertz](https://www.cloudwego.io/zh/docs/hertz/) - High-performance HTTP framework
+- [Eino Framework](https://github.com/cloudwego/eino) - ByteDance LLM framework
+- [Atlas](https://atlasgo.io/) - Database Schema management
+- [Domain-Driven Design](https://domainlanguage.com/ddd/) - Domain-Driven Design
 
 ---
 
-## 📄 许可证
+## 📄 License
 
-本项目采用 [MIT License](LICENSE) 开源协议。
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
 <div align="center">
 
-**如果这个项目帮助到了你，请给一个 ⭐ Star！**
+**If this project helps you, please give it a ⭐ Star!**
 
 Made with ❤️ by Go-GenAI-Stack Team
 
-[⬆ 回到顶部](#go-genai-stack)
+[⬆ Back to Top](#go-genai-stack)
 
 ---
 
-**版本**：v0.1.0 | **状态**：🚀 Active Development | **最后更新**：2025-12-02
+**Version**: v0.1.0 | **Status**: 🚀 Active Development | **Last Updated**: 2025-12-02
 
 </div>
