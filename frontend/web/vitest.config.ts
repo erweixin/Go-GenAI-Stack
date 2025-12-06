@@ -5,8 +5,8 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   test: {
-    // 只包含 src 目录下的测试文件
-    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    // 包含 src 目录和 plugins 目录下的测试文件
+    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}', 'plugins/**/*.{test,spec}.{js,ts,jsx,tsx}'],
     // 排除 e2e 目录（E2E 测试由 Playwright 运行）
     exclude: [
       '**/node_modules/**',

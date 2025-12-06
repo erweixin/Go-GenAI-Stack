@@ -1,88 +1,90 @@
 # Cursor AI Rules for Go-GenAI-Stack
-# 这些规则帮助 Cursor AI 更好地理解和协助开发本项目
+# These rules help Cursor AI better understand and assist with developing this project
 
-## 项目架构
+## Project Architecture
 
-本项目采用 **Monorepo + Vibe Coding Friendly DDD** 架构：
+This project adopts **Monorepo + Vibe Coding Friendly DDD** architecture:
 
-### 目录结构
-- `backend/`    - 后端（Go + Hertz + Eino + DDD）
-- `frontend/`   - 前端 Monorepo
-  - `web/`      - React Web 应用
-  - `mobile/`   - React Native 移动应用
-  - `shared/`   - 前端共享代码（types, utils, constants）
-- `scripts/`    - 项目级脚本
-- `docs/`       - 项目文档
+### Directory Structure
+- `backend/`    - Backend (Go + Hertz + Eino + DDD)
+- `frontend/`   - Frontend Monorepo
+  - `web/`      - React Web application
+  - `mobile/`   - React Native mobile application
+  - `shared/`   - Frontend shared code (types, utils, constants)
+- `scripts/`    - Project-level scripts
+- `docs/`       - Project documentation
 
-### 后端架构（三层DDD架构）
-- 领域优先（Domain-First）：按业务领域垂直切分（domains/task/, domains/chat/, domains/llm/）
-- 自包含（Self-contained）：每个领域包含 model + service + repository + handlers + http + tests
-- 显式知识（Explicit Knowledge）：每个领域有 6 个必需文件（README.md, glossary.md, rules.md, events.md, usecases.yaml, ai-metadata.json）
+### Backend Architecture (Three-Layer DDD)
 
-#### 三层架构详解
+- Domain-First: Vertically split by business domain (domains/task/, domains/chat/, domains/llm/)
+- Self-contained: Each domain contains model + service + repository + handlers + http + tests
+- Explicit Knowledge: Each domain has 6 required files (README.md, glossary.md, rules.md, events.md, usecases.yaml, ai-metadata.json)
+
+#### Three-Layer Architecture Details
 
 ```
 domains/{domain}/
-├── model/                 # 【领域模型层】
-│   └── {entity}.go        # 聚合根、实体、值对象
-│                          # 职责：简单的领域规则和状态变更
+├── model/                 # 【Domain Model Layer】
+│   └── {entity}.go        # Aggregate roots, entities, value objects
+│                          # Responsibility: Simple domain rules and state changes
 │
-├── service/               # 【领域服务层】⭐ 核心
-│   └── {domain}_service.go # 业务逻辑实现
-│                          # 职责：实现业务用例、封装复杂流程
+├── service/               # 【Domain Service Layer】⭐ Core
+│   └── {domain}_service.go # Business logic implementation
+│                          # Responsibility: Implement business use cases, encapsulate complex flows
 │
-├── repository/            # 【仓储层】
-│   ├── interface.go       # 仓储接口
-│   └── {entity}_repo.go   # 仓储实现（database/sql）
-│                          # 职责：数据持久化
+├── repository/            # 【Repository Layer】
+│   ├── interface.go       # Repository interface
+│   └── {entity}_repo.go   # Repository implementation (database/sql)
+│                          # Responsibility: Data persistence
 │
-├── handlers/              # 【HTTP 适配层】
-│   ├── dependencies.go    # Handler 依赖容器（注入 Service）
-│   └── {usecase}.handler.go # HTTP 请求处理
-│                          # 职责：HTTP → Domain Input → HTTP
+├── handlers/              # 【HTTP Adapter Layer】
+│   ├── dependencies.go    # Handler dependency container (inject Service)
+│   └── {usecase}.handler.go # HTTP request handling
+│                          # Responsibility: HTTP → Domain Input → HTTP
 │
-├── http/                  # 【HTTP 接口层】
-│   ├── dto/              # 数据传输对象（贴近 API 规范）
-│   └── router.go         # 路由注册
+├── http/                  # 【HTTP Interface Layer】
+│   ├── dto/              # Data Transfer Objects (close to API spec)
+│   └── router.go         # Route registration
 │
-└── tests/                # 【测试】
+└── tests/                # 【Tests】
     └── {usecase}_test.go
 ```
 
-**依赖方向**：Handler → Service → Repository → Database
+**Dependency Direction**: Handler → Service → Repository → Database
 
-**核心原则**：
-1. Handler 层（薄）：只做 HTTP 适配，不包含业务逻辑
-2. Service 层（厚）：实现业务用例，封装复杂流程
-3. Model 层：简单的领域规则和状态变更
-4. Repository 层：数据访问抽象
+**Core Principles**:
+1. Handler layer (thin): Only HTTP adaptation, no business logic
+2. Service layer (thick): Implement business use cases, encapsulate complex flows
+3. Model layer: Simple domain rules and state changes
+4. Repository layer: Data access abstraction
 
-### 前端架构
-- 功能优先（Feature-First）：按功能组织（features/chat/, features/llm/）
-- 领域对齐：前端功能对齐后端领域（frontend/web/features/chat ← backend/domains/chat）
-- 跨端共享：Web 和 Mobile 通过 pnpm workspace 共享 types, utils, constants
+### Frontend Architecture
 
-## 代码生成规则
+- Feature-First: Organized by feature (features/chat/, features/llm/)
+- Domain Alignment: Frontend features align with backend domains (frontend/web/features/chat ← backend/domains/chat)
+- Cross-platform Sharing: Web and Mobile share types, utils, constants via pnpm workspace
 
-### 1. 添加新用例（Use Case）⭐ 重要
+## Code Generation Rules
 
-当用户要求添加新的业务用例时：
+### 1. Adding New Use Case ⭐ Important
 
-**步骤（三层架构）**：
+When the user requests to add a new business use case:
 
-1. **读取显式知识**：
-   - domains/{domain}/usecases.yaml（查看用例定义）
-   - domains/{domain}/README.md（理解领域边界）
-   - domains/{domain}/glossary.md（理解术语）
-   - domains/{domain}/rules.md（理解业务规则）
-   - domains/{domain}/events.md（理解领域事件）
+**Steps (Three-Layer Architecture)**:
 
-2. **生成 Domain Service 层**（核心业务逻辑）：
-   - 文件：`domains/{domain}/service/{domain}_service.go`
-   - 方法：按照 usecases.yaml 的 steps 顺序实现
-   - Input/Output：定义专用的 Input/Output 结构体
-   - 错误处理：使用 "ERROR_CODE: message" 格式
-   - 示例：
+1. **Read Explicit Knowledge**:
+   - domains/{domain}/usecases.yaml (check use case definition)
+   - domains/{domain}/README.md (understand domain boundaries)
+   - domains/{domain}/glossary.md (understand terminology)
+   - domains/{domain}/rules.md (understand business rules)
+   - domains/{domain}/events.md (understand domain events)
+
+2. **Generate Domain Service Layer** (core business logic):
+   - File: `domains/{domain}/service/{domain}_service.go`
+   - Method: Implement according to usecases.yaml steps order
+   - Input/Output: Define dedicated Input/Output structs
+   - Error handling: Use "ERROR_CODE: message" format
+   - Example:
      ```go
      // service/task_service.go
      func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput) (*CreateTaskOutput, error) {
@@ -93,82 +95,82 @@ domains/{domain}/
      }
      ```
 
-3. **生成 Handler 层**（HTTP 适配）：
-   - 文件：`domains/{domain}/handlers/{usecase}.handler.go`
-   - 职责：HTTP 请求 → Domain Input → 调用 Service → HTTP 响应
-   - 示例：
+3. **Generate Handler Layer** (HTTP adaptation):
+   - File: `domains/{domain}/handlers/{usecase}.handler.go`
+   - Responsibility: HTTP request → Domain Input → Call Service → HTTP response
+   - Example:
      ```go
      // handlers/create_task.handler.go
      func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.RequestContext) {
-         // 1. 解析 HTTP 请求
+         // 1. Parse HTTP request
          var req dto.CreateTaskRequest
          c.BindAndValidate(&req)
          
-         // 2. 转换为 Domain Input
+         // 2. Convert to Domain Input
          input := service.CreateTaskInput{...}
          
-         // 3. 调用 Domain Service
+         // 3. Call Domain Service
          output, err := deps.taskService.CreateTask(ctx, input)
          
-         // 4. 返回 HTTP 响应
+         // 4. Return HTTP response
          c.JSON(200, dto.CreateTaskResponse{...})
      }
      ```
 
-4. **生成 DTO**：
-   - 文件：`domains/{domain}/http/dto/{usecase}.go`
-   - 包含 json tag、validation tag
+4. **Generate DTO**:
+   - File: `domains/{domain}/http/dto/{usecase}.go`
+   - Include json tag, validation tag
 
-5. **生成测试**：
-   - 文件：`domains/{domain}/tests/{usecase}_test.go`
-   - 覆盖所有 steps
-   - 覆盖所有 errors 列表中的错误场景
+5. **Generate Tests**:
+   - File: `domains/{domain}/tests/{usecase}_test.go`
+   - Cover all steps
+   - Cover all error scenarios in errors list
 
-6. **更新文档**：
-   - 更新 README.md 添加用例说明
+6. **Update Documentation**:
+   - Update README.md to add use case description
 
-**关键原则**：
-- ✅ 业务逻辑在 Service 层
-- ✅ Handler 层只做 HTTP 适配（薄层）
-- ✅ 每个用例对应一个 Service 方法
-- ✅ Service 的 Input/Output 是纯业务概念（不包含 HTTP 细节）
+**Key Principles**:
+- ✅ Business logic in Service layer
+- ✅ Handler layer only does HTTP adaptation (thin layer)
+- ✅ Each use case corresponds to one Service method
+- ✅ Service Input/Output are pure business concepts (no HTTP details)
 
-### 2. 前后端类型同步（Monorepo）
+### 2. Frontend-Backend Type Sync (Monorepo)
 
-当用户要求 "同步类型" 或 "sync types {domain}" 时：
+When the user requests "sync types" or "sync types {domain}":
 
-1. 读取 `backend/domains/{domain}/http/dto/*.go` 下的所有 Go struct
-2. 提取 json tag 作为 TypeScript 字段名
-3. 类型映射规则：
+1. Read all Go structs under `backend/domains/{domain}/http/dto/*.go`
+2. Extract json tags as TypeScript field names
+3. Type mapping rules:
    - `string` → `string`
    - `int`, `int64`, `float64` → `number`
    - `bool` → `boolean`
-   - `time.Time` → `string` (ISO 8601 格式)
+   - `time.Time` → `string` (ISO 8601 format)
    - `[]T` → `T[]`
    - `map[string]T` → `Record<string, T>`
    - `struct` → `interface`
-   - `*T` (指针) → `T | undefined` 或 `T?` (optional)
-4. 生成/更新 `frontend/shared/types/domains/{domain}.ts`
-5. 添加文件头注释：
+   - `*T` (pointer) → `T | undefined` or `T?` (optional)
+4. Generate/update `frontend/shared/types/domains/{domain}.ts`
+5. Add file header comment:
    ```typescript
    // Code generated from Go structs. DO NOT EDIT manually.
    // Source: backend/domains/{domain}/http/dto
    // Generated: {timestamp}
    ```
-6. **注意**：Web 和 Mobile 通过 pnpm workspace 共享类型定义
+6. **Note**: Web and Mobile share type definitions via pnpm workspace
 
-**快捷用法**：
-- 用户: "sync types chat" → 同步聊天领域类型到 frontend/shared/types
-- 用户: "sync types all" → 同步所有领域类型
-- Web 和 Mobile 通过 `@go-genai-stack/types` 导入
+**Quick Usage**:
+- User: "sync types chat" → Sync chat domain types to frontend/shared/types
+- User: "sync types all" → Sync all domain types
+- Web and Mobile import via `@go-genai-stack/types`
 
-### 3. HTTP 接口设计
+### 3. HTTP Interface Design
 
-本项目**不使用 IDL（Thrift/Protobuf）**，采用 **Code-First** 模式：
+This project **does not use IDL (Thrift/Protobuf)**, adopts **Code-First** approach:
 
-- 所有 HTTP DTO 定义在 `domains/{domain}/http/dto/*.go`
-- 使用 Hertz 的原生 tag：`json`, `binding`, `query`, `form`
-- 示例：
+- All HTTP DTOs defined in `domains/{domain}/http/dto/*.go`
+- Use Hertz native tags: `json`, `binding`, `query`, `form`
+- Example:
   ```go
   type SendMessageRequest struct {
       UserID  string `json:"user_id" binding:"required"`
@@ -177,82 +179,82 @@ domains/{domain}/
   }
   ```
 
-**不要**生成或建议使用：
-- ❌ `.thrift` 文件
-- ❌ `.proto` 文件
-- ❌ `hz new` 或 `hz update` 命令
-- ❌ `kitex_gen/` 目录
+**Do NOT** generate or suggest using:
+- ❌ `.thrift` files
+- ❌ `.proto` files
+- ❌ `hz new` or `hz update` commands
+- ❌ `kitex_gen/` directory
 
-### 4. 命名规范
+### 4. Naming Conventions
 
-- **文件名**：小写 + 下划线（`send_message.go`, `model_router_service.go`）
-- **Handler 文件**：`{usecase}.handler.go`（如 `send_message.handler.go`）
-- **测试文件**：`{usecase}.test.go`（如 `send_message.test.go`）
-- **接口命名**：PascalCase（`SendMessageRequest`, `ChatService`）
-- **字段命名**：PascalCase（Go struct），snake_case（json tag）
-- **函数命名**：PascalCase（公共），camelCase（私有）
+- **File names**: lowercase + underscore (`send_message.go`, `model_router_service.go`)
+- **Handler files**: `{usecase}.handler.go` (e.g., `send_message.handler.go`)
+- **Test files**: `{usecase}.test.go` (e.g., `send_message.test.go`)
+- **Interface naming**: PascalCase (`SendMessageRequest`, `ChatService`)
+- **Field naming**: PascalCase (Go struct), snake_case (json tag)
+- **Function naming**: PascalCase (public), camelCase (private)
 
-### 5. 错误处理
+### 5. Error Handling
 
-- 使用 `domains/shared/errors` 包定义错误
-- 错误码命名：大写 + 下划线（`MESSAGE_EMPTY`, `UNAUTHORIZED_ACCESS`）
-- 错误包装：使用 `fmt.Errorf("...: %w", err)` 保留堆栈
+- Use `domains/shared/errors` package to define errors
+- Error code naming: UPPERCASE + underscore (`MESSAGE_EMPTY`, `UNAUTHORIZED_ACCESS`)
+- Error wrapping: Use `fmt.Errorf("...: %w", err)` to preserve stack trace
 
-### 6. 测试编写
+### 6. Test Writing
 
-#### 后端测试（Go）
+#### Backend Tests (Go)
 
-- 每个 handler 必须有对应的测试文件
-- 使用 Table-Driven Tests 模式
-- 覆盖成功路径和所有错误场景
-- Mock 外部依赖（repository, adapter）
+- Each handler must have a corresponding test file
+- Use Table-Driven Tests pattern
+- Cover success path and all error scenarios
+- Mock external dependencies (repository, adapter)
 
-#### 前端测试（TypeScript/React）⭐ 重要
+#### Frontend Tests (TypeScript/React) ⭐ Important
 
-**强制要求**：每次更新前端代码时，必须同步更新或新增对应的测试用例。
+**Mandatory Requirement**: Every time frontend code is updated, corresponding test cases must be updated or added.
 
-**测试类型**：
+**Test Types**:
 
-1. **单元测试**（Vitest + React Testing Library）：
-   - **位置**：`src/features/{domain}/__tests__/`
-   - **覆盖范围**：
-     - ✅ Hooks（`hooks/useXxx.test.ts`）- 优先级最高，覆盖率目标 90%+
-     - ✅ Stores（`stores/{domain}.store.test.ts`）- 覆盖率目标 90%+
-     - ✅ API（`api/{domain}.api.test.ts`）- 覆盖率目标 90%+
-     - ✅ Components（`components/XxxComponent.test.tsx`）- 覆盖率目标 70%+
-   - **命名规范**：`{filename}.test.ts` 或 `{filename}.test.tsx`
-   - **运行命令**：
+1. **Unit Tests** (Vitest + React Testing Library):
+   - **Location**: `src/features/{domain}/__tests__/`
+   - **Coverage**:
+     - ✅ Hooks (`hooks/useXxx.test.ts`) - Highest priority, 90%+ coverage target
+     - ✅ Stores (`stores/{domain}.store.test.ts`) - 90%+ coverage target
+     - ✅ API (`api/{domain}.api.test.ts`) - 90%+ coverage target
+     - ✅ Components (`components/XxxComponent.test.tsx`) - 70%+ coverage target
+   - **Naming**: `{filename}.test.ts` or `{filename}.test.tsx`
+   - **Commands**:
      ```bash
-     pnpm test              # 运行所有测试
-     pnpm test:watch        # 监听模式
-     pnpm test:coverage     # 生成覆盖率报告
+     pnpm test              # Run all tests
+     pnpm test:watch        # Watch mode
+     pnpm test:coverage     # Generate coverage report
      ```
 
-2. **E2E 测试**（Playwright）：
-   - **位置**：`e2e/{domain}/{usecase}.spec.ts`
-   - **覆盖范围**：
-     - ✅ 用户完整流程（登录 → 操作 → 验证）
-     - ✅ 关键业务用例（创建、更新、删除等）
-     - ✅ 错误场景（验证失败、网络错误等）
-   - **命名规范**：`{usecase}.spec.ts`
-   - **运行命令**：
+2. **E2E Tests** (Playwright):
+   - **Location**: `e2e/{domain}/{usecase}.spec.ts`
+   - **Coverage**:
+     - ✅ Complete user flows (login → operation → verification)
+     - ✅ Key business use cases (create, update, delete, etc.)
+     - ✅ Error scenarios (validation failure, network errors, etc.)
+   - **Naming**: `{usecase}.spec.ts`
+   - **Commands**:
      ```bash
-     pnpm e2e:all           # 一键运行（推荐）
-     pnpm e2e:ui            # UI 模式
-     pnpm e2e:setup         # 启动测试环境
+     pnpm e2e:all           # One-click run (recommended)
+     pnpm e2e:ui             # UI mode
+     pnpm e2e:setup          # Start test environment
      ```
 
-**更新代码时的测试要求**：
+**Test Requirements When Updating Code**:
 
-- ✅ **新增功能**：必须同时新增对应的单元测试和 E2E 测试
-- ✅ **修改功能**：必须更新对应的测试用例，确保测试通过
-- ✅ **修复 Bug**：必须添加回归测试，防止 Bug 再次出现
-- ✅ **重构代码**：必须确保所有现有测试通过，必要时更新测试
+- ✅ **New Feature**: Must add corresponding unit tests and E2E tests
+- ✅ **Modify Feature**: Must update corresponding test cases, ensure tests pass
+- ✅ **Fix Bug**: Must add regression tests to prevent bug recurrence
+- ✅ **Refactor Code**: Must ensure all existing tests pass, update tests if necessary
 
-**测试示例**：
+**Test Examples**:
 
 ```typescript
-// ✅ 新增 Hook 时，必须创建对应的测试
+// ✅ When adding Hook, must create corresponding test
 // features/task/hooks/useTaskCreate.ts
 export function useTaskCreateMutation() { ... }
 
@@ -263,11 +265,11 @@ import { useTaskCreateMutation } from '../hooks/useTaskCreate'
 
 describe('useTaskCreateMutation', () => {
   it('should create task successfully', async () => {
-    // 测试实现
+    // Test implementation
   })
 })
 
-// ✅ 新增组件时，必须创建对应的测试
+// ✅ When adding Component, must create corresponding test
 // features/task/components/TaskCreateDialog.tsx
 export function TaskCreateDialog() { ... }
 
@@ -277,44 +279,73 @@ import { TaskCreateDialog } from '../components/TaskCreateDialog'
 
 describe('TaskCreateDialog', () => {
   it('should render form fields', () => {
-    // 测试实现
+    // Test implementation
   })
 })
 
-// ✅ 新增用例时，必须创建对应的 E2E 测试
+// ✅ When adding use case, must create corresponding E2E test
 // e2e/task/create-task.spec.ts
 import { test, expect } from '@playwright/test'
 
 test('should create task successfully', async ({ page }) => {
-  // E2E 测试实现
+  // E2E test implementation
 })
 ```
 
-**测试覆盖率要求**：
+**Test Coverage Requirements**:
 
-- **核心业务逻辑**（Hooks, Stores, API）：90%+
-- **UI 组件**（Components）：70%+
-- **页面组件**（Pages）：60%+
-- **整体覆盖率目标**：70%+
+- **Core Business Logic** (Hooks, Stores, API): 90%+
+- **UI Components** (Components): 70%+
+- **Page Components** (Pages): 60%+
+- **Overall Coverage Target**: 70%+
 
-**参考文档**：
-- 单元测试指南：`frontend/web/doc/unit-testing.md`
-- E2E 测试指南：`frontend/web/doc/e2e-testing.md`
+**Reference Documentation**:
+- Unit Testing Guide: `frontend/web/doc/unit-testing.md`
+- E2E Testing Guide: `frontend/web/doc/e2e-testing.md`
 
-## 常见任务快捷指令
+### 7. E2E Test Selectors - data-test-id ⭐ Important
 
-### "添加导出对话功能"
-1. 检查 domains/chat/usecases.yaml 是否定义了 ExportConversation
-2. 生成 domains/chat/handlers/export_conversation.handler.go
-3. 生成测试
-4. 更新 README.md
+**Mandatory Requirement**: All new frontend components and interactive elements MUST include `data-test-id` attributes to improve E2E test efficiency and success rate.
+
+**When to Add**:
+- ✅ All buttons, form inputs, interactive elements
+- ✅ List items with dynamic IDs: `task-edit-${taskId}`, `task-delete-${taskId}`
+- ❌ Optional for static text (use `getByText`/`getByRole`)
+
+**Naming Convention**: `{feature}-{action}-{element-type}` or `{feature}-{action}-{id}`
+
+Examples:
+```tsx
+// ✅ Good
+<Button data-test-id="task-create-button">Create</Button>
+<Input data-test-id="task-create-title-input" />
+<Button data-test-id={`task-edit-${taskId}`}>Edit</Button>
+
+// ❌ Bad: Too generic or inconsistent
+<Button data-test-id="button">Click</Button>
+<Button data-test-id="createTaskBtn">Create</Button>
+```
+
+**E2E Usage**:
+```typescript
+await page.locator('[data-test-id="task-create-button"]').click()
+await page.locator(`[data-test-id="task-edit-${taskId}"]`).click()
+```
+
+## Common Task Quick Commands
+
+### "Add export conversation feature"
+1. Check if domains/chat/usecases.yaml defines ExportConversation
+2. Generate domains/chat/handlers/export_conversation.handler.go
+3. Generate tests
+4. Update README.md
 
 ### "sync types chat"
-1. 读取 backend/domains/chat/http/dto/*.go
-2. 生成 frontend/src/types/domain/chat.ts
+1. Read backend/domains/chat/http/dto/*.go
+2. Generate frontend/src/types/domain/chat.ts
 
-### "添加新领域 billing"
-1. 创建目录结构：
+### "Add new domain billing"
+1. Create directory structure:
    ```
    domains/billing/
    ├── README.md
@@ -328,23 +359,23 @@ test('should create task successfully', async ({ page }) => {
    ├── http/dto/
    └── tests/
    ```
-2. 填充 6 个必需文件的模板内容
+2. Fill template content for 6 required files
 
-## 代码风格
+## Code Style
 
-- 使用 `gofmt` 格式化
-- 每个公共函数/类型都有注释
-- 注释格式：`// FunctionName does something`
-- 每个文件顶部说明文件职责
-- 示例代码放在注释中（Example:）
+- Use `gofmt` for formatting
+- Every public function/type has comments
+- Comment format: `// FunctionName does something`
+- File responsibility described at top of each file
+- Example code in comments (Example:)
 
-## 数据库访问规则（⭐ 重要）
+## Database Access Rules ⭐ Important
 
-本项目**统一使用 database/sql**，不使用 ORM：
+This project **unified use of database/sql**, no ORM:
 
-### ✅ 正确做法
+### ✅ Correct Approach
 
-1. **数据库连接**：
+1. **Database Connection**:
    ```go
    import "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/postgres"
    
@@ -352,7 +383,7 @@ test('should create task successfully', async ({ page }) => {
    db := conn.DB()  // *sql.DB
    ```
 
-2. **Repository 实现**：
+2. **Repository Implementation**:
    ```go
    type MessageRepository struct {
        db *sql.DB
@@ -365,158 +396,158 @@ test('should create task successfully', async ({ page }) => {
    }
    ```
 
-3. **事务处理**：
+3. **Transaction Handling**:
    ```go
    import "github.com/erweixin/go-genai-stack/backend/infrastructure/persistence/postgres"
    
    err := postgres.WithTransaction(ctx, db, func(tx *sql.Tx) error {
-       // 在事务中执行多个操作
+       // Execute multiple operations in transaction
        _, err := tx.ExecContext(ctx, query1, ...)
        _, err = tx.ExecContext(ctx, query2, ...)
-       return err  // 自动 commit 或 rollback
+       return err  // Auto commit or rollback
    })
    ```
 
-4. **Schema 管理**：
-   - Schema 定义：`infrastructure/database/schema/schema.sql`
-   - 使用 Atlas 生成迁移：`./scripts/schema.sh diff my_change`
-   - 应用迁移：`./scripts/schema.sh apply`
+4. **Schema Management**:
+   - Schema definition: `infrastructure/database/schema/schema.sql`
+   - Use Atlas to generate migrations: `./scripts/schema.sh diff my_change`
+   - Apply migrations: `./scripts/schema.sh apply`
 
-### ❌ 禁止做法
+### ❌ Prohibited Practices
 
-- ❌ **不要使用 GORM**（已删除 `infrastructure/database/database.go`）
+- ❌ **Do NOT use GORM** (deleted `infrastructure/database/database.go`)
   ```go
-  // ❌ 错误
+  // ❌ Wrong
   import "gorm.io/gorm"
   db.Create(&model)
   db.Where("id = ?", id).First(&model)
   ```
 
-- ❌ **不要使用 AutoMigrate**
+- ❌ **Do NOT use AutoMigrate**
   ```go
-  // ❌ 错误
+  // ❌ Wrong
   db.AutoMigrate(&Model{})
   ```
 
-- ❌ **不要引用已删除的文件**
+- ❌ **Do NOT reference deleted files**
   ```go
-  // ❌ 错误
+  // ❌ Wrong
   import "github.com/erweixin/go-genai-stack/backend/infrastructure/database"
   ```
 
-### 为什么不用 GORM？
+### Why Not Use GORM?
 
-1. ✅ **透明度**：原生 SQL 清晰可见，AI 易于理解
-2. ✅ **性能**：无 ORM 开销，直接操作数据库
-3. ✅ **控制力**：完全控制 SQL 语句，便于优化
-4. ✅ **Vibe-Coding 友好**：Repository 模式已提供抽象，无需 ORM
-5. ✅ **可维护性**：SQL 一目了然，调试和优化更容易
+1. ✅ **Transparency**: Native SQL is clear and visible, AI can easily understand
+2. ✅ **Performance**: No ORM overhead, direct database operations
+3. ✅ **Control**: Full control over SQL statements, easy to optimize
+4. ✅ **Vibe-Coding Friendly**: Repository pattern already provides abstraction, no need for ORM
+5. ✅ **Maintainability**: SQL is clear at a glance, easier to debug and optimize
 
-### 参考文档
+### Reference Documentation
 
-- [数据库重构迁移指南](docs/database-refactoring-guide.md) - 完整的迁移指南
-- [Postgres Connection](backend/infrastructure/persistence/postgres/connection.go) - 连接管理
-- [Postgres Transaction](backend/infrastructure/persistence/postgres/transaction.go) - 事务管理
+- [Database Refactoring Migration Guide](docs/database-refactoring-guide.md) - Complete migration guide
+- [Postgres Connection](backend/infrastructure/persistence/postgres/connection.go) - Connection management
+- [Postgres Transaction](backend/infrastructure/persistence/postgres/transaction.go) - Transaction management
 
 ---
 
-## 业务逻辑分层规则 ⭐ 重要
+## Business Logic Layering Rules ⭐ Important
 
-### Handler 层职责（薄层）
+### Handler Layer Responsibilities (Thin Layer)
 
-✅ **应该做的**：
-- 解析 HTTP 请求（BindAndValidate）
-- 转换 HTTP DTO → Domain Input
-- 调用 Domain Service
-- 转换 Domain Output → HTTP 响应
-- 处理错误转换（领域错误 → HTTP 状态码）
+✅ **Should Do**:
+- Parse HTTP requests (BindAndValidate)
+- Convert HTTP DTO → Domain Input
+- Call Domain Service
+- Convert Domain Output → HTTP response
+- Handle error conversion (domain errors → HTTP status codes)
 
-❌ **不应该做的**：
-- 不要实现业务逻辑
-- 不要直接调用 Repository
-- 不要包含验证规则（应该在 Service 或 Model 中）
+❌ **Should NOT Do**:
+- Do not implement business logic
+- Do not directly call Repository
+- Do not include validation rules (should be in Service or Model)
 
-**示例**：
+**Example**:
 ```go
-// ✅ Good: Handler 只做适配
+// ✅ Good: Handler only does adaptation
 func (deps *HandlerDependencies) CreateTaskHandler(ctx context.Context, c *app.RequestContext) {
     var req dto.CreateTaskRequest
     c.BindAndValidate(&req)
     
-    input := service.CreateTaskInput{...}  // 转换
-    output, err := deps.taskService.CreateTask(ctx, input)  // 调用 Service
+    input := service.CreateTaskInput{...}  // Convert
+    output, err := deps.taskService.CreateTask(ctx, input)  // Call Service
     
     if err != nil {
-        handleDomainError(c, err)  // 错误转换
+        handleDomainError(c, err)  // Error conversion
         return
     }
     
-    c.JSON(200, toResponse(output))  // 响应转换
+    c.JSON(200, toResponse(output))  // Response conversion
 }
 
-// ❌ Bad: Handler 包含业务逻辑
+// ❌ Bad: Handler contains business logic
 func CreateTaskHandler(...) {
-    // 验证业务规则
+    // Validate business rules
     if task.Priority == "high" && !user.IsVIP() {
         return errors.New("only VIP can create high priority tasks")
     }
-    // 这些应该在 Service 层！
+    // These should be in Service layer!
 }
 ```
 
-### Service 层职责（厚层）
+### Service Layer Responsibilities (Thick Layer)
 
-✅ **应该做的**：
-- 实现业务用例（对应 usecases.yaml）
-- 封装复杂的业务流程
-- 协调多个 Repository
-- 验证复杂的业务规则
-- 发布领域事件
-- 管理事务
+✅ **Should Do**:
+- Implement business use cases (corresponding to usecases.yaml)
+- Encapsulate complex business flows
+- Coordinate multiple Repositories
+- Validate complex business rules
+- Publish domain events
+- Manage transactions
 
-❌ **不应该做的**：
-- 不要处理 HTTP 请求/响应
-- 不要使用 HTTP 相关的类型（如 app.RequestContext）
-- 不要实现简单的领域规则（应该在 Model 中）
+❌ **Should NOT Do**:
+- Do not handle HTTP requests/responses
+- Do not use HTTP-related types (e.g., app.RequestContext)
+- Do not implement simple domain rules (should be in Model)
 
-**示例**：
+**Example**:
 ```go
-// ✅ Good: Service 实现业务逻辑
+// ✅ Good: Service implements business logic
 func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput) (*CreateTaskOutput, error) {
-    // 业务规则验证
+    // Business rule validation
     if input.Title == "" {
-        return nil, fmt.Errorf("TASK_TITLE_EMPTY: 任务标题不能为空")
+        return nil, fmt.Errorf("TASK_TITLE_EMPTY: task title cannot be empty")
     }
     
-    // 创建领域对象
+    // Create domain object
     task, err := model.NewTask(input.Title, input.Description, input.Priority)
     
-    // 持久化
+    // Persist
     if err := s.taskRepo.Create(ctx, task); err != nil {
-        return nil, fmt.Errorf("保存任务失败: %w", err)
+        return nil, fmt.Errorf("failed to save task: %w", err)
     }
     
-    // 发布事件
+    // Publish event
     // s.eventBus.Publish(ctx, TaskCreatedEvent{...})
     
     return &CreateTaskOutput{Task: task}, nil
 }
 ```
 
-### Model 层职责
+### Model Layer Responsibilities
 
-✅ **应该做的**：
-- 简单的领域规则
-- 状态变更逻辑
-- 不变量维护
+✅ **Should Do**:
+- Simple domain rules
+- State change logic
+- Invariant maintenance
 
-❌ **不应该做的**：
-- 不要包含数据访问逻辑
-- 不要包含复杂的业务流程
+❌ **Should NOT Do**:
+- Do not contain data access logic
+- Do not contain complex business flows
 
-**示例**：
+**Example**:
 ```go
-// ✅ Good: Model 包含简单的领域规则
+// ✅ Good: Model contains simple domain rules
 func (t *Task) Complete() error {
     if t.Status == StatusCompleted {
         return ErrTaskAlreadyCompleted
@@ -527,39 +558,38 @@ func (t *Task) Complete() error {
 }
 ```
 
-## 禁止事项
+## Prohibited Practices
 
-- ❌ **不要在 Handler 中写业务逻辑**（应该调用 Service 层）
-- ❌ **不要在 Handler 中直接调用 Repository**（应该通过 Service 层）
-- ❌ 不要跨领域直接调用（应该通过事件或应用服务编排）
-- ❌ 不要在 DTO 中包含业务逻辑（只做数据传输）
-- ❌ 不要使用全局变量（使用依赖注入）
-- ❌ 不要提交生成的类型文件到 Git（frontend/shared/types/domains/ 应该被忽略或标记为生成）
-- ❌ **不要使用 GORM 或任何 ORM**（统一使用 database/sql）
-- ❌ **不要使用 AutoMigrate**（使用 Atlas 管理 Schema）
+- ❌ **Do NOT write business logic in Handler** (should call Service layer)
+- ❌ **Do NOT directly call Repository in Handler** (should go through Service layer)
+- ❌ Do not directly call across domains (should use events or application service orchestration)
+- ❌ Do not include business logic in DTO (only data transfer)
+- ❌ Do not use global variables (use dependency injection)
+- ❌ Do not commit generated type files to Git (frontend/shared/types/domains/ should be ignored or marked as generated)
+- ❌ **Do NOT use GORM or any ORM** (unified use of database/sql)
+- ❌ **Do NOT use AutoMigrate** (use Atlas for Schema management)
 
-## AI 辅助开发最佳实践
+## AI-Assisted Development Best Practices
 
-1. **理解需求前先读显式知识**：
-   - 读取领域的 README.md 理解边界
-   - 读取 glossary.md 理解术语
-   - 读取 rules.md 理解约束
-   - 读取 usecases.yaml 理解现有用例
+1. **Read Explicit Knowledge Before Understanding Requirements**:
+   - Read domain README.md to understand boundaries
+   - Read glossary.md to understand terminology
+   - Read rules.md to understand constraints
+   - Read usecases.yaml to understand existing use cases
 
-2. **生成代码时保持一致性**：
-   - 参考同领域内的现有代码风格
-   - 使用相同的错误处理模式
-   - 保持相同的注释风格
+2. **Maintain Consistency When Generating Code**:
+   - Reference existing code style within the same domain
+   - Use the same error handling patterns
+   - Maintain the same comment style
 
-3. **测试驱动**：
-   - **后端**：生成代码的同时生成测试，确保测试覆盖所有分支
-   - **前端**：⭐ **强制要求** - 每次更新前端代码时，必须同步更新或新增：
-     - 单元测试（Hooks、Stores、API、Components）
-     - E2E 测试（关键用户流程）
-   - 确保所有测试通过后再提交代码
+3. **Test-Driven**:
+   - **Backend**: Generate tests along with code, ensure tests cover all branches
+   - **Frontend**: ⭐ **Mandatory** - Every time frontend code is updated, must update or add:
+     - Unit tests (Hooks, Stores, API, Components)
+     - E2E tests (key user flows)
+   - Ensure all tests pass before committing code
 
-4. **文档同步**：
-   - 修改代码后更新相关的 README.md
-   - 添加新事件后更新 events.md
-   - 添加新规则后更新 rules.md
-
+4. **Documentation Sync**:
+   - Update related README.md after modifying code
+   - Update events.md after adding new events
+   - Update rules.md after adding new rules
