@@ -5,10 +5,11 @@
 #================================================
 # 功能：
 # 1. 检查依赖（Go, Docker）
-# 2. 启动数据库（Docker Compose）
-# 3. 运行迁移和种子数据
-# 4. 启动后端
-# 5. 打印访问地址
+# 2. 设置环境变量（从 .env.example 复制）
+# 3. 启动数据库（Docker Compose）
+# 4. 运行迁移和种子数据
+# 5. 启动后端
+# 6. 打印访问地址
 #================================================
 
 set -e  # 遇到错误立即退出
@@ -80,11 +81,35 @@ fi
 
 echo ""
 
-# 步骤 2: 启动数据库
-info "步骤 2/5: 启动数据库（PostgreSQL + Redis）..."
+# 步骤 2: 设置环境变量
+info "步骤 2/6: 设置环境变量..."
 
 cd "$(dirname "$0")/.."  # 切换到项目根目录
 PROJECT_ROOT=$(pwd)
+
+# 检查并复制环境变量文件
+if [ ! -f "$PROJECT_ROOT/docker/.env" ]; then
+    if [ -f "$PROJECT_ROOT/docker/.env.example" ]; then
+        info "从 .env.example 创建 .env 文件..."
+        cp "$PROJECT_ROOT/docker/.env.example" "$PROJECT_ROOT/docker/.env"
+        success ".env 文件已创建"
+        warning "请根据需要编辑 docker/.env 文件（可选）"
+    elif [ -f "$PROJECT_ROOT/docker/prod/env.example" ]; then
+        info "从 prod/env.example 创建 .env 文件..."
+        cp "$PROJECT_ROOT/docker/prod/env.example" "$PROJECT_ROOT/docker/.env"
+        success ".env 文件已创建"
+        warning "请根据需要编辑 docker/.env 文件（可选）"
+    else
+        warning "未找到 .env.example 文件，将使用默认配置"
+    fi
+else
+    success ".env 文件已存在"
+fi
+
+echo ""
+
+# 步骤 3: 启动数据库
+info "步骤 3/6: 启动数据库（PostgreSQL + Redis）..."
 
 # 检查 docker-compose.yml 是否存在
 if [ ! -f "docker/docker-compose.yml" ]; then
@@ -124,8 +149,8 @@ fi
 
 echo ""
 
-# 步骤 3: 运行数据库迁移
-info "步骤 3/5: 运行数据库迁移..."
+# 步骤 4: 运行数据库迁移
+info "步骤 4/6: 运行数据库迁移..."
 
 cd "$PROJECT_ROOT/backend"
 
@@ -149,8 +174,8 @@ fi
 
 echo ""
 
-# 步骤 4: 加载种子数据
-info "步骤 4/5: 加载种子数据..."
+# 步骤 5: 加载种子数据
+info "步骤 5/6: 加载种子数据..."
 
 if [ "$PSQL_AVAILABLE" = true ]; then
     # 加载环境变量
@@ -171,8 +196,8 @@ fi
 
 echo ""
 
-# 步骤 5: 启动后端服务
-info "步骤 5/5: 启动后端服务..."
+# 步骤 6: 启动后端服务
+info "步骤 6/6: 启动后端服务..."
 
 cd "$PROJECT_ROOT/backend"
 

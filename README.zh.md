@@ -284,7 +284,7 @@ git commit -m "feat(task): add new usecase"
 | **Type Sync** | Go → TypeScript 类型同步 | `./scripts/sync_types.sh all` |
 | **Testing** | 单元 + 集成测试 | `./backend/scripts/test_all.sh` |
 | **Linting** | 代码质量检查 | `./backend/scripts/lint.sh --fix` |
-| **Docker** | 一键启动完整环境 | `./docker/docker-up.sh` |
+| **Docker** | 一键启动完整环境 | `./scripts/quickstart.sh` |
 
 ---
 
@@ -346,71 +346,127 @@ observability:
 
 ## 🚀 快速开始
 
-### ⚡ 三步上手（推荐）
+### ⚡ 一键启动（推荐）
+
+最简单的启动方式：
 
 ```bash
 # 1️⃣ 克隆项目
 git clone https://github.com/erweixin/Go-GenAI-Stack.git
 cd Go-GenAI-Stack
 
-# 2️⃣ 一键启动（Docker）
-./docker/docker-up.sh
-
-# 3️⃣ 验证运行
-curl http://localhost:8080/health
+# 2️⃣ 一键启动（后端 + 数据库）
+./scripts/quickstart.sh
 ```
+
+这个脚本会自动完成：
+- ✅ 检查依赖（Go、Docker）
+- ✅ 设置环境变量（从 .env.example 复制，如需要）
+- ✅ 启动 PostgreSQL 和 Redis（Docker）
+- ✅ 运行数据库迁移（Atlas）
+- ✅ 加载种子数据
+- ✅ 启动后端服务
 
 **访问服务**：
 - 🔗 后端 API：`http://localhost:8080/api`
 - ❤️ 健康检查：`http://localhost:8080/health`
-- 📊 Prometheus：`http://localhost:8080/metrics`
-
-**Docker 启动完整监控栈**（可选）：
-```bash
-# 包含 Jaeger、Prometheus、Grafana
-./docker/docker-up.sh --full
-
-# 访问监控面板
-# - Grafana: http://localhost:3000 (admin/admin)
-# - Jaeger:  http://localhost:16686
-```
+- 📊 Prometheus 指标：`http://localhost:8080/metrics`
 
 ---
 
-### 🛠️ 本地开发模式（无 Docker）
+### 🌐 启动全栈（后端 + 前端）
+
+完整的前后端开发环境：
+
+```bash
+# 1. 启动后端（在一个终端）
+./scripts/quickstart.sh
+
+# 2. 启动前端（在另一个终端）
+cd frontend
+pnpm install
+cd web
+pnpm dev
+```
+
+**访问**：
+- 🌐 前端 Web：`http://localhost:5173`
+- 🔗 后端 API：`http://localhost:8080/api`
+
+---
+
+### 🐳 Docker 生产模式
+
+启动完整的生产环境（包含监控）：
+
+```bash
+# 启动所有服务（后端 + 监控）
+./scripts/start-all.sh
+```
+
+**访问服务**：
+- 🔗 后端 API：`http://localhost:8080`
+- 📊 Grafana：`http://localhost:3000` (admin/admin)
+- 🔍 Jaeger：`http://localhost:16686`
+- 📈 Prometheus：`http://localhost:9090`
+- 🐛 Sentry：`http://localhost:9000`
+
+**注意**：前端需要单独构建和部署。请参考 [前端 README](frontend/web/README.md) 了解构建说明。
+
+---
+
+### 🛠️ 本地开发模式（手动设置）
 
 <details>
 <summary><b>展开查看详细步骤</b></summary>
 
 #### 前置要求
 
-- Go 1.23+
-- PostgreSQL 16+
-- Redis 7+
-- [Atlas](https://atlasgo.io/) (Schema 管理)
+- **Go** 1.23+
+- **Node.js** 22.0+
+- **pnpm** 8.0+
+- **Docker** & Docker Compose（用于数据库）
+- **[Atlas](https://atlasgo.io/)**（Schema 管理）
 
 ```bash
 # 安装 Atlas
 curl -sSf https://atlasgo.sh | sh
 ```
 
-#### 启动后端
+#### 步骤 1：启动数据库
 
 ```bash
-# 1. 启动数据库（仅 PostgreSQL + Redis）
+# 启动 PostgreSQL 和 Redis
 cd docker
 docker-compose up -d postgres redis
 
-# 2. 应用数据库迁移
-cd ../backend/database
+# 等待数据库就绪
+docker-compose ps
+```
+
+#### 步骤 2：设置后端
+
+```bash
+cd backend
+
+# 安装依赖
+go mod download
+
+# 应用数据库迁移
+cd database
 make apply
 
-# 3. 启动后端服务
+# 加载种子数据（可选）
+make seed
+
+# 启动后端服务
 cd ..
 go run cmd/server/main.go
 ```
 
-#### 启动前端
+后端将在 `http://localhost:8080` 启动
+
+#### 步骤 3：设置前端
 
 ```bash
 cd frontend
@@ -422,9 +478,19 @@ pnpm install
 cd web
 pnpm dev         # http://localhost:5173
 
-# 或启动 Mobile 应用
-cd mobile
+# 或启动 Mobile 应用（可选）
+cd ../mobile
 pnpm start
+```
+
+#### 步骤 4：验证
+
+```bash
+# 检查后端健康状态
+curl http://localhost:8080/health
+
+# 检查前端
+open http://localhost:5173
 ```
 
 </details>

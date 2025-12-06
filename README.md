@@ -284,7 +284,7 @@ git commit -m "feat(task): add new usecase"
 | **Type Sync** | Go → TypeScript type sync | `./scripts/sync_types.sh all` |
 | **Testing** | Unit + Integration tests | `./backend/scripts/test_all.sh` |
 | **Linting** | Code quality check | `./backend/scripts/lint.sh --fix` |
-| **Docker** | One-click full environment | `./docker/docker-up.sh` |
+| **Docker** | One-click full environment | `./scripts/quickstart.sh` |
 
 ---
 
@@ -346,71 +346,127 @@ Access:
 
 ## 🚀 Quick Start
 
-### ⚡ Three Steps to Get Started (Recommended)
+### ⚡ One-Click Start (Recommended)
+
+The easiest way to get started:
 
 ```bash
 # 1️⃣ Clone the project
 git clone https://github.com/erweixin/Go-GenAI-Stack.git
 cd Go-GenAI-Stack
 
-# 2️⃣ One-click start (Docker)
-./docker/docker-up.sh
-
-# 3️⃣ Verify it's running
-curl http://localhost:8080/health
+# 2️⃣ One-click start (Backend + Database)
+./scripts/quickstart.sh
 ```
+
+This script will:
+- ✅ Check dependencies (Go, Docker)
+- ✅ Setup environment variables (copy from .env.example if needed)
+- ✅ Start PostgreSQL and Redis (Docker)
+- ✅ Run database migrations (Atlas)
+- ✅ Load seed data
+- ✅ Start backend server
 
 **Access services**:
 - 🔗 Backend API: `http://localhost:8080/api`
 - ❤️ Health check: `http://localhost:8080/health`
-- 📊 Prometheus: `http://localhost:8080/metrics`
-
-**Docker start full monitoring stack** (optional):
-```bash
-# Includes Jaeger, Prometheus, Grafana
-./docker/docker-up.sh --full
-
-# Access monitoring dashboards
-# - Grafana: http://localhost:3000 (admin/admin)
-# - Jaeger:  http://localhost:16686
-```
+- 📊 Prometheus Metrics: `http://localhost:8080/metrics`
 
 ---
 
-### 🛠️ Local Development Mode (No Docker)
+### 🌐 Start Full Stack (Backend + Frontend)
+
+For full-stack development:
+
+```bash
+# 1. Start backend (in one terminal)
+./scripts/quickstart.sh
+
+# 2. Start frontend (in another terminal)
+cd frontend
+pnpm install
+cd web
+pnpm dev
+```
+
+**Access**:
+- 🌐 Frontend Web: `http://localhost:5173`
+- 🔗 Backend API: `http://localhost:8080/api`
+
+---
+
+### 🐳 Docker Production Mode
+
+Start complete production environment with monitoring:
+
+```bash
+# Start all services (Backend + Monitoring)
+./scripts/start-all.sh
+```
+
+**Access services**:
+- 🔗 Backend API: `http://localhost:8080`
+- 📊 Grafana: `http://localhost:3000` (admin/admin)
+- 🔍 Jaeger: `http://localhost:16686`
+- 📈 Prometheus: `http://localhost:9090`
+- 🐛 Sentry: `http://localhost:9000`
+
+**Note**: Frontend needs to be built and deployed separately. See [Frontend README](frontend/web/README.md) for build instructions.
+
+---
+
+### 🛠️ Local Development Mode (Manual Setup)
 
 <details>
 <summary><b>Click to expand detailed steps</b></summary>
 
 #### Prerequisites
 
-- Go 1.23+
-- PostgreSQL 16+
-- Redis 7+
-- [Atlas](https://atlasgo.io/) (Schema management)
+- **Go** 1.23+
+- **Node.js** 22.0+
+- **pnpm** 8.0+
+- **Docker** & Docker Compose (for databases)
+- **[Atlas](https://atlasgo.io/)** (Schema management)
 
 ```bash
 # Install Atlas
 curl -sSf https://atlasgo.sh | sh
 ```
 
-#### Start Backend
+#### Step 1: Start Databases
 
 ```bash
-# 1. Start databases (PostgreSQL + Redis only)
+# Start PostgreSQL and Redis
 cd docker
 docker-compose up -d postgres redis
 
-# 2. Apply database migrations
-cd ../backend/database
+# Wait for databases to be ready
+docker-compose ps
+```
+
+#### Step 2: Setup Backend
+
+```bash
+cd backend
+
+# Install dependencies
+go mod download
+
+# Apply database migrations
+cd database
 make apply
 
-# 3. Start backend service
+# Load seed data (optional)
+make seed
+
+# Start backend server
 cd ..
 go run cmd/server/main.go
 ```
 
-#### Start Frontend
+Backend will start at `http://localhost:8080`
+
+#### Step 3: Setup Frontend
 
 ```bash
 cd frontend
@@ -422,9 +478,19 @@ pnpm install
 cd web
 pnpm dev         # http://localhost:5173
 
-# Or start Mobile application
-cd mobile
+# Or start Mobile application (optional)
+cd ../mobile
 pnpm start
+```
+
+#### Step 4: Verify
+
+```bash
+# Check backend health
+curl http://localhost:8080/health
+
+# Check frontend
+open http://localhost:5173
 ```
 
 </details>
