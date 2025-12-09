@@ -50,6 +50,7 @@ In the era of AI programming, traditional project architectures face challenges:
 - ❌ **Business rules scattered across code**, AI needs to read massive amounts of code to understand intent
 - ❌ **Horizontal layered architecture** makes it difficult for AI to locate functional boundaries
 - ❌ **Implicit domain knowledge** requires repeated manual explanations
+- ❌ **Test-unfriendly design**, automated tests are costly and flaky
 
 **Go-GenAI-Stack rethinks how code is organized**:
 
@@ -60,6 +61,7 @@ In the era of AI programming, traditional project architectures face challenges:
 | Describe flow with code | **Declare use cases with YAML** (usecases.yaml) |
 | AI needs to read thousands of lines | **AI reads a few structured files to understand** |
 | Manual frontend-backend type sync | **Go → TypeScript automatic sync** |
+| Flaky tests and unstable selectors | **Playwright-friendly design + data-test-id convention + Docker E2E env** |
 
 > 💡 **Vibe Coding**: Express your ideas, AI understands business logic, directly generates code that follows rules.
 >
@@ -192,6 +194,21 @@ CreateTask:
 
 ---
 
+### 🧪 Test-Friendly by Design (Playwright / Vitest Ready)
+
+In AI-assisted development, testability determines how fast AI-generated code can be verified. This project is optimized for automation:
+
+- **Frontend Playwright-friendly**: Mandatory `data-test-id` on all interactive elements; stable routes/state to reduce flakiness; selectors never rely on styling classes.
+- **Isolated E2E environment**: Docker spins dedicated Postgres (:5433) + Backend (:8081) so dev and E2E can run in parallel; `pnpm e2e:all` = setup → test → teardown.
+- **Stable fixtures**: Seed data and fixed test accounts; shared Playwright fixtures/helpers to avoid magic strings.
+- **Fast unit feedback**: Vitest + happy-dom + thread pool; `pnpm test:watch` for second-level feedback, `pnpm test:coverage` for reports.
+- **Directory as contract**: Feature-local `__tests__` beside hooks/stores/api/components so humans/AI can locate behaviors quickly.
+- **CI friendly**: E2E triple caching (pnpm store / Playwright browsers / Docker layers); backend `./backend/scripts/test_all.sh` supports coverage output, reducing pipeline time.
+
+> Goal: close the loop of “AI generates → automation validates → quick fix” with minimal human regression effort.
+
+---
+
 ### Architecture Highlights
 
 #### 1️⃣ **Domain-First**
@@ -282,7 +299,7 @@ git commit -m "feat(task): add new usecase"
 |-----|------|------|
 | **Atlas** | Database Schema management | `cd backend/database && make diff/apply` |
 | **Type Sync** | Go → TypeScript type sync | `./scripts/sync_types.sh all` |
-| **Testing** | Unit + Integration tests | `./backend/scripts/test_all.sh` |
+| **Testing** | Unit + Integration + E2E | `./backend/scripts/test_all.sh` / `pnpm test` / `pnpm e2e:all` |
 | **Linting** | Code quality check | `./backend/scripts/lint.sh --fix` |
 | **Docker** | One-click full environment | `./scripts/quickstart.sh` |
 
@@ -742,6 +759,8 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) specificatio
 - ✅ Frontend Monorepo (Web + Mobile)
 - ✅ Docker one-click start
 - ✅ Complete development scripts
+- ✅ Playwright-friendly frontend (data-test-id convention, Docker E2E env)
+- ✅ Vitest + happy-dom unit test setup (thread pool, fast feedback)
 
 </td>
 </tr>
@@ -898,9 +917,9 @@ chore:            Build/toolchain
 <table>
 <tr>
 <td align="center" width="25%">
-<h3>🎯 Test Coverage</h3>
-<h2>≥ 10%</h2>
-<small>Continuously improving</small>
+<h3>🧪 Test Readiness</h3>
+<h2>Playwright-friendly</h2>
+<small>data-test-id + isolated Docker E2E env</small>
 </td>
 <td align="center" width="25%">
 <h3>✅ Code Quality</h3>
