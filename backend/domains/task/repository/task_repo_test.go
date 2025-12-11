@@ -20,7 +20,7 @@ func TestTaskRepository_Create(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 
 		// Mock INSERT tasks
@@ -50,7 +50,7 @@ func TestTaskRepository_Create(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 		task.AddTag(model.Tag{Name: "urgent", Color: "#ff0000"})
 		task.AddTag(model.Tag{Name: "important", Color: "#00ff00"})
@@ -78,7 +78,7 @@ func TestTaskRepository_Create(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 
 		mock.ExpectExec("INSERT INTO tasks").
@@ -98,7 +98,7 @@ func TestTaskRepository_FindByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		now := time.Now()
 
 		// Mock SELECT tasks
@@ -140,7 +140,7 @@ func TestTaskRepository_FindByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 			WithArgs("nonexistent").
@@ -158,7 +158,7 @@ func TestTaskRepository_FindByID(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
 			WillReturnError(fmt.Errorf("database error"))
@@ -177,7 +177,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
 		// Mock UPDATE
@@ -210,7 +210,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 		task.AddTag(model.Tag{Name: "new-tag", Color: "#ff0000"})
 
@@ -238,7 +238,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
 		// Mock UPDATE returns 0 rows affected
@@ -256,7 +256,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
 		mock.ExpectExec("UPDATE tasks SET").
@@ -276,7 +276,7 @@ func TestTaskRepository_Delete(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		// Mock DELETE task (标签通过外键级联删除)
 		mock.ExpectExec("DELETE FROM tasks WHERE id").
@@ -294,7 +294,7 @@ func TestTaskRepository_Delete(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		// Mock DELETE task returns 0 rows affected
 		mock.ExpectExec("DELETE FROM tasks WHERE id").
@@ -312,7 +312,7 @@ func TestTaskRepository_Delete(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		mock.ExpectExec("DELETE FROM tasks WHERE id").
 			WithArgs("task-123").
@@ -332,7 +332,7 @@ func TestTaskRepository_List(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		filter := NewTaskFilter()
 		filter.Page = 1
 		filter.Limit = 10
@@ -385,7 +385,7 @@ func TestTaskRepository_List(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		filter := NewTaskFilter()
 		status := model.StatusPending
 		filter.Status = &status
@@ -432,7 +432,7 @@ func TestTaskRepository_List(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		filter := NewTaskFilter()
 		filter.Page = 1
 		filter.Limit = 10
@@ -463,7 +463,7 @@ func TestTaskRepository_List(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		filter := NewTaskFilter()
 
 		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
@@ -482,7 +482,7 @@ func TestTaskRepository_List(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 		filter := NewTaskFilter()
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(5)
@@ -508,7 +508,7 @@ func TestTaskRepository_Exists(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		rows := sqlmock.NewRows([]string{"exists"}).AddRow(true)
 		mock.ExpectQuery("SELECT EXISTS").
@@ -527,7 +527,7 @@ func TestTaskRepository_Exists(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		rows := sqlmock.NewRows([]string{"exists"}).AddRow(false)
 		mock.ExpectQuery("SELECT EXISTS").
@@ -546,7 +546,7 @@ func TestTaskRepository_Exists(t *testing.T) {
 		require.NoError(t, err)
 		defer db.Close()
 
-		repo := NewTaskRepository(db)
+		repo := NewTaskRepository(db, "postgres")
 
 		mock.ExpectQuery("SELECT EXISTS").
 			WillReturnError(fmt.Errorf("database error"))

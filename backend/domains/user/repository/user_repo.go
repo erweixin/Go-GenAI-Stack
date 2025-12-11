@@ -7,53 +7,77 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/erweixin/go-genai-stack/backend/domains/user/model"
 	"github.com/lib/pq"
 )
 
 // userRepository 用户仓储实现
 //
-// 使用 database/sql 实现数据访问
+// 使用 database/sql + goqu 实现数据访问。
+// 使用 goqu 作为 SQL 构建器，支持多数据库方言（PostgreSQL、MySQL、SQLite）。
 type userRepository struct {
-	db *sql.DB
+	db      *sql.DB
+	dialect goqu.DialectWrapper
 }
 
 // NewUserRepository 创建用户仓储实例
 //
 // 参数：
 //   - db: 数据库连接
+//   - dbType: 数据库类型（postgres, mysql, sqlite），用于选择 SQL 方言
 //
 // 返回：
 //   - UserRepository: 用户仓储接口
-func NewUserRepository(db *sql.DB) UserRepository {
-	return &userRepository{db: db}
+func NewUserRepository(db *sql.DB, dbType string) UserRepository {
+	// 映射数据库类型到 goqu dialect
+	var dialect goqu.DialectWrapper
+	switch dbType {
+	case "postgres":
+		dialect = goqu.Dialect("postgres")
+	case "mysql":
+		dialect = goqu.Dialect("mysql")
+	case "sqlite":
+		dialect = goqu.Dialect("sqlite3")
+	default:
+		// 默认使用 postgres（向后兼容）
+		dialect = goqu.Dialect("postgres")
+	}
+
+	return &userRepository{
+		db:      db,
+		dialect: dialect,
+	}
 }
 
 // Create 创建用户
 func (r *userRepository) Create(ctx context.Context, user *model.User) error {
-	query := `
-		INSERT INTO users (
-			id, email, username, password_hash, full_name, avatar_url,
-			status, email_verified, created_at, updated_at, last_login_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-	`
+	// 使用 goqu 构建 INSERT 语句
+	query, args, err := r.dialect.Insert("users").
+		Cols("id", "email", "username", "password_hash", "full_name", "avatar_url",
+			"status", "email_verified", "created_at", "updated_at", "last_login_at").
+		Vals(goqu.Vals{
+			user.ID,
+			user.Email,
+			nullString(user.Username),
+			user.PasswordHash,
+			nullString(user.FullName),
+			nullString(user.AvatarURL),
+			string(user.Status),
+			user.EmailVerified,
+			user.CreatedAt,
+			user.UpdatedAt,
+			nullTime(user.LastLoginAt),
+		}).
+		ToSQL()
+	if err != nil {
+		return fmt.Errorf("构建插入查询失败: %w", err)
+	}
 
-	_, err := r.db.ExecContext(ctx, query,
-		user.ID,
-		user.Email,
-		nullString(user.Username),
-		user.PasswordHash,
-		nullString(user.FullName),
-		nullString(user.AvatarURL),
-		string(user.Status),
-		user.EmailVerified,
-		user.CreatedAt,
-		user.UpdatedAt,
-		nullTime(user.LastLoginAt),
-	)
+	_, err = r.db.ExecContext(ctx, query, args...)
 
 	if err != nil {
-		// 检查是否是唯一性约束冲突
+		// 检查是否是唯一性约束冲突（PostgreSQL 特有）
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code == "23505" { // unique_violation
 				if pqErr.Constraint == "users_email_key" {
@@ -72,18 +96,21 @@ func (r *userRepository) Create(ctx context.Context, user *model.User) error {
 
 // GetByID 根据 ID 获取用户
 func (r *userRepository) GetByID(ctx context.Context, userID string) (*model.User, error) {
-	query := `
-		SELECT id, email, username, password_hash, full_name, avatar_url,
-		       status, email_verified, created_at, updated_at, last_login_at
-		FROM users
-		WHERE id = $1
-	`
+	// 使用 goqu 构建 SELECT 语句
+	query, args, err := r.dialect.From("users").
+		Select("id", "email", "username", "password_hash", "full_name", "avatar_url",
+			"status", "email_verified", "created_at", "updated_at", "last_login_at").
+		Where(goqu.C("id").Eq(userID)).
+		ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("构建查询失败: %w", err)
+	}
 
 	user := &model.User{}
 	var username, fullName, avatarURL sql.NullString
 	var lastLoginAt sql.NullTime
 
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.Email,
 		&username,
@@ -117,18 +144,21 @@ func (r *userRepository) GetByID(ctx context.Context, userID string) (*model.Use
 
 // GetByEmail 根据邮箱获取用户
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
-	query := `
-		SELECT id, email, username, password_hash, full_name, avatar_url,
-		       status, email_verified, created_at, updated_at, last_login_at
-		FROM users
-		WHERE email = $1
-	`
+	// 使用 goqu 构建 SELECT 语句
+	query, args, err := r.dialect.From("users").
+		Select("id", "email", "username", "password_hash", "full_name", "avatar_url",
+			"status", "email_verified", "created_at", "updated_at", "last_login_at").
+		Where(goqu.C("email").Eq(email)).
+		ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("构建查询失败: %w", err)
+	}
 
 	user := &model.User{}
 	var username, fullName, avatarURL sql.NullString
 	var lastLoginAt sql.NullTime
 
-	err := r.db.QueryRowContext(ctx, query, email).Scan(
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.Email,
 		&username,
@@ -162,18 +192,21 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*model.U
 
 // GetByUsername 根据用户名获取用户
 func (r *userRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	query := `
-		SELECT id, email, username, password_hash, full_name, avatar_url,
-		       status, email_verified, created_at, updated_at, last_login_at
-		FROM users
-		WHERE username = $1
-	`
+	// 使用 goqu 构建 SELECT 语句
+	query, args, err := r.dialect.From("users").
+		Select("id", "email", "username", "password_hash", "full_name", "avatar_url",
+			"status", "email_verified", "created_at", "updated_at", "last_login_at").
+		Where(goqu.C("username").Eq(username)).
+		ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("构建查询失败: %w", err)
+	}
 
 	user := &model.User{}
 	var usernameVal, fullName, avatarURL sql.NullString
 	var lastLoginAt sql.NullTime
 
-	err := r.db.QueryRowContext(ctx, query, username).Scan(
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
 		&user.ID,
 		&user.Email,
 		&usernameVal,
@@ -207,29 +240,29 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*m
 
 // Update 更新用户信息
 func (r *userRepository) Update(ctx context.Context, user *model.User) error {
-	query := `
-		UPDATE users
-		SET email = $2, username = $3, password_hash = $4, full_name = $5,
-		    avatar_url = $6, status = $7, email_verified = $8,
-		    updated_at = $9, last_login_at = $10
-		WHERE id = $1
-	`
+	// 使用 goqu 构建 UPDATE 语句
+	query, args, err := r.dialect.Update("users").
+		Set(goqu.Record{
+			"email":          user.Email,
+			"username":       nullString(user.Username),
+			"password_hash":  user.PasswordHash,
+			"full_name":      nullString(user.FullName),
+			"avatar_url":     nullString(user.AvatarURL),
+			"status":         string(user.Status),
+			"email_verified": user.EmailVerified,
+			"updated_at":     user.UpdatedAt,
+			"last_login_at":  nullTime(user.LastLoginAt),
+		}).
+		Where(goqu.C("id").Eq(user.ID)).
+		ToSQL()
+	if err != nil {
+		return fmt.Errorf("构建更新查询失败: %w", err)
+	}
 
-	result, err := r.db.ExecContext(ctx, query,
-		user.ID,
-		user.Email,
-		nullString(user.Username),
-		user.PasswordHash,
-		nullString(user.FullName),
-		nullString(user.AvatarURL),
-		string(user.Status),
-		user.EmailVerified,
-		user.UpdatedAt,
-		nullTime(user.LastLoginAt),
-	)
+	result, err := r.db.ExecContext(ctx, query, args...)
 
 	if err != nil {
-		// 检查是否是唯一性约束冲突
+		// 检查是否是唯一性约束冲突（PostgreSQL 特有）
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code == "23505" { // unique_violation
 				if pqErr.Constraint == "users_email_key" {
@@ -257,9 +290,15 @@ func (r *userRepository) Update(ctx context.Context, user *model.User) error {
 
 // Delete 删除用户
 func (r *userRepository) Delete(ctx context.Context, userID string) error {
-	query := `DELETE FROM users WHERE id = $1`
+	// 使用 goqu 构建 DELETE 语句
+	query, args, err := r.dialect.Delete("users").
+		Where(goqu.C("id").Eq(userID)).
+		ToSQL()
+	if err != nil {
+		return fmt.Errorf("构建删除查询失败: %w", err)
+	}
 
-	result, err := r.db.ExecContext(ctx, query, userID)
+	result, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("删除用户失败: %w", err)
 	}
@@ -278,10 +317,17 @@ func (r *userRepository) Delete(ctx context.Context, userID string) error {
 
 // ExistsByEmail 检查邮箱是否存在
 func (r *userRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`
+	// 使用 goqu 构建 EXISTS 查询
+	query, args, err := r.dialect.Select(goqu.L("EXISTS(?)", r.dialect.From("users").
+		Select(goqu.L("1")).
+		Where(goqu.C("email").Eq(email)))).
+		ToSQL()
+	if err != nil {
+		return false, fmt.Errorf("构建查询失败: %w", err)
+	}
 
 	var exists bool
-	err := r.db.QueryRowContext(ctx, query, email).Scan(&exists)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("检查邮箱是否存在失败: %w", err)
 	}
@@ -291,10 +337,17 @@ func (r *userRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 
 // ExistsByUsername 检查用户名是否存在
 func (r *userRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE username = $1)`
+	// 使用 goqu 构建 EXISTS 查询
+	query, args, err := r.dialect.Select(goqu.L("EXISTS(?)", r.dialect.From("users").
+		Select(goqu.L("1")).
+		Where(goqu.C("username").Eq(username)))).
+		ToSQL()
+	if err != nil {
+		return false, fmt.Errorf("构建查询失败: %w", err)
+	}
 
 	var exists bool
-	err := r.db.QueryRowContext(ctx, query, username).Scan(&exists)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("检查用户名是否存在失败: %w", err)
 	}

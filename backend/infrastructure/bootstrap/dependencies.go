@@ -86,7 +86,8 @@ func InitDependencies(
 	)
 
 	// 2. User Repository（Auth 依赖 User Repository）
-	userRepo := userrepo.NewUserRepository(db)
+	// 传递数据库类型给 Repository，用于 goqu 方言选择
+	userRepo := userrepo.NewUserRepository(db, dbProvider.Type())
 
 	// 3. Auth Service
 	authService := authservice.NewAuthService(userRepo, jwtService)
@@ -112,7 +113,8 @@ func InitDependencies(
 	// ============================================
 
 	// 1. Repository Layer（基础设施层）
-	taskRepo := taskrepo.NewTaskRepository(db)
+	// 传递数据库类型给 Repository，用于 goqu 方言选择
+	taskRepo := taskrepo.NewTaskRepository(db, dbProvider.Type())
 
 	// 2. Domain Service Layer（领域层）
 	taskService := taskservice.NewTaskService(taskRepo)
@@ -151,7 +153,8 @@ func InitDependenciesFromDB(db *sql.DB, redisConn *redis.Connection, cfg *config
 	)
 
 	// User 领域
-	userRepo := userrepo.NewUserRepository(db)
+	// 注意：InitDependenciesFromDB 用于测试，默认使用 postgres
+	userRepo := userrepo.NewUserRepository(db, "postgres")
 	userService := userservice.NewUserService(userRepo)
 	userHandlerDeps := userhandlers.NewHandlerDependencies(userService)
 
@@ -161,7 +164,7 @@ func InitDependenciesFromDB(db *sql.DB, redisConn *redis.Connection, cfg *config
 	authMiddleware := middleware.NewAuthMiddleware(jwtService)
 
 	// Task 领域（三层架构）
-	taskRepo := taskrepo.NewTaskRepository(db)
+	taskRepo := taskrepo.NewTaskRepository(db, "postgres")
 	taskService := taskservice.NewTaskService(taskRepo)
 	taskHandlerDeps := taskhandlers.NewHandlerDependencies(taskService)
 

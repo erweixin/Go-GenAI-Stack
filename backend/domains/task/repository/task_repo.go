@@ -6,20 +6,47 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/doug-martin/goqu/v9"
 	"github.com/erweixin/go-genai-stack/backend/domains/task/model"
 )
 
 // TaskRepositoryImpl 任务仓储实现
 //
-// 使用 database/sql 实现任务数据访问。
+// 使用 database/sql + goqu 实现任务数据访问。
+// 使用 goqu 作为 SQL 构建器，支持多数据库方言（PostgreSQL、MySQL、SQLite）。
 // 不使用 ORM，使用原生 SQL 保证透明度和性能。
 type TaskRepositoryImpl struct {
-	db *sql.DB
+	db      *sql.DB
+	dialect goqu.DialectWrapper
 }
 
 // NewTaskRepository 创建任务仓储实例
-func NewTaskRepository(db *sql.DB) *TaskRepositoryImpl {
-	return &TaskRepositoryImpl{db: db}
+//
+// 参数：
+//   - db: 数据库连接
+//   - dbType: 数据库类型（postgres, mysql, sqlite），用于选择 SQL 方言
+//
+// 返回：
+//   - *TaskRepositoryImpl: 任务仓储实例
+func NewTaskRepository(db *sql.DB, dbType string) *TaskRepositoryImpl {
+	// 映射数据库类型到 goqu dialect
+	var dialect goqu.DialectWrapper
+	switch dbType {
+	case "postgres":
+		dialect = goqu.Dialect("postgres")
+	case "mysql":
+		dialect = goqu.Dialect("mysql")
+	case "sqlite":
+		dialect = goqu.Dialect("sqlite3")
+	default:
+		// 默认使用 postgres（向后兼容）
+		dialect = goqu.Dialect("postgres")
+	}
+
+	return &TaskRepositoryImpl{
+		db:      db,
+		dialect: dialect,
+	}
 }
 
 // 错误定义
@@ -29,29 +56,29 @@ var (
 
 // Create 创建任务
 func (r *TaskRepositoryImpl) Create(ctx context.Context, task *model.Task) error {
-	// SQL 语句
-	query := `
-		INSERT INTO tasks (
-			id, user_id, title, description, status, priority, 
-			due_date, created_at, updated_at, completed_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	`
+	// 使用 goqu 构建 INSERT 语句
+	query, args, err := r.dialect.Insert("tasks").
+		Cols("id", "user_id", "title", "description", "status", "priority",
+			"due_date", "created_at", "updated_at", "completed_at").
+		Vals(goqu.Vals{
+			task.ID,
+			task.UserID,
+			task.Title,
+			task.Description,
+			task.Status,
+			task.Priority,
+			task.DueDate,
+			task.CreatedAt,
+			task.UpdatedAt,
+			task.CompletedAt,
+		}).
+		ToSQL()
+	if err != nil {
+		return fmt.Errorf("build insert query failed: %w", err)
+	}
 
 	// 执行插入
-	_, err := r.db.ExecContext(
-		ctx,
-		query,
-		task.ID,
-		task.UserID,
-		task.Title,
-		task.Description,
-		task.Status,
-		task.Priority,
-		task.DueDate,
-		task.CreatedAt,
-		task.UpdatedAt,
-		task.CompletedAt,
-	)
+	_, err = r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("create task failed: %w", err)
 	}
@@ -68,32 +95,25 @@ func (r *TaskRepositoryImpl) Create(ctx context.Context, task *model.Task) error
 
 // Update 更新任务
 func (r *TaskRepositoryImpl) Update(ctx context.Context, task *model.Task) error {
-	// SQL 语句
-	query := `
-		UPDATE tasks 
-		SET title = $1, 
-		    description = $2, 
-		    status = $3, 
-		    priority = $4, 
-		    due_date = $5, 
-		    updated_at = $6, 
-		    completed_at = $7
-		WHERE id = $8
-	`
+	// 使用 goqu 构建 UPDATE 语句
+	query, args, err := r.dialect.Update("tasks").
+		Set(goqu.Record{
+			"title":        task.Title,
+			"description":  task.Description,
+			"status":       task.Status,
+			"priority":     task.Priority,
+			"due_date":     task.DueDate,
+			"updated_at":   task.UpdatedAt,
+			"completed_at": task.CompletedAt,
+		}).
+		Where(goqu.C("id").Eq(task.ID)).
+		ToSQL()
+	if err != nil {
+		return fmt.Errorf("build update query failed: %w", err)
+	}
 
 	// 执行更新
-	result, err := r.db.ExecContext(
-		ctx,
-		query,
-		task.Title,
-		task.Description,
-		task.Status,
-		task.Priority,
-		task.DueDate,
-		task.UpdatedAt,
-		task.CompletedAt,
-		task.ID,
-	)
+	result, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("update task failed: %w", err)
 	}
@@ -122,17 +142,19 @@ func (r *TaskRepositoryImpl) Update(ctx context.Context, task *model.Task) error
 
 // FindByID 根据 ID 查找任务
 func (r *TaskRepositoryImpl) FindByID(ctx context.Context, id string) (*model.Task, error) {
-	// SQL 语句
-	query := `
-		SELECT id, user_id, title, description, status, priority, 
-		       due_date, created_at, updated_at, completed_at
-		FROM tasks
-		WHERE id = $1
-	`
+	// 使用 goqu 构建 SELECT 语句
+	query, args, err := r.dialect.From("tasks").
+		Select("id", "user_id", "title", "description", "status", "priority",
+			"due_date", "created_at", "updated_at", "completed_at").
+		Where(goqu.C("id").Eq(id)).
+		ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("build select query failed: %w", err)
+	}
 
 	// 查询任务
 	task := &model.Task{}
-	err := r.db.QueryRowContext(ctx, query, id).Scan(
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(
 		&task.ID,
 		&task.UserID,
 		&task.Title,
@@ -163,11 +185,16 @@ func (r *TaskRepositoryImpl) FindByID(ctx context.Context, id string) (*model.Ta
 
 // Delete 删除任务
 func (r *TaskRepositoryImpl) Delete(ctx context.Context, id string) error {
-	// SQL 语句（标签会通过外键级联删除）
-	query := `DELETE FROM tasks WHERE id = $1`
+	// 使用 goqu 构建 DELETE 语句（标签会通过外键级联删除）
+	query, args, err := r.dialect.Delete("tasks").
+		Where(goqu.C("id").Eq(id)).
+		ToSQL()
+	if err != nil {
+		return fmt.Errorf("build delete query failed: %w", err)
+	}
 
 	// 执行删除
-	result, err := r.db.ExecContext(ctx, query, id)
+	result, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("delete task failed: %w", err)
 	}
@@ -186,30 +213,43 @@ func (r *TaskRepositoryImpl) Delete(ctx context.Context, id string) error {
 
 // List 列出任务
 func (r *TaskRepositoryImpl) List(ctx context.Context, filter *TaskFilter) ([]*model.Task, int, error) {
-	// 构建 WHERE 子句
-	whereClause, args := r.buildWhereClause(filter)
+	// 构建基础查询
+	baseQuery := r.dialect.From("tasks")
+
+	// 构建 WHERE 条件
+	baseQuery = r.buildWhereConditions(baseQuery, filter)
 
 	// 查询总数
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM tasks %s", whereClause)
+	countSQL, countArgs, err := baseQuery.Select(goqu.COUNT(goqu.Star())).ToSQL()
+	if err != nil {
+		return nil, 0, fmt.Errorf("build count query failed: %w", err)
+	}
+
 	var totalCount int
-	err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&totalCount)
+	err = r.db.QueryRowContext(ctx, countSQL, countArgs...).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count tasks failed: %w", err)
 	}
 
-	// 构建查询语句
-	query := fmt.Sprintf(`
-		SELECT id, user_id, title, description, status, priority, 
-		       due_date, created_at, updated_at, completed_at
-		FROM tasks
-		%s
-		ORDER BY %s %s
-		LIMIT $%d OFFSET $%d
-	`, whereClause, filter.SortBy, filter.SortOrder, len(args)+1, len(args)+2)
-
-	// 计算 offset
+	// 构建 SELECT 查询
 	offset := (filter.Page - 1) * filter.Limit
-	args = append(args, filter.Limit, offset)
+	selectQuery := baseQuery.
+		Select("id", "user_id", "title", "description", "status", "priority",
+			"due_date", "created_at", "updated_at", "completed_at")
+
+	// 排序
+	if filter.SortOrder == "asc" {
+		selectQuery = selectQuery.Order(goqu.C(filter.SortBy).Asc())
+	} else {
+		selectQuery = selectQuery.Order(goqu.C(filter.SortBy).Desc())
+	}
+
+	selectQuery = selectQuery.Limit(uint(filter.Limit)).Offset(uint(offset))
+
+	query, args, err := selectQuery.ToSQL()
+	if err != nil {
+		return nil, 0, fmt.Errorf("build select query failed: %w", err)
+	}
 
 	// 执行查询
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -257,10 +297,20 @@ func (r *TaskRepositoryImpl) List(ctx context.Context, filter *TaskFilter) ([]*m
 
 // Exists 检查任务是否存在
 func (r *TaskRepositoryImpl) Exists(ctx context.Context, id string) (bool, error) {
-	query := `SELECT EXISTS(SELECT 1 FROM tasks WHERE id = $1)`
+	// 使用 goqu 构建 EXISTS 查询
+	// 注意：goqu 的 EXISTS 子查询需要单独构建，然后作为参数传递
+	subQuery := r.dialect.From("tasks").
+		Select(goqu.L("1")).
+		Where(goqu.C("id").Eq(id))
+
+	query, args, err := r.dialect.Select(goqu.L("EXISTS(?)", subQuery)).
+		ToSQL()
+	if err != nil {
+		return false, fmt.Errorf("build exists query failed: %w", err)
+	}
 
 	var exists bool
-	err := r.db.QueryRowContext(ctx, query, id).Scan(&exists)
+	err = r.db.QueryRowContext(ctx, query, args...).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("check task existence failed: %w", err)
 	}
@@ -278,11 +328,17 @@ func (r *TaskRepositoryImpl) saveTags(ctx context.Context, taskID string, tags [
 		return nil
 	}
 
-	// 批量插入
-	query := `INSERT INTO task_tags (task_id, tag_name, tag_color) VALUES ($1, $2, $3)`
-
+	// 使用 goqu 批量插入标签
 	for _, tag := range tags {
-		_, err := r.db.ExecContext(ctx, query, taskID, tag.Name, tag.Color)
+		query, args, err := r.dialect.Insert("task_tags").
+			Cols("task_id", "tag_name", "tag_color").
+			Vals(goqu.Vals{taskID, tag.Name, tag.Color}).
+			ToSQL()
+		if err != nil {
+			return fmt.Errorf("build insert tag query failed: %w", err)
+		}
+
+		_, err = r.db.ExecContext(ctx, query, args...)
 		if err != nil {
 			return fmt.Errorf("insert tag failed: %w", err)
 		}
@@ -293,16 +349,28 @@ func (r *TaskRepositoryImpl) saveTags(ctx context.Context, taskID string, tags [
 
 // deleteTags 删除标签
 func (r *TaskRepositoryImpl) deleteTags(ctx context.Context, taskID string) error {
-	query := `DELETE FROM task_tags WHERE task_id = $1`
-	_, err := r.db.ExecContext(ctx, query, taskID)
+	query, args, err := r.dialect.Delete("task_tags").
+		Where(goqu.C("task_id").Eq(taskID)).
+		ToSQL()
+	if err != nil {
+		return fmt.Errorf("build delete tags query failed: %w", err)
+	}
+
+	_, err = r.db.ExecContext(ctx, query, args...)
 	return err
 }
 
 // loadTags 加载标签
 func (r *TaskRepositoryImpl) loadTags(ctx context.Context, taskID string) ([]model.Tag, error) {
-	query := `SELECT tag_name, tag_color FROM task_tags WHERE task_id = $1`
+	query, args, err := r.dialect.From("task_tags").
+		Select("tag_name", "tag_color").
+		Where(goqu.C("task_id").Eq(taskID)).
+		ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("build select tags query failed: %w", err)
+	}
 
-	rows, err := r.db.QueryContext(ctx, query, taskID)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query tags failed: %w", err)
 	}
@@ -320,73 +388,53 @@ func (r *TaskRepositoryImpl) loadTags(ctx context.Context, taskID string) ([]mod
 	return tags, rows.Err()
 }
 
-// buildWhereClause 构建 WHERE 子句
-func (r *TaskRepositoryImpl) buildWhereClause(filter *TaskFilter) (string, []interface{}) {
-	conditions := make([]string, 0)
-	args := make([]interface{}, 0)
-	argIndex := 1
-
+// buildWhereConditions 构建 WHERE 条件（使用 goqu）
+func (r *TaskRepositoryImpl) buildWhereConditions(query *goqu.SelectDataset, filter *TaskFilter) *goqu.SelectDataset {
 	// 按用户 ID 筛选（必需）
 	if filter.UserID != nil {
-		conditions = append(conditions, fmt.Sprintf("user_id = $%d", argIndex))
-		args = append(args, *filter.UserID)
-		argIndex++
+		query = query.Where(goqu.C("user_id").Eq(*filter.UserID))
 	}
 
 	// 按状态筛选
 	if filter.Status != nil {
-		conditions = append(conditions, fmt.Sprintf("status = $%d", argIndex))
-		args = append(args, *filter.Status)
-		argIndex++
+		query = query.Where(goqu.C("status").Eq(*filter.Status))
 	}
 
 	// 按优先级筛选
 	if filter.Priority != nil {
-		conditions = append(conditions, fmt.Sprintf("priority = $%d", argIndex))
-		args = append(args, *filter.Priority)
-		argIndex++
+		query = query.Where(goqu.C("priority").Eq(*filter.Priority))
 	}
 
 	// 按标签筛选
 	if filter.Tag != nil {
-		conditions = append(conditions, fmt.Sprintf(
-			"id IN (SELECT task_id FROM task_tags WHERE tag_name = $%d)", argIndex))
-		args = append(args, *filter.Tag)
-		argIndex++
+		subQuery := r.dialect.From("task_tags").
+			Select("task_id").
+			Where(goqu.C("tag_name").Eq(*filter.Tag))
+		query = query.Where(goqu.C("id").In(subQuery))
 	}
 
 	// 按截止日期范围筛选
 	if filter.DueDateFrom != nil {
-		conditions = append(conditions, fmt.Sprintf("due_date >= $%d", argIndex))
-		args = append(args, *filter.DueDateFrom)
-		argIndex++
+		query = query.Where(goqu.C("due_date").Gte(*filter.DueDateFrom))
 	}
 	if filter.DueDateTo != nil {
-		conditions = append(conditions, fmt.Sprintf("due_date <= $%d", argIndex))
-		args = append(args, *filter.DueDateTo)
-		argIndex++
+		query = query.Where(goqu.C("due_date").Lte(*filter.DueDateTo))
 	}
 
 	// 关键词搜索（标题或描述）
+	// 注意：ILIKE 是 PostgreSQL 特有，其他数据库使用 LIKE
+	// goqu 会根据 dialect 自动处理，但为了兼容性，我们使用 LIKE
 	if filter.Keyword != nil {
-		conditions = append(conditions, fmt.Sprintf(
-			"(title ILIKE $%d OR description ILIKE $%d)", argIndex, argIndex+1))
 		keyword := "%" + *filter.Keyword + "%"
-		args = append(args, keyword, keyword)
-		argIndex += 2
+		query = query.Where(
+			goqu.Or(
+				goqu.C("title").Like(keyword),
+				goqu.C("description").Like(keyword),
+			),
+		)
 	}
 
-	// 组合 WHERE 子句
-	if len(conditions) == 0 {
-		return "", args
-	}
-
-	whereClause := "WHERE " + conditions[0]
-	for i := 1; i < len(conditions); i++ {
-		whereClause += " AND " + conditions[i]
-	}
-
-	return whereClause, args
+	return query
 }
 
 // ============================================
@@ -395,9 +443,15 @@ func (r *TaskRepositoryImpl) buildWhereClause(filter *TaskFilter) (string, []int
 
 // CountByStatus 按状态统计任务数量
 func (r *TaskRepositoryImpl) CountByStatus(ctx context.Context) (map[model.TaskStatus]int, error) {
-	query := `SELECT status, COUNT(*) FROM tasks GROUP BY status`
+	query, args, err := r.dialect.From("tasks").
+		Select("status", goqu.COUNT(goqu.Star())).
+		GroupBy("status").
+		ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("build count by status query failed: %w", err)
+	}
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("count by status failed: %w", err)
 	}
@@ -418,17 +472,19 @@ func (r *TaskRepositoryImpl) CountByStatus(ctx context.Context) (map[model.TaskS
 
 // FindOverdueTasks 查找逾期任务
 func (r *TaskRepositoryImpl) FindOverdueTasks(ctx context.Context) ([]*model.Task, error) {
-	query := `
-		SELECT id, user_id, title, description, status, priority, 
-		       due_date, created_at, updated_at, completed_at
-		FROM tasks
-		WHERE status != 'completed' 
-		  AND due_date IS NOT NULL 
-		  AND due_date < NOW()
-		ORDER BY due_date ASC
-	`
+	query, args, err := r.dialect.From("tasks").
+		Select("id", "user_id", "title", "description", "status", "priority",
+			"due_date", "created_at", "updated_at", "completed_at").
+		Where(goqu.C("status").Neq("completed")).
+		Where(goqu.C("due_date").IsNotNull()).
+		Where(goqu.C("due_date").Lt(goqu.L("CURRENT_TIMESTAMP"))).
+		Order(goqu.C("due_date").Asc()).
+		ToSQL()
+	if err != nil {
+		return nil, fmt.Errorf("build find overdue tasks query failed: %w", err)
+	}
 
-	rows, err := r.db.QueryContext(ctx, query)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query overdue tasks failed: %w", err)
 	}
