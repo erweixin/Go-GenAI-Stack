@@ -23,20 +23,8 @@ func TestTaskRepository_Create(t *testing.T) {
 		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 
-		// Mock INSERT tasks
-		mock.ExpectExec("INSERT INTO tasks").
-			WithArgs(
-				task.ID,
-				task.UserID,
-				task.Title,
-				task.Description,
-				string(task.Status),
-				string(task.Priority),
-				task.DueDate,
-				sqlmock.AnyArg(), // CreatedAt
-				sqlmock.AnyArg(), // UpdatedAt
-				task.CompletedAt,
-			).
+		// Mock INSERT tasks (goqu 将参数值直接嵌入到 SQL 中，不使用占位符)
+		mock.ExpectExec(`INSERT INTO "tasks"`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		err = repo.Create(context.Background(), task)
@@ -55,16 +43,14 @@ func TestTaskRepository_Create(t *testing.T) {
 		task.AddTag(model.Tag{Name: "urgent", Color: "#ff0000"})
 		task.AddTag(model.Tag{Name: "important", Color: "#00ff00"})
 
-		// Mock INSERT tasks
-		mock.ExpectExec("INSERT INTO tasks").
+		// Mock INSERT tasks (goqu 使用双引号引用标识符)
+		mock.ExpectExec(`INSERT INTO "tasks"`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		// Mock INSERT tags (2次)
-		mock.ExpectExec("INSERT INTO task_tags").
-			WithArgs(task.ID, "urgent", "#ff0000").
+		// Mock INSERT tags (2次) (goqu 将参数值直接嵌入到 SQL 中)
+		mock.ExpectExec(`INSERT INTO "task_tags"`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
-		mock.ExpectExec("INSERT INTO task_tags").
-			WithArgs(task.ID, "important", "#00ff00").
+		mock.ExpectExec(`INSERT INTO "task_tags"`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		err = repo.Create(context.Background(), task)
@@ -81,7 +67,7 @@ func TestTaskRepository_Create(t *testing.T) {
 		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Test Task", "Description", model.PriorityMedium)
 
-		mock.ExpectExec("INSERT INTO tasks").
+		mock.ExpectExec(`INSERT INTO "tasks"`).
 			WillReturnError(fmt.Errorf("database error"))
 
 		err = repo.Create(context.Background(), task)
@@ -109,16 +95,15 @@ func TestTaskRepository_FindByID(t *testing.T) {
 			"task-123", "user-123", "Test Task", "Description", "pending", "medium",
 			nil, now, now, nil,
 		)
-		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-			WithArgs("task-123").
+		// goqu 生成的 SQL 使用双引号引用标识符，WHERE 条件使用括号，参数值直接嵌入
+		mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 			WillReturnRows(rows)
 
-		// Mock SELECT tags
+		// Mock SELECT tags (goqu 使用双引号引用标识符，参数值直接嵌入)
 		tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"}).
 			AddRow("urgent", "#ff0000").
 			AddRow("important", "#00ff00")
-		mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags").
-			WithArgs("task-123").
+		mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags"`).
 			WillReturnRows(tagsRows)
 
 		task, err := repo.FindByID(context.Background(), "task-123")
@@ -142,8 +127,7 @@ func TestTaskRepository_FindByID(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
-		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-			WithArgs("nonexistent").
+		mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 			WillReturnError(sql.ErrNoRows)
 
 		task, err := repo.FindByID(context.Background(), "nonexistent")
@@ -160,7 +144,7 @@ func TestTaskRepository_FindByID(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
-		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
+		mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 			WillReturnError(fmt.Errorf("database error"))
 
 		task, err := repo.FindByID(context.Background(), "task-123")
@@ -180,23 +164,12 @@ func TestTaskRepository_Update(t *testing.T) {
 		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
-		// Mock UPDATE
-		mock.ExpectExec("UPDATE tasks SET").
-			WithArgs(
-				task.Title,
-				task.Description,
-				string(task.Status),
-				string(task.Priority),
-				task.DueDate,
-				sqlmock.AnyArg(), // UpdatedAt
-				task.CompletedAt,
-				task.ID,
-			).
+		// Mock UPDATE (goqu 将参数值直接嵌入到 SQL 中)
+		mock.ExpectExec(`UPDATE "tasks" SET`).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		// Mock DELETE old tags
-		mock.ExpectExec("DELETE FROM task_tags WHERE task_id").
-			WithArgs(task.ID).
+		// Mock DELETE old tags (goqu 将参数值直接嵌入到 SQL 中)
+		mock.ExpectExec(`DELETE FROM "task_tags" WHERE \("task_id"`).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err = repo.Update(context.Background(), task)
@@ -214,17 +187,16 @@ func TestTaskRepository_Update(t *testing.T) {
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 		task.AddTag(model.Tag{Name: "new-tag", Color: "#ff0000"})
 
-		// Mock UPDATE
-		mock.ExpectExec("UPDATE tasks SET").
+		// Mock UPDATE (goqu 使用双引号引用标识符)
+		mock.ExpectExec(`UPDATE "tasks" SET`).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		// Mock DELETE old tags
-		mock.ExpectExec("DELETE FROM task_tags WHERE task_id").
+		// Mock DELETE old tags (goqu 使用双引号引用标识符)
+		mock.ExpectExec(`DELETE FROM "task_tags" WHERE \("task_id"`).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		// Mock INSERT new tag
-		mock.ExpectExec("INSERT INTO task_tags").
-			WithArgs(task.ID, "new-tag", "#ff0000").
+		// Mock INSERT new tag (goqu 将参数值直接嵌入到 SQL 中)
+		mock.ExpectExec(`INSERT INTO "task_tags"`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		err = repo.Update(context.Background(), task)
@@ -241,8 +213,8 @@ func TestTaskRepository_Update(t *testing.T) {
 		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
-		// Mock UPDATE returns 0 rows affected
-		mock.ExpectExec("UPDATE tasks SET").
+		// Mock UPDATE returns 0 rows affected (goqu 使用双引号引用标识符)
+		mock.ExpectExec(`UPDATE "tasks" SET`).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err = repo.Update(context.Background(), task)
@@ -259,7 +231,7 @@ func TestTaskRepository_Update(t *testing.T) {
 		repo := NewTaskRepository(db, "postgres")
 		task, _ := model.NewTask("test-user-id", "Updated Task", "Updated Desc", model.PriorityHigh)
 
-		mock.ExpectExec("UPDATE tasks SET").
+		mock.ExpectExec(`UPDATE "tasks" SET`).
 			WillReturnError(fmt.Errorf("database error"))
 
 		err = repo.Update(context.Background(), task)
@@ -278,9 +250,8 @@ func TestTaskRepository_Delete(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
-		// Mock DELETE task (标签通过外键级联删除)
-		mock.ExpectExec("DELETE FROM tasks WHERE id").
-			WithArgs("task-123").
+		// Mock DELETE task (标签通过外键级联删除) (goqu 将参数值直接嵌入到 SQL 中)
+		mock.ExpectExec(`DELETE FROM "tasks" WHERE \("id"`).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 
 		err = repo.Delete(context.Background(), "task-123")
@@ -296,9 +267,8 @@ func TestTaskRepository_Delete(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
-		// Mock DELETE task returns 0 rows affected
-		mock.ExpectExec("DELETE FROM tasks WHERE id").
-			WithArgs("nonexistent").
+		// Mock DELETE task returns 0 rows affected (goqu 将参数值直接嵌入到 SQL 中)
+		mock.ExpectExec(`DELETE FROM "tasks" WHERE \("id"`).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		err = repo.Delete(context.Background(), "nonexistent")
@@ -314,8 +284,7 @@ func TestTaskRepository_Delete(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
-		mock.ExpectExec("DELETE FROM tasks WHERE id").
-			WithArgs("task-123").
+		mock.ExpectExec(`DELETE FROM "tasks" WHERE \("id"`).
 			WillReturnError(fmt.Errorf("database error"))
 
 		err = repo.Delete(context.Background(), "task-123")
@@ -339,12 +308,12 @@ func TestTaskRepository_List(t *testing.T) {
 
 		now := time.Now()
 
-		// Mock COUNT
+		// Mock COUNT (goqu 使用双引号引用标识符)
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 			WillReturnRows(countRows)
 
-		// Mock SELECT tasks
+		// Mock SELECT tasks (goqu 使用双引号引用标识符)
 		rows := sqlmock.NewRows([]string{
 			"id", "user_id", "title", "description", "status", "priority",
 			"due_date", "created_at", "updated_at", "completed_at",
@@ -352,20 +321,18 @@ func TestTaskRepository_List(t *testing.T) {
 			AddRow("task-1", "user-123", "Task 1", "Desc 1", "pending", "medium", nil, now, now, nil).
 			AddRow("task-2", "user-123", "Task 2", "Desc 2", "completed", "high", nil, now, now, &now)
 
-		mock.ExpectQuery("SELECT (.+) FROM tasks").
+		mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 			WillReturnRows(rows)
 
-		// Mock tags for task-1
+		// Mock tags for task-1 (goqu 将参数值直接嵌入到 SQL 中)
 		tags1 := sqlmock.NewRows([]string{"tag_name", "tag_color"}).
 			AddRow("urgent", "#ff0000")
-		mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags").
-			WithArgs("task-1").
+		mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags"`).
 			WillReturnRows(tags1)
 
-		// Mock tags for task-2
+		// Mock tags for task-2 (goqu 将参数值直接嵌入到 SQL 中)
 		tags2 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-		mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags").
-			WithArgs("task-2").
+		mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags"`).
 			WillReturnRows(tags2)
 
 		tasks, totalCount, err := repo.List(context.Background(), filter)
@@ -396,26 +363,23 @@ func TestTaskRepository_List(t *testing.T) {
 
 		now := time.Now()
 
-		// Mock COUNT with WHERE
+		// Mock COUNT with WHERE (goqu 将参数值直接嵌入到 SQL 中)
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks WHERE").
-			WithArgs("pending", "high").
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks" WHERE`).
 			WillReturnRows(countRows)
 
-		// Mock SELECT with WHERE
+		// Mock SELECT with WHERE (goqu 将参数值直接嵌入到 SQL 中)
 		rows := sqlmock.NewRows([]string{
 			"id", "user_id", "title", "description", "status", "priority",
 			"due_date", "created_at", "updated_at", "completed_at",
 		}).AddRow("task-1", "user-123", "Task 1", "Desc 1", "pending", "high", nil, now, now, nil)
 
-		mock.ExpectQuery("SELECT (.+) FROM tasks WHERE").
-			WithArgs("pending", "high", 10, 0).
+		mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE`).
 			WillReturnRows(rows)
 
-		// Mock tags
+		// Mock tags (goqu 将参数值直接嵌入到 SQL 中)
 		tags := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-		mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags").
-			WithArgs("task-1").
+		mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags"`).
 			WillReturnRows(tags)
 
 		tasks, totalCount, err := repo.List(context.Background(), filter)
@@ -437,17 +401,17 @@ func TestTaskRepository_List(t *testing.T) {
 		filter.Page = 1
 		filter.Limit = 10
 
-		// Mock COUNT
+		// Mock COUNT (goqu 使用双引号引用标识符)
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 			WillReturnRows(countRows)
 
-		// Mock SELECT
+		// Mock SELECT (goqu 使用双引号引用标识符)
 		rows := sqlmock.NewRows([]string{
 			"id", "user_id", "title", "description", "status", "priority",
 			"due_date", "created_at", "updated_at", "completed_at",
 		})
-		mock.ExpectQuery("SELECT (.+) FROM tasks").
+		mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 			WillReturnRows(rows)
 
 		tasks, totalCount, err := repo.List(context.Background(), filter)
@@ -466,7 +430,7 @@ func TestTaskRepository_List(t *testing.T) {
 		repo := NewTaskRepository(db, "postgres")
 		filter := NewTaskFilter()
 
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 			WillReturnError(fmt.Errorf("database error"))
 
 		tasks, totalCount, err := repo.List(context.Background(), filter)
@@ -486,10 +450,10 @@ func TestTaskRepository_List(t *testing.T) {
 		filter := NewTaskFilter()
 
 		countRows := sqlmock.NewRows([]string{"count"}).AddRow(5)
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 			WillReturnRows(countRows)
 
-		mock.ExpectQuery("SELECT (.+) FROM tasks").
+		mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 			WillReturnError(fmt.Errorf("database error"))
 
 		tasks, totalCount, err := repo.List(context.Background(), filter)
@@ -510,9 +474,9 @@ func TestTaskRepository_Exists(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
+		// goqu 生成的 EXISTS 查询将参数嵌入到子查询中，主查询没有参数
 		rows := sqlmock.NewRows([]string{"exists"}).AddRow(true)
-		mock.ExpectQuery("SELECT EXISTS").
-			WithArgs("task-123").
+		mock.ExpectQuery(`SELECT EXISTS\(\(SELECT 1 FROM "tasks" WHERE \("id"`).
 			WillReturnRows(rows)
 
 		exists, err := repo.Exists(context.Background(), "task-123")
@@ -529,9 +493,9 @@ func TestTaskRepository_Exists(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
+		// goqu 生成的 EXISTS 查询将参数嵌入到子查询中，主查询没有参数
 		rows := sqlmock.NewRows([]string{"exists"}).AddRow(false)
-		mock.ExpectQuery("SELECT EXISTS").
-			WithArgs("nonexistent").
+		mock.ExpectQuery(`SELECT EXISTS\(\(SELECT 1 FROM "tasks" WHERE \("id"`).
 			WillReturnRows(rows)
 
 		exists, err := repo.Exists(context.Background(), "nonexistent")
@@ -548,7 +512,7 @@ func TestTaskRepository_Exists(t *testing.T) {
 
 		repo := NewTaskRepository(db, "postgres")
 
-		mock.ExpectQuery("SELECT EXISTS").
+		mock.ExpectQuery(`SELECT EXISTS\(\(SELECT 1 FROM "tasks" WHERE \("id"`).
 			WillReturnError(fmt.Errorf("database error"))
 
 		exists, err := repo.Exists(context.Background(), "task-123")

@@ -38,14 +38,12 @@ func TestGetTask_Success(t *testing.T) {
 		nil,
 	)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
 	// 创建 HTTP 上下文
@@ -78,8 +76,7 @@ func TestGetTask_TASK_NOT_FOUND(t *testing.T) {
 	defer helper.Close()
 
 	// Mock 查询返回空结果
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("nonexistent-task").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnError(sql.ErrNoRows)
 
 	c := app.NewContext(0)

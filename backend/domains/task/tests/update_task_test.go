@@ -25,33 +25,20 @@ func TestUpdateTask_Success(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow("task-123", TestUserID, "Old Title", "Old Description", "pending", "low", nil, time.Now(), time.Now(), nil)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
-	// Mock 更新任务（先更新任务）
-	helper.Mock.ExpectExec("UPDATE tasks SET (.+) WHERE id").
-		WithArgs(
-			"New Title",       // title
-			"New Description", // description
-			sqlmock.AnyArg(),  // status
-			"high",            // priority
-			sqlmock.AnyArg(),  // due_date
-			sqlmock.AnyArg(),  // updated_at
-			sqlmock.AnyArg(),  // completed_at
-			"task-123",        // id
-		).
+	// Mock 更新任务（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectExec(`UPDATE "tasks" SET`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	// Mock 删除旧 tags（在更新任务后）
-	helper.Mock.ExpectExec("DELETE FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	// Mock 删除旧 tags（在更新任务后）（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectExec(`DELETE FROM "task_tags" WHERE \("task_id"`).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// 注册路由
@@ -89,8 +76,7 @@ func TestUpdateTask_TASK_NOT_FOUND(t *testing.T) {
 	defer helper.Close()
 
 	// Mock 查询返回空结果
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("nonexistent").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnError(sql.ErrNoRows)
 
 	// 注册路由
@@ -130,14 +116,12 @@ func TestUpdateTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow("task-123", TestUserID, "Test Task", "Description", "completed", "medium", nil, time.Now(), time.Now(), &completedAt)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
 	// 注册路由
@@ -181,14 +165,12 @@ func TestUpdateTask_INVALID_PRIORITY(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow("task-123", TestUserID, "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
 	// 注册路由
@@ -228,18 +210,16 @@ func TestUpdateTask_UPDATE_FAILED(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow("task-123", TestUserID, "Old Title", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
 	// Mock 更新失败（先尝试更新任务）
-	helper.Mock.ExpectExec("UPDATE tasks SET (.+) WHERE id").
+	helper.Mock.ExpectExec(`UPDATE "tasks" SET`).
 		WillReturnError(sql.ErrConnDone)
 
 	// 注册路由

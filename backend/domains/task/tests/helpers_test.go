@@ -65,7 +65,8 @@ func NewTestHelper(t *testing.T) *TestHelper {
 	}
 
 	// 1. 创建 Repository（基础设施层）
-	taskRepo := repository.NewTaskRepository(db)
+	// 使用 postgres 作为测试数据库类型（goqu 需要指定数据库类型）
+	taskRepo := repository.NewTaskRepository(db, "postgres")
 
 	// 2. 创建 Domain Service（领域层）
 	taskService := service.NewTaskService(taskRepo)
@@ -253,8 +254,8 @@ func MockFindByID(mock sqlmock.Sqlmock, task *model.Task) {
 		task.DueDate, task.CreatedAt, task.UpdatedAt, task.CompletedAt,
 	)
 
-	mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs(task.ID).
+	// goqu 生成的 SQL 使用双引号引用标识符，参数值直接嵌入
+	mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	MockLoadTags(mock, task.ID, task.Tags)
@@ -267,57 +268,38 @@ func MockLoadTags(mock sqlmock.Sqlmock, taskID string, tags []model.Tag) {
 		tagsRows.AddRow(tag.Name, tag.Color)
 	}
 
-	mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs(taskID).
+	// goqu 生成的 SQL 使用双引号引用标识符，参数值直接嵌入
+	mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 }
 
 // MockInsertTask Mock 插入任务
+// goqu 将参数值直接嵌入到 SQL 中，不需要 WithArgs
 func MockInsertTask(mock sqlmock.Sqlmock, task *model.Task) {
-	mock.ExpectExec("INSERT INTO tasks").
-		WithArgs(
-			task.ID,
-			task.Title,
-			task.Description,
-			string(task.Status),
-			string(task.Priority),
-			task.DueDate,
-			sqlmock.AnyArg(), // CreatedAt
-			sqlmock.AnyArg(), // UpdatedAt
-			task.CompletedAt,
-		).
+	mock.ExpectExec(`INSERT INTO "tasks"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 }
 
 // MockInsertTags Mock 插入标签
+// goqu 将参数值直接嵌入到 SQL 中，不需要 WithArgs
 func MockInsertTags(mock sqlmock.Sqlmock, taskID string, tags []model.Tag) {
-	for _, tag := range tags {
-		mock.ExpectExec("INSERT INTO task_tags").
-			WithArgs(taskID, tag.Name, tag.Color).
+	for range tags {
+		mock.ExpectExec(`INSERT INTO "task_tags"`).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 	}
 }
 
 // MockUpdateTask Mock 更新任务
+// goqu 将参数值直接嵌入到 SQL 中，不需要 WithArgs
 func MockUpdateTask(mock sqlmock.Sqlmock, task *model.Task) {
-	mock.ExpectExec("UPDATE tasks SET").
-		WithArgs(
-			task.Title,
-			task.Description,
-			string(task.Status),
-			string(task.Priority),
-			task.DueDate,
-			sqlmock.AnyArg(), // UpdatedAt
-			task.CompletedAt,
-			task.ID,
-		).
+	mock.ExpectExec(`UPDATE "tasks" SET`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 }
 
 // MockDeleteOldTags Mock 删除旧标签
+// goqu 将参数值直接嵌入到 SQL 中，不需要 WithArgs
 func MockDeleteOldTags(mock sqlmock.Sqlmock, taskID string) {
-	mock.ExpectExec("DELETE FROM task_tags WHERE task_id").
-		WithArgs(taskID).
+	mock.ExpectExec(`DELETE FROM "task_tags" WHERE \("task_id"`).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 }
 
@@ -340,9 +322,10 @@ func MockCompleteUpdate(mock sqlmock.Sqlmock, task *model.Task) {
 }
 
 // MockCount Mock 统计总数
+// goqu 生成的 SQL 使用双引号引用标识符
 func MockCount(mock sqlmock.Sqlmock, count int) {
 	countRows := sqlmock.NewRows([]string{"count"}).AddRow(count)
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 		WillReturnRows(countRows)
 }
 
@@ -361,7 +344,8 @@ func MockListTasks(mock sqlmock.Sqlmock, tasks []*model.Task) {
 		)
 	}
 
-	mock.ExpectQuery("SELECT (.+) FROM tasks").
+	// goqu 生成的 SQL 使用双引号引用标识符
+	mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 		WillReturnRows(rows)
 
 	// Mock tags for each task

@@ -24,8 +24,7 @@ func TestDeleteTask_Success(t *testing.T) {
 	MockFindByID(helper.Mock, task)
 
 	// Mock 删除操作
-	helper.Mock.ExpectExec("DELETE FROM tasks WHERE id").
-		WithArgs("task-123").
+	helper.Mock.ExpectExec(`DELETE FROM "tasks" WHERE \("id"`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	c := app.NewContext(0)
@@ -49,9 +48,8 @@ func TestDeleteTask_TASK_NOT_FOUND(t *testing.T) {
 	helper := NewTestHelper(t)
 	defer helper.Close()
 
-	// Mock FindByID 查询返回 not found
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("nonexistent").
+	// Mock FindByID 查询返回 not found（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnError(sql.ErrNoRows)
 
 	c := app.NewContext(0)
@@ -82,8 +80,7 @@ func TestDeleteTask_DELETION_FAILED(t *testing.T) {
 	MockFindByID(helper.Mock, task)
 
 	// Mock 删除失败
-	helper.Mock.ExpectExec("DELETE FROM tasks WHERE id").
-		WithArgs("task-123").
+	helper.Mock.ExpectExec(`DELETE FROM "tasks" WHERE \("id"`).
 		WillReturnError(sql.ErrConnDone)
 
 	c := app.NewContext(0)

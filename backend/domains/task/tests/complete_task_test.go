@@ -25,33 +25,21 @@ func TestCompleteTask_Success(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow("task-123", TestUserID, "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	// goqu 生成的 SQL 使用双引号引用标识符，参数值直接嵌入
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
-	// Mock 更新任务状态（先执行 UPDATE）
-	helper.Mock.ExpectExec("UPDATE tasks SET (.+) WHERE id").
-		WithArgs(
-			sqlmock.AnyArg(), // title
-			sqlmock.AnyArg(), // description
-			sqlmock.AnyArg(), // status = completed
-			sqlmock.AnyArg(), // priority
-			sqlmock.AnyArg(), // due_date
-			sqlmock.AnyArg(), // updated_at
-			sqlmock.AnyArg(), // completed_at
-			"task-123",       // id
-		).
+	// Mock 更新任务状态（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectExec(`UPDATE "tasks" SET`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	// Mock 删除旧 tags (UPDATE 之后)
-	helper.Mock.ExpectExec("DELETE FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	// Mock 删除旧 tags (goqu 将参数值直接嵌入到 SQL 中)
+	helper.Mock.ExpectExec(`DELETE FROM "task_tags" WHERE \("task_id"`).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 
 	c := app.NewContext(0)
@@ -81,9 +69,8 @@ func TestCompleteTask_TASK_NOT_FOUND(t *testing.T) {
 	helper := NewTestHelper(t)
 	defer helper.Close()
 
-	// Mock 查询返回空结果
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("nonexistent").
+	// Mock 查询返回空结果（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnError(sql.ErrNoRows)
 
 	c := app.NewContext(0)
@@ -113,14 +100,13 @@ func TestCompleteTask_TASK_ALREADY_COMPLETED(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow("task-123", TestUserID, "Test Task", "Description", "completed", "medium", nil, time.Now(), time.Now(), &completedAt)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	// goqu 生成的 SQL 使用双引号引用标识符，参数值直接嵌入
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
 	c := app.NewContext(0)
@@ -154,18 +140,17 @@ func TestCompleteTask_COMPLETION_FAILED(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	}).AddRow("task-123", TestUserID, "Test Task", "Description", "pending", "medium", nil, time.Now(), time.Now(), nil)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks WHERE id").
-		WithArgs("task-123").
+	// goqu 生成的 SQL 使用双引号引用标识符，参数值直接嵌入
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks" WHERE \("id"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-123").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
-	// Mock 更新失败（先执行 UPDATE，然后失败）
-	helper.Mock.ExpectExec("UPDATE tasks SET (.+) WHERE id").
+	// Mock 更新失败（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectExec(`UPDATE "tasks" SET`).
 		WillReturnError(sql.ErrConnDone)
 
 	c := app.NewContext(0)

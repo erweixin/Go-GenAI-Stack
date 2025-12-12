@@ -18,9 +18,9 @@ func TestListTasks_Success(t *testing.T) {
 	helper := NewTestHelper(t)
 	defer helper.Close()
 
-	// Mock 统计总数（先执行）
+	// Mock 统计总数（先执行）（goqu 生成的 SQL 使用双引号引用标识符）
 	countRows := sqlmock.NewRows([]string{"count"}).AddRow(3)
-	helper.Mock.ExpectQuery("SELECT COUNT").
+	helper.Mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 		WillReturnRows(countRows)
 
 	// Mock 查询任务列表（需要 10 列）
@@ -32,21 +32,18 @@ func TestListTasks_Success(t *testing.T) {
 		AddRow("task-2", TestUserID, "Task 2", "Description 2", "in_progress", "medium", nil, now, now, nil).
 		AddRow("task-3", TestUserID, "Task 3", "Description 3", "completed", "low", nil, now, now, &now)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags (为每个任务)
 	tagsRows1 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-1").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows1)
 	tagsRows2 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-2").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows2)
 	tagsRows3 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-3").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows3)
 
 	// 创建 HTTP 上下文
@@ -81,7 +78,7 @@ func TestListTasks_WithFilters(t *testing.T) {
 
 	// Mock 统计总数（无过滤条件）
 	countRows := sqlmock.NewRows([]string{"count"}).AddRow(1)
-	helper.Mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+	helper.Mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 		WillReturnRows(countRows)
 
 	// Mock 查询任务列表（无过滤条件，需要 10 列）
@@ -91,13 +88,12 @@ func TestListTasks_WithFilters(t *testing.T) {
 	}).
 		AddRow("task-1", TestUserID, "High Priority Task", "Description", "pending", "high", nil, now, now, nil)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags
 	tagsRows := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-1").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows)
 
 	// 注册路由
@@ -128,7 +124,7 @@ func TestListTasks_EmptyResult(t *testing.T) {
 
 	// Mock 统计总数为 0（先执行 COUNT）
 	countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
-	helper.Mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+	helper.Mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 		WillReturnRows(countRows)
 
 	// Mock 查询返回空结果（需要 9 列）
@@ -136,7 +132,7 @@ func TestListTasks_EmptyResult(t *testing.T) {
 		"id", "user_id", "title", "description", "status", "priority", "due_date", "created_at", "updated_at", "completed_at",
 	})
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 		WillReturnRows(rows)
 
 	// 注册路由
@@ -220,7 +216,7 @@ func TestListTasks_Pagination(t *testing.T) {
 
 	// Mock 统计总数（先执行 COUNT）
 	countRows := sqlmock.NewRows([]string{"count"}).AddRow(25)
-	helper.Mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM tasks").
+	helper.Mock.ExpectQuery(`SELECT COUNT\(\*\) FROM "tasks"`).
 		WillReturnRows(countRows)
 
 	// Mock 第 2 页的数据（需要 10 列）
@@ -231,18 +227,16 @@ func TestListTasks_Pagination(t *testing.T) {
 		AddRow("task-11", TestUserID, "Task 11", "Description 11", "pending", "medium", nil, now, now, nil).
 		AddRow("task-12", TestUserID, "Task 12", "Description 12", "pending", "low", nil, now, now, nil)
 
-	helper.Mock.ExpectQuery("SELECT (.+) FROM tasks").
+	helper.Mock.ExpectQuery(`SELECT .+ FROM "tasks"`).
 		WillReturnRows(rows)
 
 	// Mock 加载 tags (2个任务)
 	tagsRows1 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-11").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows1)
 
 	tagsRows2 := sqlmock.NewRows([]string{"tag_name", "tag_color"})
-	helper.Mock.ExpectQuery("SELECT tag_name, tag_color FROM task_tags WHERE task_id").
-		WithArgs("task-12").
+	helper.Mock.ExpectQuery(`SELECT "tag_name", "tag_color" FROM "task_tags" WHERE \("task_id"`).
 		WillReturnRows(tagsRows2)
 
 	// 注册路由

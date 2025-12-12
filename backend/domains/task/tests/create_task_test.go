@@ -21,28 +21,14 @@ func TestCreateTask_Success(t *testing.T) {
 	helper := NewTestHelper(t)
 	defer helper.Close()
 
-	// Mock 数据库操作：插入任务
-	helper.Mock.ExpectExec("INSERT INTO tasks").
-		WithArgs(
-			sqlmock.AnyArg(),   // ID (UUID)
-			TestUserID,         // UserID
-			"Test Task",        // Title
-			"Test Description", // Description
-			"pending",          // Status
-			"medium",           // Priority
-			sqlmock.AnyArg(),   // DueDate
-			sqlmock.AnyArg(),   // CreatedAt
-			sqlmock.AnyArg(),   // UpdatedAt
-			sqlmock.AnyArg(),   // CompletedAt
-		).
+	// Mock 数据库操作：插入任务（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectExec(`INSERT INTO "tasks"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Mock 插入 tags (有 2 个 tags: "test", "unit")
-	helper.Mock.ExpectExec("INSERT INTO task_tags").
-		WithArgs(sqlmock.AnyArg(), "test", sqlmock.AnyArg()).
+	// Mock 插入 tags (有 2 个 tags: "test", "unit")（goqu 将参数值直接嵌入到 SQL 中）
+	helper.Mock.ExpectExec(`INSERT INTO "task_tags"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-	helper.Mock.ExpectExec("INSERT INTO task_tags").
-		WithArgs(sqlmock.AnyArg(), "unit", sqlmock.AnyArg()).
+	helper.Mock.ExpectExec(`INSERT INTO "task_tags"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	// 注册路由
@@ -324,7 +310,7 @@ func TestCreateTask_CREATION_FAILED(t *testing.T) {
 	})
 
 	// Mock 数据库操作失败
-	helper.Mock.ExpectExec("INSERT INTO tasks").
+	helper.Mock.ExpectExec(`INSERT INTO "tasks"`).
 		WillReturnError(fmt.Errorf("database connection failed"))
 
 	req := dto.CreateTaskRequest{
@@ -362,14 +348,14 @@ func TestCreateTask_WithOptionalFields(t *testing.T) {
 	})
 
 	// Mock 数据库操作
-	helper.Mock.ExpectExec("INSERT INTO tasks").
+	helper.Mock.ExpectExec(`INSERT INTO "tasks"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	// Mock tags 插入（3个标签）
-	helper.Mock.ExpectExec("INSERT INTO task_tags").
+	helper.Mock.ExpectExec(`INSERT INTO "task_tags"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-	helper.Mock.ExpectExec("INSERT INTO task_tags").
+	helper.Mock.ExpectExec(`INSERT INTO "task_tags"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-	helper.Mock.ExpectExec("INSERT INTO task_tags").
+	helper.Mock.ExpectExec(`INSERT INTO "task_tags"`).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	req := dto.CreateTaskRequest{
