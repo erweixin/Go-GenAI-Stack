@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/common/utils"
-	"github.com/erweixin/go-genai-stack/backend/domains/user/model"
 )
 
 // handleDomainError 将领域错误转换为 HTTP 响应
@@ -81,18 +79,4 @@ func getHTTPStatusCode(errorCode string) int {
 	default:
 		return 500
 	}
-}
-
-// 特定错误检查（可选，用于更精确的错误处理）
-func isNotFoundError(err error) bool {
-	return errors.Is(err, model.ErrUserNotFound)
-}
-
-func isValidationError(err error) bool {
-	return errors.Is(err, model.ErrInvalidEmail) ||
-		errors.Is(err, model.ErrInvalidUsername) ||
-		errors.Is(err, model.ErrWeakPassword) ||
-		errors.Is(err, model.ErrPasswordTooLong) ||
-		errors.Is(err, model.ErrFullNameTooLong) ||
-		errors.Is(err, model.ErrInvalidAvatarURL)
 }
