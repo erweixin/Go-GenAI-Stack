@@ -17,7 +17,9 @@ docs/
 ├── Guides/                                   # 开发指南
 │   ├── quick-reference.md                   # 快速参考
 │   ├── database.md                          # 数据库管理
-│   └── type-sync.md                         # 类型同步
+│   ├── type-sync.md                         # 类型同步
+│   ├── spec-kit-guide.md                    # Spec-Kit 使用指南 ⭐
+│   └── spec-kit-integration.md              # Spec-Kit 集成指南
 ├── Extensions/                               # 扩展指南
 │   └── APPLICATION-LAYER-GUIDE.md           # Application 层指南
 
@@ -138,6 +140,26 @@ docs/
 
 **适合**：前后端协作开发
 
+### Spec-Kit 规范驱动开发 ⭐
+
+**[spec-kit-guide.md](Guides/spec-kit-guide.md)**
+
+- Spec-Kit 完整使用指南
+- 四阶段工作流程（Specify → Plan → Tasks → Implement）
+- 规范编写最佳实践
+- 与 AI 工具集成
+
+**适合**：需要规范驱动开发的团队
+
+**[spec-kit-integration.md](Guides/spec-kit-integration.md)**
+
+- Spec-Kit 与现有系统集成方案
+- 双层规范体系（Spec-Kit + usecases.yaml）
+- 规范同步流程
+- 最佳实践
+
+**适合**：需要将 Spec-Kit 集成到项目的开发者
+
 ### Docker 部署
 
 **[docker-deployment.md](Guides/docker-deployment.md)**
@@ -230,6 +252,7 @@ docs/
 | **如何添加新功能？** | [Task 领域示例](../backend/domains/task/README.md) |
 | **如何管理数据库？** | [数据库指南](Guides/database.md) |
 | **如何同步前后端类型？** | [类型同步指南](Guides/type-sync.md) |
+| **如何使用 Spec-Kit？** | [Spec-Kit 使用指南](Guides/spec-kit-guide.md) ⭐ |
 | **如何部署到生产环境？** | [Docker 部署指南](Guides/docker-deployment.md) |
 | **如何实现跨领域功能？** | [Application 层指南](Extensions/APPLICATION-LAYER-GUIDE.md) |
 | **常用命令是什么？** | [快速参考](Guides/quick-reference.md) |
@@ -285,6 +308,13 @@ docs/
 - [Handler 示例](../backend/domains/task/handlers/create_task.handler.go)
 - [Repository 示例](../backend/domains/task/repository/task_repo.go)
 
+### Spec-Kit 示例
+
+- [Spec-Kit 目录](../.spec-kit/)
+- [Task Domain Spec](../.spec-kit/specs/task-management.spec.md)
+- [Task Domain Plan](../.spec-kit/plans/task-management.plan.md)
+- [Task Domain Tasks](../.spec-kit/tasks/task-management.tasks.md)
+
 ### 配置文件
 
 - [Cursor AI 规则](../.cursorrules)
@@ -292,6 +322,7 @@ docs/
 - [数据库 Schema](../backend/database/schema.sql)
 - [种子数据](../backend/database/seed/01_demo_tasks.sql)
 - [类型同步配置](../tygo.yaml)
+- [Spec-Kit 配置](../.spec-kit/README.md)
 
 ---
 
