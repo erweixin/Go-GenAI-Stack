@@ -162,14 +162,18 @@ docs/
 
 ### Docker 部署
 
-**[docker-deployment.md](Guides/docker-deployment.md)**
+**[Docker 环境指南](../docker/README.md)** ⭐
 
-- Docker 一键启动指南
-- 多阶段构建 Dockerfile
-- 生产环境部署
-- 常见问题排查
+- 多环境概览（frontend-debug, backend-debug, e2e, prod, monitoring）
+- 快速开始指南
+- 各环境详细说明
+- 常用命令
 
-**适合**：需要部署项目的开发者
+**适合**：需要部署和开发环境的开发者
+
+**详细文档**：
+- [生产环境部署](../docker/prod/README.md) - 完整的生产环境部署指南
+- [监控服务](../docker/monitoring/README.md) - Jaeger/Prometheus/Grafana 配置
 
 ---
 
@@ -247,13 +251,13 @@ docs/
 | 主题 | 推荐文档 |
 |------|----------|
 | **项目是什么？** | [主 README](../README.md) |
-| **如何启动项目？** | [Docker 部署指南](Guides/docker-deployment.md) + `./docker/docker-up.sh` |
+| **如何启动项目？** | [Docker 环境指南](../docker/README.md) |
 | **架构是什么样的？** | [架构概览](Core/architecture-overview.md) |
 | **如何添加新功能？** | [Task 领域示例](../backend/domains/task/README.md) |
 | **如何管理数据库？** | [数据库指南](Guides/database.md) |
 | **如何同步前后端类型？** | [类型同步指南](Guides/type-sync.md) |
 | **如何使用 Spec-Kit？** | [Spec-Kit 使用指南](Guides/spec-kit-guide.md) ⭐ |
-| **如何部署到生产环境？** | [Docker 部署指南](Guides/docker-deployment.md) |
+| **如何部署到生产环境？** | [生产环境部署指南](../docker/prod/README.md) |
 | **如何实现跨领域功能？** | [Application 层指南](Extensions/APPLICATION-LAYER-GUIDE.md) |
 | **常用命令是什么？** | [快速参考](Guides/quick-reference.md) |
 

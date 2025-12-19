@@ -512,7 +512,7 @@ open http://localhost:5173
 
 </details>
 
-📖 **更多启动选项**：[Docker 部署指南](docs/Guides/docker-deployment.md)
+📖 **更多启动选项**：[Docker 环境指南](docker/README.md)
 
 ---
 
@@ -621,7 +621,7 @@ git commit -m "feat(task): add feature"
 
 - 🗄️ [数据库管理](docs/Guides/database.md) - Atlas Schema 管理
 - 🔄 [类型同步](docs/Guides/type-sync.md) - Go → TypeScript
-- 🐳 [Docker 部署](docs/Guides/docker-deployment.md)
+- 🐳 [Docker 环境](docker/README.md)
 
 </td>
 <td width="50%">

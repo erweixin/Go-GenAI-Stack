@@ -26,6 +26,13 @@ pnpm build:backend     # 构建后端
 pnpm test              # 测试所有项目
 pnpm test:web          # 测试 Web
 pnpm test:backend      # 测试后端
+
+# Docker 环境
+cd docker/prod && ./start.sh              # 启动生产环境
+cd docker/frontend-debug && ./start.sh    # 启动前端开发环境
+cd docker/backend-debug && ./start.sh     # 启动后端开发环境
+cd docker/e2e && ./start.sh               # 启动 E2E 测试环境
+cd docker/monitoring && ./start.sh        # 启动监控服务
 ```
 
 ## 📦 Import 路径
@@ -60,23 +67,30 @@ go-genai-stack/
 │           ├── http/dto/      # HTTP DTO（tygo 来源）
 │           └── handlers/      # 用例实现
 │
-├── web/                       # React Web
-│   └── src/
-│       └── features/         # 功能模块（对齐领域）
-│           └── {feature}/
-│               ├── api/      # API 调用
-│               ├── components/
-│               ├── hooks/
-│               └── types.ts  # UI 类型
+├── frontend/                  # 前端 Monorepo
+│   ├── web/                   # React Web
+│   │   └── src/
+│   │       └── features/     # 功能模块（对齐领域）
+│   │           └── {feature}/
+│   │               ├── api/  # API 调用
+│   │               ├── components/
+│   │               ├── hooks/
+│   │               └── types.ts  # UI 类型
+│   │
+│   ├── mobile/                # React Native
+│   │   └── src/
+│   │       └── features/
+│   │
+│   └── shared/                 # 共享包
+│       ├── types/            # API 类型（tygo 生成）
+│       ├── utils/            # 工具函数
+│       └── constants/        # 常量
 │
-├── mobile/                    # React Native
-│   └── src/
-│       └── features/
-│
-└── shared/                    # 共享包
-    ├── types/                # API 类型（tygo 生成）
-    ├── utils/                # 工具函数
-    └── constants/            # 常量
+└── docker/                    # Docker 环境配置
+    ├── prod/                 # 生产环境
+    ├── frontend-debug/       # 前端开发环境
+    ├── backend-debug/        # 后端开发环境
+    └── e2e/                  # E2E 测试环境
 ```
 
 ## 🔄 工作流速查
@@ -103,15 +117,15 @@ go-genai-stack/
 
 ### 添加共享工具函数
 
-1. **在 shared/utils 添加**
+1. **在 frontend/shared/utils 添加**
    ```typescript
-   // shared/utils/myUtil.ts
+   // frontend/shared/utils/myUtil.ts
    export function myUtil() { ... }
    ```
 
 2. **导出**
    ```typescript
-   // shared/utils/index.ts
+   // frontend/shared/utils/index.ts
    export * from './myUtil';
    ```
 
@@ -124,11 +138,11 @@ go-genai-stack/
 
 | 类型 | 位置 | 示例 |
 |------|------|------|
-| HTTP API 接口 | `shared/types/domains/` | `SendMessageRequest` |
-| Web UI 状态 | `web/src/features/*/types.ts` | `ChatMessageUI` |
-| Mobile UI 状态 | `mobile/src/features/*/types.ts` | `ChatMessageRN` |
-| 共享工具类型 | `shared/utils/*.ts` | `StorageAdapter` |
-| 共享常量类型 | `shared/constants/*.ts` | `ModelName` |
+| HTTP API 接口 | `frontend/shared/types/domains/` | `SendMessageRequest` |
+| Web UI 状态 | `frontend/web/src/features/*/types.ts` | `ChatMessageUI` |
+| Mobile UI 状态 | `frontend/mobile/src/features/*/types.ts` | `ChatMessageRN` |
+| 共享工具类型 | `frontend/shared/utils/*.ts` | `StorageAdapter` |
+| 共享常量类型 | `frontend/shared/constants/*.ts` | `ModelName` |
 
 ## 🛠️ 配置文件速查
 
@@ -146,6 +160,21 @@ go-genai-stack/
 
 ### tsconfig.json 路径配置
 
+**Web 项目** (`frontend/web/tsconfig.json`):
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@go-genai-stack/types": ["../shared/types"],
+      "@go-genai-stack/utils": ["../shared/utils"],
+      "@go-genai-stack/constants": ["../shared/constants"]
+    }
+  }
+}
+```
+
+**Mobile 项目** (`frontend/mobile/tsconfig.json`):
 ```json
 {
   "compilerOptions": {
@@ -232,9 +261,10 @@ try {
 
 ## 🔗 快速链接
 
-- [完整 Monorepo 设置指南](./monorepo-setup.md)
-- [Shared 包文档](../shared/README.md)
-- [类型同步指南](./type-sync.md)
-- [DDD 架构文档](./vibe-coding-ddd-structure.md)
-- [主 README](../README.md)
+- [架构概览](../Core/architecture-overview.md) - 完整的项目架构说明
+- [Shared 包文档](../../frontend/shared/README.md) - 前端共享包说明
+- [类型同步指南](./type-sync.md) - Go → TypeScript 类型同步
+- [Vibe-Coding-Friendly 理念](../Core/vibe-coding-friendly.md) - 核心设计理念
+- [Docker 环境指南](../../docker/README.md) - Docker 环境配置
+- [主 README](../../README.md) - 项目总览
 
