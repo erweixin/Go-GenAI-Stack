@@ -167,14 +167,92 @@ const app = testHelper.app;
   - 未授权错误
   - 任务不存在错误
 
-### User 领域 ⏳
-- ⏳ Model 测试（待添加）
-- ⏳ Handler 集成测试（待添加）
+### User 领域 ✅
 
-### Auth 领域 ⏳
-- ⏳ JWTService 测试（待添加）
-- ⏳ AuthService 测试（待添加）
-- ⏳ Handler 集成测试（待添加）
+#### Model 测试 ✅
+- ✅ `create` - 用户创建（各种边界情况）
+- ✅ `verifyPassword` - 密码验证
+- ✅ `updatePassword` - 更新密码
+- ✅ `updateProfile` - 更新用户资料
+- ✅ `activate` - 激活用户
+- ✅ `deactivate` - 禁用用户
+- ✅ `recordLogin` - 记录登录时间
+- ✅ `canLogin` - 检查登录权限
+
+#### Handler 集成测试 ✅
+- ✅ `get_user_profile.test.ts` - 获取用户资料
+  - 成功获取
+  - 未授权错误
+
+- ✅ `update_user_profile.test.ts` - 更新用户资料
+  - 成功更新用户名
+  - 成功更新全名
+  - 成功更新头像 URL
+  - 无效用户名错误
+  - 全名过长错误
+  - 无效头像 URL 错误
+  - 未授权错误
+
+- ✅ `change_password.test.ts` - 修改密码
+  - 成功修改密码
+  - 错误旧密码错误
+  - 弱密码错误
+  - 过长密码错误
+  - 未授权错误
+
+### Auth 领域 ✅
+
+#### JWTService 单元测试 ✅
+- ✅ `generateAccessToken` - 生成 Access Token
+- ✅ `generateRefreshToken` - 生成 Refresh Token
+- ✅ `verifyToken` - 验证 Token
+- ✅ `verifyAccessToken` - 验证 Access Token
+- ✅ `verifyRefreshToken` - 验证 Refresh Token
+- ✅ `extractUserId` - 提取用户 ID
+
+#### AuthService 单元测试 ✅
+- ✅ `register` - 用户注册
+  - 成功注册
+  - 重复邮箱错误
+  - 重复用户名错误
+  - 无效邮箱错误
+  - 弱密码错误
+
+- ✅ `login` - 用户登录
+  - 成功登录
+  - 错误密码错误
+  - 不存在邮箱错误
+  - 禁用用户错误
+  - 未激活用户允许登录
+
+- ✅ `refreshToken` - 刷新 Token
+  - 成功刷新
+  - 无效 Token 错误
+  - 错误 Token 类型错误
+  - 不存在用户错误
+  - 禁用用户错误
+
+#### Handler 集成测试 ✅
+- ✅ `register.test.ts` - 用户注册
+  - 成功注册
+  - 重复邮箱错误
+  - 无效邮箱错误
+  - 弱密码错误
+  - 可选字段支持
+
+- ✅ `login.test.ts` - 用户登录
+  - 成功登录
+  - 错误密码错误
+  - 不存在邮箱错误
+  - 禁用用户错误
+  - 邮箱大小写不敏感
+
+- ✅ `refresh_token.test.ts` - 刷新 Token
+  - 成功刷新
+  - 无效 Token 错误
+  - Access Token 作为 Refresh Token 错误
+  - 不存在用户错误
+  - 禁用用户错误
 
 ## 测试最佳实践
 
