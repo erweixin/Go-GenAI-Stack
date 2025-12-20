@@ -41,7 +41,17 @@ services:
     volumes:
       # 数据持久化（可选，用于调试）
       - redis-e2e-data:/data
-    command: redis-server --appendonly yes --protected-mode no
+    # 配置 Redis 以减少内存 overcommit 警告
+    # --save "" 禁用 RDB 持久化（E2E 测试不需要持久化）
+    # --appendonly yes 启用 AOF（如果需要持久化）
+    # 或者使用 --save "" --appendonly no 完全禁用持久化（推荐用于 E2E 测试）
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --protected-mode no
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s
@@ -111,8 +121,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
       
-      # JWT 配置
-      JWT_SECRET: e2e-test-secret-key-for-testing-only
+      # JWT 配置（E2E 测试环境，secret 长度至少 32 字符）
+      JWT_SECRET: e2e-test-secret-key-for-testing-only-32chars
       JWT_ACCESS_TOKEN_EXPIRY: 15m
       JWT_REFRESH_TOKEN_EXPIRY: 7d
       JWT_ISSUER: go-genai-stack-e2e

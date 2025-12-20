@@ -5,6 +5,7 @@
 
 import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
+import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { Config } from '../config/config.js';
 import type { Kysely } from 'kysely';
 import type { Database } from '../persistence/postgres/database.js';
@@ -18,6 +19,7 @@ import { register } from '../monitoring/metrics/metrics.js';
 
 /**
  * 创建 Fastify 服务器
+ * 注册 Zod type provider 以支持直接使用 Zod schema
  */
 export function createServer(config: Config): FastifyInstance {
   const fastify = Fastify({
@@ -34,7 +36,11 @@ export function createServer(config: Config): FastifyInstance {
             }
           : undefined,
     },
-  });
+  }).withTypeProvider<ZodTypeProvider>();
+
+  // 注册 Zod validator 和 serializer
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
 
   return fastify;
 }

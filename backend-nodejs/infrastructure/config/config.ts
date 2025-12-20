@@ -32,7 +32,10 @@ const ConfigSchema = z.object({
     db: z.coerce.number().int().nonnegative().default(0),
   }),
   jwt: z.object({
-    secret: z.string().min(32, 'JWT secret must be at least 32 characters'),
+    secret: z.string().min(1, 'JWT secret is required').refine(
+      (val) => val.length >= 32 || process.env.NODE_ENV === 'test',
+      { message: 'JWT secret must be at least 32 characters (except in test mode)' }
+    ),
     accessTokenExpiry: z.coerce.number().int().positive().default(3600), // 1 小时
     refreshTokenExpiry: z.coerce.number().int().positive().default(604800), // 7 天
     issuer: z.string().default('go-genai-stack'),
@@ -87,9 +90,9 @@ export function loadConfig(): Config {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Configuration validation failed:');
-      error.errors.forEach((err) => {
-        const path = err.path.join('.');
-        console.error(`   ${path}: ${err.message}`);
+      error.issues.forEach((issue) => {
+        const path = issue.path.join('.');
+        console.error(`   ${path}: ${issue.message}`);
       });
       console.error('\nPlease check your environment variables and .env file.');
       process.exit(1);

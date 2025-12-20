@@ -216,7 +216,11 @@ jobs:
           docker compose logs --tail=50 redis-e2e
           echo ""
           echo "📋 ${{ matrix.backend_name }} Logs:"
-          docker compose logs --tail=100 ${{ matrix.container_name }}
+          if [ "${{ matrix.backend }}" == "nodejs" ]; then
+            docker compose logs --tail=100 backend-nodejs-e2e || echo "Could not retrieve logs for backend-nodejs-e2e"
+          else
+            docker compose logs --tail=100 backend-e2e || echo "Could not retrieve logs for backend-e2e"
+          fi
       
       - name: Stop E2E environment
         if: always()

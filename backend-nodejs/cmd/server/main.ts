@@ -39,12 +39,18 @@ async function main() {
   let db: ReturnType<typeof createDatabaseConnection>;
   try {
     db = createDatabaseConnection(config.database);
-    // 测试连接
-    // await db.selectFrom('users').select('id').limit(1).execute();
+    // 测试连接（实际执行查询以确保连接可用）
+    await db.selectFrom('users').select('id').limit(1).execute();
     console.log('✅ Database connected');
   } catch (error) {
     console.error('❌ Failed to connect to database:', error);
     console.error('   Make sure PostgreSQL is running and schema is applied');
+    console.error('   Connection details:', {
+      host: config.database.host,
+      port: config.database.port,
+      database: config.database.database,
+      user: config.database.user,
+    });
     process.exit(1);
   }
 
