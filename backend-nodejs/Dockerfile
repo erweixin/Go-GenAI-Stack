@@ -41,20 +41,23 @@ FROM node:22-alpine
 # 安装 pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# 创建非 root 用户
-RUN addgroup -g 1000 nodejs && \
-    adduser -D -u 1000 -G nodejs nodejs
+# 使用 Node.js 镜像自带的 node 用户（如果不存在则创建）
+# Node.js 官方镜像通常已经包含 node 用户，但为了兼容性，我们检查并创建
+RUN if ! id -u node > /dev/null 2>&1; then \
+      addgroup -S node && \
+      adduser -S node -G node; \
+    fi
 
 # 设置工作目录
 WORKDIR /app
 
 # 从 builder 复制依赖和编译后的代码
-COPY --from=builder --chown=nodejs:nodejs /build/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /build/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /build/package.json ./
+COPY --from=builder --chown=node:node /build/node_modules ./node_modules
+COPY --from=builder --chown=node:node /build/dist ./dist
+COPY --from=builder --chown=node:node /build/package.json ./
 
 # 切换到非 root 用户
-USER nodejs
+USER node
 
 # 暴露端口
 EXPOSE 8080
