@@ -10,6 +10,7 @@ import {
   toUpdateTaskResponse,
 } from './converters.js';
 import { parseErrorCode } from '../errors/errors.js';
+import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 
 export async function updateTaskHandler(
   deps: HandlerDependencies,
@@ -20,7 +21,7 @@ export async function updateTaskHandler(
   reply: FastifyReply
 ): Promise<void> {
   try {
-    const userId = (req.headers['x-user-id'] as string) || 'default-user';
+    const userId = requireUserId(req);
     const taskId = req.params.id;
 
     const input = toUpdateTaskInput(userId, taskId, req.body);
@@ -38,14 +39,16 @@ export async function updateTaskHandler(
 }
 
 function getStatusCode(errorCode: string): number {
-  if (errorCode.startsWith('TASK_') || errorCode === 'INVALID_PRIORITY' || errorCode === 'INVALID_DUE_DATE') {
-    return 400;
-  }
+  // 先检查特定错误码
   if (errorCode === 'TASK_NOT_FOUND') {
     return 404;
   }
   if (errorCode === 'UNAUTHORIZED_ACCESS') {
     return 403;
+  }
+  // 再检查通用错误码
+  if (errorCode.startsWith('TASK_') || errorCode === 'INVALID_PRIORITY' || errorCode === 'INVALID_DUE_DATE') {
+    return 400;
   }
   return 500;
 }

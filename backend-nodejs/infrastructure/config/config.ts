@@ -26,6 +26,12 @@ export interface Config {
     password: string;
     db: number;
   };
+  jwt: {
+    secret: string;
+    accessTokenExpiry: number; // 秒
+    refreshTokenExpiry: number; // 秒
+    issuer: string;
+  };
 }
 
 /**
@@ -58,6 +64,12 @@ export function loadConfig(): Config {
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
       password: process.env.REDIS_PASSWORD || '',
       db: parseInt(process.env.REDIS_DB || '0', 10),
+    },
+    jwt: {
+      secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+      accessTokenExpiry: parseInt(process.env.JWT_ACCESS_TOKEN_EXPIRY || '3600', 10), // 1 小时
+      refreshTokenExpiry: parseInt(process.env.JWT_REFRESH_TOKEN_EXPIRY || '604800', 10), // 7 天
+      issuer: process.env.JWT_ISSUER || 'go-genai-stack',
     },
   };
 }

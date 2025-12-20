@@ -21,7 +21,14 @@ import {
 import type { RedisClientType } from 'redis';
 import { TaskRepositoryImpl } from '../../domains/task/repository/task_repo.js';
 import { TaskService } from '../../domains/task/service/task_service.js';
-import type { HandlerDependencies } from '../../domains/task/handlers/dependencies.js';
+import type { HandlerDependencies as TaskHandlerDependencies } from '../../domains/task/handlers/dependencies.js';
+import { UserRepositoryImpl } from '../../domains/user/repository/user_repo.js';
+import { UserService } from '../../domains/user/service/user_service.js';
+import type { HandlerDependencies as UserHandlerDependencies } from '../../domains/user/handlers/dependencies.js';
+import { JWTService } from '../../domains/auth/service/jwt_service.js';
+import { AuthService } from '../../domains/auth/service/auth_service.js';
+import type { HandlerDependencies as AuthHandlerDependencies } from '../../domains/auth/handlers/dependencies.js';
+import { createAuthMiddleware } from '../../infrastructure/middleware/auth.js';
 
 async function main() {
   console.log('\n🚀 Starting Go-GenAI-Stack Backend (Node.js)...\n');
@@ -84,15 +91,43 @@ async function main() {
 
   // 7. 初始化领域服务
   console.log('🏗️  Initializing domain services...');
+  
+  // Task 领域
   const taskRepo = new TaskRepositoryImpl(db);
   const taskService = new TaskService(taskRepo);
-  const handlerDeps: HandlerDependencies = {
+  const taskHandlerDeps: TaskHandlerDependencies = {
     taskService,
   };
 
+  // User 领域
+  const userRepo = new UserRepositoryImpl(db);
+  const userService = new UserService(userRepo);
+  const userHandlerDeps: UserHandlerDependencies = {
+    userService,
+  };
+
+  // Auth 领域
+  const jwtService = new JWTService({
+    secret: config.jwt.secret,
+    accessTokenExpiry: config.jwt.accessTokenExpiry,
+    refreshTokenExpiry: config.jwt.refreshTokenExpiry,
+    issuer: config.jwt.issuer,
+  });
+  const authService = new AuthService(userRepo, jwtService);
+  const authHandlerDeps: AuthHandlerDependencies = {
+    authService,
+  };
+
+  // 创建认证中间件
+  const authMiddleware = createAuthMiddleware(jwtService);
+
   // 8. 注册领域路由
   console.log('📚 Registering domain routes...');
-  await registerDomainRoutes(fastify, handlerDeps);
+  await registerDomainRoutes(fastify, {
+    task: taskHandlerDeps,
+    user: userHandlerDeps,
+    auth: authHandlerDeps,
+  }, authMiddleware);
 
   // 9. 启动服务器
   const address = `http://${config.server.host}:${config.server.port}`;

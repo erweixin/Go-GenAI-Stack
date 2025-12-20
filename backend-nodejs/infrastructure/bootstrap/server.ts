@@ -113,10 +113,33 @@ export function registerRoutes(
  */
 export async function registerDomainRoutes(
   fastify: FastifyInstance,
-  handlerDeps: unknown
+  handlerDeps: Record<string, unknown>,
+  authMiddleware: unknown
 ): Promise<void> {
   // 动态导入并注册 Task 路由
-  const taskRouter = await import('../../domains/task/http/router.js');
-  taskRouter.registerTaskRoutes(fastify, handlerDeps as Parameters<typeof taskRouter.registerTaskRoutes>[1]);
+  if (handlerDeps.task) {
+    const taskRouter = await import('../../domains/task/http/router.js');
+    taskRouter.registerTaskRoutes(
+      fastify,
+      handlerDeps.task as Parameters<typeof taskRouter.registerTaskRoutes>[1],
+      authMiddleware as Parameters<typeof taskRouter.registerTaskRoutes>[2]
+    );
+  }
+
+  // 动态导入并注册 User 路由
+  if (handlerDeps.user) {
+    const userRouter = await import('../../domains/user/http/router.js');
+    userRouter.registerUserRoutes(
+      fastify,
+      handlerDeps.user as Parameters<typeof userRouter.registerUserRoutes>[1],
+      authMiddleware as Parameters<typeof userRouter.registerUserRoutes>[2]
+    );
+  }
+
+  // 动态导入并注册 Auth 路由（不需要认证中间件）
+  if (handlerDeps.auth) {
+    const authRouter = await import('../../domains/auth/http/router.js');
+    authRouter.registerAuthRoutes(fastify, handlerDeps.auth as Parameters<typeof authRouter.registerAuthRoutes>[1]);
+  }
 }
 

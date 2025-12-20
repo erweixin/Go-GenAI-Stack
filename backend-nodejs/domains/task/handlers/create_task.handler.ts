@@ -11,6 +11,7 @@ import {
   toCreateTaskResponse,
 } from './converters.js';
 import { parseErrorCode } from '../errors/errors.js';
+import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 
 export async function createTaskHandler(
   deps: HandlerDependencies,
@@ -18,15 +19,8 @@ export async function createTaskHandler(
   reply: FastifyReply
 ): Promise<void> {
   try {
-    // 1. 获取用户 ID（当前从请求头获取，后续可扩展为 JWT）
-    const userId = (req.headers['x-user-id'] as string) || 'default-user';
-    if (!userId) {
-      reply.code(401).send({
-        error: 'UNAUTHORIZED',
-        message: '未授权访问',
-      });
-      return;
-    }
+    // 1. 获取用户 ID（从 JWT Token 中提取）
+    const userId = requireUserId(req);
 
     // 2. 解析 HTTP 请求
     const body = req.body;
@@ -50,8 +44,8 @@ export async function createTaskHandler(
 }
 
 function getStatusCode(errorCode: string): number {
-  if (errorCode.startsWith('TASK_') || errorCode === 'INVALID_PRIORITY' || errorCode === 'INVALID_DUE_DATE') {
-    return 400;
+  if (errorCode === 'UNAUTHORIZED') {
+    return 401;
   }
   if (errorCode === 'TASK_NOT_FOUND') {
     return 404;
@@ -59,6 +53,15 @@ function getStatusCode(errorCode: string): number {
   if (errorCode === 'UNAUTHORIZED_ACCESS') {
     return 403;
   }
+  if (
+    errorCode.startsWith('TASK_') ||
+    errorCode === 'INVALID_PRIORITY' ||
+    errorCode === 'INVALID_DUE_DATE' ||
+    errorCode === 'TOO_MANY_TAGS' ||
+    errorCode === 'DUPLICATE_TAG' ||
+    errorCode === 'TAG_NAME_EMPTY'
+  ) {
+    return 400;
+  }
   return 500;
 }
-

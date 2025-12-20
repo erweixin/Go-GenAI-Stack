@@ -10,6 +10,7 @@ import {
   toListTasksResponse,
 } from './converters.js';
 import { parseErrorCode } from '../errors/errors.js';
+import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 
 export async function listTasksHandler(
   deps: HandlerDependencies,
@@ -17,7 +18,7 @@ export async function listTasksHandler(
   reply: FastifyReply
 ): Promise<void> {
   try {
-    const userId = (req.headers['x-user-id'] as string) || 'default-user';
+    const userId = requireUserId(req);
 
     const input = toListTasksInput(userId, req.query);
     const output = await deps.taskService.listTasks(req, input);
