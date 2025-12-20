@@ -143,8 +143,28 @@ jobs:
           echo " ✅"
           
           echo "⏳ Waiting for ${{ matrix.backend_name }} to be healthy..."
-          timeout 90s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }})" == "healthy" ]; do echo -n "."; sleep 2; done'
-          echo " ✅"
+          timeout 120s bash -c '
+            max_attempts=60
+            attempt=0
+            while [ $attempt -lt $max_attempts ]; do
+              status=$(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }} 2>/dev/null || echo "not-found")
+              if [ "$status" == "healthy" ]; then
+                echo " ✅"
+                exit 0
+              fi
+              if [ "$status" == "not-found" ]; then
+                echo " ❌ Container not found"
+                exit 1
+              fi
+              echo -n "."
+              sleep 2
+              attempt=$((attempt + 1))
+            done
+            echo " ❌ Health check timeout after $((max_attempts * 2)) seconds"
+            echo "Container status: $status"
+            docker logs --tail=50 ${{ matrix.container_name }} || true
+            exit 1
+          '
           
           echo "✅ All services are ready"
           docker compose ps
