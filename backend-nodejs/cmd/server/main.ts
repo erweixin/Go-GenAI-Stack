@@ -91,7 +91,7 @@ async function main() {
     task: container.taskHandlerDeps,
     user: container.userHandlerDeps,
     auth: container.authHandlerDeps,
-  }, container.authMiddleware);
+  }, container.authMiddleware, redis);
 
   // 9. 启动服务器
   const address = `http://${config.server.host}:${config.server.port}`;

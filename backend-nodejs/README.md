@@ -13,6 +13,7 @@
 - [项目结构](#-项目结构)
 - [架构设计](#-架构设计)
 - [开发指南](#-开发指南)
+- [监控和安全](#-监控和安全)
 - [与 Go 后端的关系](#-与-go-后端的关系)
 
 ---
@@ -512,6 +513,68 @@ pnpm test:coverage
 # Watch 模式
 pnpm test:watch
 ```
+
+---
+
+## 📊 监控和安全
+
+### 功能概览
+
+系统已集成以下监控和安全功能：
+
+- ✅ **请求追踪**：自动生成 TraceID/RequestID，支持分布式追踪
+- ✅ **Metrics 监控**：Prometheus 格式指标，支持 QPS、延迟、错误率监控
+- ✅ **API 限流**：基于 Redis 的限流保护，防止恶意请求
+
+### 快速使用
+
+#### 1. 请求追踪（自动启用）
+
+```bash
+# 发送请求，自动获得追踪信息
+curl -v http://localhost:8081/api/tasks
+
+# 响应头包含：
+# X-Trace-Id: 550e8400-e29b-41d4-a716-446655440000
+# X-Request-Id: 660e8400-e29b-41d4-a716-446655440001
+```
+
+#### 2. Metrics 监控
+
+```bash
+# 访问 Metrics 端点
+curl http://localhost:8081/metrics
+
+# 集成 Prometheus（prometheus.yml）
+scrape_configs:
+  - job_name: 'backend-nodejs'
+    static_configs:
+      - targets: ['localhost:8081']
+```
+
+#### 3. API 限流
+
+```bash
+# 测试登录限流（每分钟最多 5 次）
+for i in {1..6}; do
+  curl -X POST http://localhost:8081/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"test@example.com","password":"wrong"}'
+done
+# 第 6 次会返回 429 Too Many Requests
+```
+
+### 详细文档
+
+- 📖 [完整使用文档](docs/MONITORING_AND_SECURITY.md) - 详细的使用说明和配置
+- 🚀 [快速参考](docs/QUICK_START_MONITORING.md) - 快速上手指南
+- 💡 [使用示例](docs/USAGE_EXAMPLES.md) - 实际使用场景和代码示例
+- 🧪 [测试脚本](scripts/test-monitoring.sh) - 自动化测试脚本
+
+### 已应用的限流策略
+
+- **登录接口**：每分钟最多 5 次（防止暴力破解）
+- **注册接口**：每小时最多 3 次（防止批量注册）
 
 ---
 

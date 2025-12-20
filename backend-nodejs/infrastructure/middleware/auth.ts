@@ -7,10 +7,13 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { JWTService } from '../../domains/auth/service/jwt_service.js';
 
 // 扩展 FastifyRequest 类型，添加 user_id 和 email
+// 注意：traceId 和 requestId 在 tracing.ts 中定义
 declare module 'fastify' {
   interface FastifyRequest {
     userId?: string;
     email?: string;
+    traceId?: string;
+    requestId?: string;
   }
 }
 

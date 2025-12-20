@@ -43,7 +43,7 @@ export function createEmptyContext(): RequestContext {
 
 /**
  * 从 FastifyRequest 创建请求上下文
- * 提取请求 ID、用户 ID 等信息
+ * 提取请求 ID、用户 ID、追踪 ID 等信息
  */
 export function createContextFromRequest(req: {
   requestId?: string;
