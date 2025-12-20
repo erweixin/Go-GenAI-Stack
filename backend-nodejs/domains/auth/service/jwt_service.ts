@@ -3,7 +3,7 @@
  * 负责 JWT Token 的生成和验证
  */
 
-import * as jwt from 'jsonwebtoken';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 
 export type TokenType = 'access' | 'refresh';
 
@@ -91,7 +91,7 @@ export class JWTService {
     try {
       const decoded = jwt.verify(tokenString, this.config.secret, {
         algorithms: ['HS256'],
-      }) as jwt.JwtPayload;
+      }) as JwtPayload;
 
       // 验证 Issuer
       if (decoded.iss !== this.config.issuer) {
@@ -109,12 +109,14 @@ export class JWTService {
       };
 
       return payload;
-    } catch (error: any) {
-      if (error.name === 'TokenExpiredError') {
-        throw new Error('INVALID_TOKEN: Token 已过期');
-      }
-      if (error.name === 'JsonWebTokenError') {
-        throw new Error('INVALID_TOKEN: Token 验证失败');
+    } catch (error) {
+      if (error instanceof Error) {
+        if (error.name === 'TokenExpiredError') {
+          throw new Error('INVALID_TOKEN: Token 已过期');
+        }
+        if (error.name === 'JsonWebTokenError') {
+          throw new Error('INVALID_TOKEN: Token 验证失败');
+        }
       }
       throw error;
     }

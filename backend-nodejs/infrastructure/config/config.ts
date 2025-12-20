@@ -42,7 +42,7 @@ export function loadConfig(): Config {
   return {
     server: {
       host: process.env.SERVER_HOST || '0.0.0.0',
-      port: parseInt(process.env.PORT || '8081', 10),
+      port: parseInt(process.env.SERVER_PORT || process.env.PORT || '8080', 10),
       env: process.env.NODE_ENV || 'development',
     },
     database: {
