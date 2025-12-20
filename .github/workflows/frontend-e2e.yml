@@ -143,26 +143,49 @@ jobs:
           echo " ✅"
           
           echo "⏳ Waiting for ${{ matrix.backend_name }} to be healthy..."
-          timeout 120s bash -c '
-            max_attempts=60
+          timeout 180s bash -c '
+            max_attempts=90
             attempt=0
             while [ $attempt -lt $max_attempts ]; do
-              status=$(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }} 2>/dev/null || echo "not-found")
+              # 检查容器是否存在
+              if ! docker ps --format "{{.Names}}" | grep -q "^${{ matrix.container_name }}$"; then
+                echo " ❌ Container ${{ matrix.container_name }} not found"
+                exit 1
+              fi
+              
+              # 获取健康状态
+              status=$(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }} 2>/dev/null || echo "starting")
+              
               if [ "$status" == "healthy" ]; then
                 echo " ✅"
                 exit 0
               fi
-              if [ "$status" == "not-found" ]; then
-                echo " ❌ Container not found"
-                exit 1
+              
+              # 每 10 次尝试输出一次状态信息
+              if [ $((attempt % 10)) -eq 0 ] && [ $attempt -gt 0 ]; then
+                echo ""
+                echo "   Attempt $attempt/$max_attempts, Status: $status"
+                # 如果是 unhealthy，显示最近的 health check 日志
+                if [ "$status" == "unhealthy" ]; then
+                  echo "   Recent health check logs:"
+                  docker inspect --format="{{range .State.Health.Log}}{{.Output}}{{end}}" ${{ matrix.container_name }} 2>/dev/null | tail -3 || true
+                fi
               fi
+              
               echo -n "."
               sleep 2
               attempt=$((attempt + 1))
             done
+            echo ""
             echo " ❌ Health check timeout after $((max_attempts * 2)) seconds"
-            echo "Container status: $status"
+            echo "Container: ${{ matrix.container_name }}"
+            echo "Final status: $(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }} 2>/dev/null || echo "unknown")"
+            echo ""
+            echo "Container logs (last 50 lines):"
             docker logs --tail=50 ${{ matrix.container_name }} || true
+            echo ""
+            echo "Health check history:"
+            docker inspect --format="{{range .State.Health.Log}}{{.Output}}{{end}}" ${{ matrix.container_name }} 2>/dev/null || true
             exit 1
           '
           
