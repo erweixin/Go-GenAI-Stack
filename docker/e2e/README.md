@@ -53,7 +53,7 @@ pnpm e2e:ui           # UI 模式（推荐）
 
 ### docker-compose.yml
 
-包含两个服务：
+包含四个服务：
 
 #### 1. postgres-e2e（测试数据库）
 
@@ -66,14 +66,31 @@ pnpm e2e:ui           # UI 模式（推荐）
   1. 自动加载 Schema (`backend/database/schema.sql`)
   2. 自动加载测试数据 (`seed-data.sql`)
 
-#### 2. backend-e2e（后端服务）
+#### 2. redis-e2e（Redis 缓存）
+
+- **镜像**: redis:7-alpine
+- **端口**: 6381（避免与开发环境冲突）
+- **数据卷**: redis-e2e-data
+- **用途**: Node.js 后端需要 Redis 支持
+
+#### 3. backend-e2e（Go 后端服务）
 
 - **构建**: backend/Dockerfile
 - **端口**: 8081（映射到容器的 8080）
 - **数据库**: postgres-e2e:5432
 - **JWT Secret**: e2e-test-secret-key-for-testing-only
 - **环境**: test
-- **健康检查**: /ping 端点
+- **健康检查**: /health 端点
+
+#### 4. backend-nodejs-e2e（Node.js 后端服务）
+
+- **构建**: backend-nodejs/Dockerfile
+- **端口**: 8082（映射到容器的 8080）
+- **数据库**: postgres-e2e:5432
+- **Redis**: redis-e2e:6379
+- **JWT Secret**: e2e-test-secret-key-for-testing-only
+- **环境**: test
+- **健康检查**: /health 端点
 
 ---
 
@@ -129,11 +146,13 @@ E2E 环境使用两阶段初始化：
 
 📋 Service Information:
   ┌─────────────────────────────────────────────┐
-  │ Service   │ URL / Connection                │
-  ├───────────┼─────────────────────────────────┤
-  │ Postgres  │ localhost:5433                  │
-  │ Backend   │ http://localhost:8081           │
-  │ Frontend  │ http://localhost:5173 (Host)    │
+  │ Service         │ URL / Connection          │
+  ├─────────────────┼───────────────────────────┤
+  │ Postgres        │ localhost:5433            │
+  │ Redis           │ localhost:6381            │
+  │ Go Backend      │ http://localhost:8081     │
+  │ Node.js Backend │ http://localhost:8082     │
+  │ Frontend        │ http://localhost:5173     │
   └─────────────────────────────────────────────┘
 
 👤 Test User Credentials:
@@ -160,7 +179,9 @@ E2E 环境使用两阶段初始化：
 | 服务 | 容器端口 | 主机端口 | 说明 |
 |------|---------|---------|------|
 | Postgres | 5432 | 5433 | 避免与开发环境冲突 |
-| Backend | 8080 | 8081 | 避免与开发环境冲突 |
+| Redis | 6379 | 6381 | 避免与开发环境冲突 |
+| Go Backend | 8080 | 8081 | 避免与开发环境冲突 |
+| Node.js Backend | 8080 | 8082 | 避免与开发环境冲突 |
 | Frontend | - | 5173 | 在 Host 运行 |
 
 ### 网络
@@ -181,7 +202,9 @@ cd docker/e2e && docker compose logs -f
 
 # 查看特定服务日志
 cd docker/e2e && docker compose logs -f postgres-e2e
+cd docker/e2e && docker compose logs -f redis-e2e
 cd docker/e2e && docker compose logs -f backend-e2e
+cd docker/e2e && docker compose logs -f backend-nodejs-e2e
 ```
 
 ### 检查服务状态
@@ -196,18 +219,35 @@ cd docker/e2e && docker compose ps
 # 进入 Postgres 容器
 docker exec -it go-genai-stack-postgres-e2e psql -U postgres -d go_genai_stack_e2e
 
-# 进入 Backend 容器
+# 进入 Go Backend 容器
 docker exec -it go-genai-stack-backend-e2e sh
+
+# 进入 Node.js Backend 容器
+docker exec -it go-genai-stack-backend-nodejs-e2e sh
 ```
 
 ### 手动测试后端
 
+#### Go Backend (端口 8081)
+
 ```bash
 # 健康检查
-curl http://localhost:8081/ping
+curl http://localhost:8081/health
 
 # 登录测试
 curl -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"e2e-test@example.com","password":"Test123456!"}'
+```
+
+#### Node.js Backend (端口 8082)
+
+```bash
+# 健康检查
+curl http://localhost:8082/health
+
+# 登录测试
+curl -X POST http://localhost:8082/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"e2e-test@example.com","password":"Test123456!"}'
 ```
@@ -222,7 +262,9 @@ curl -X POST http://localhost:8081/api/v1/auth/login \
 ```bash
 # 检查端口占用
 lsof -i :5433
+lsof -i :6381
 lsof -i :8081
+lsof -i :8082
 
 # 停止占用端口的服务或修改 docker/e2e/docker-compose.yml 中的端口映射
 ```
@@ -285,7 +327,11 @@ docker image prune -f
 编辑 `docker/e2e/docker-compose.yml` 中的环境变量，然后重启：
 
 ```bash
+# 重启 Go Backend
 cd docker/e2e && docker compose restart backend-e2e
+
+# 重启 Node.js Backend
+cd docker/e2e && docker compose restart backend-nodejs-e2e
 ```
 
 ### 使用自定义环境变量
@@ -293,8 +339,12 @@ cd docker/e2e && docker compose restart backend-e2e
 创建 `.env.e2e` 文件（在项目根目录）：
 
 ```bash
+# Go Backend
 DATABASE_URL=postgres://postgres:postgres@localhost:5433/go_genai_stack_e2e?sslmode=disable
 BACKEND_URL=http://localhost:8081
+
+# Node.js Backend
+NODEJS_BACKEND_URL=http://localhost:8082
 ```
 
 ---
@@ -307,6 +357,19 @@ BACKEND_URL=http://localhost:8081
 
 ---
 
+---
+
+## 🎯 选择后端
+
+E2E 环境同时提供 Go 和 Node.js 两个后端实现：
+
+- **Go Backend**: `http://localhost:8081` - 使用 `backend/Dockerfile` 构建
+- **Node.js Backend**: `http://localhost:8082` - 使用 `backend-nodejs/Dockerfile` 构建
+
+前端 E2E 测试可以根据需要选择使用哪个后端。两个后端共享同一个数据库和测试数据。
+
+---
+
 **维护者**: AI Assistant  
-**最后更新**: 2025-11-27
+**最后更新**: 2025-01-XX
 

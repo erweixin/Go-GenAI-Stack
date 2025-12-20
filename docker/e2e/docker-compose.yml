@@ -32,7 +32,26 @@ services:
     networks:
       - e2e-network
 
-  # 后端服务器
+  # Redis 测试缓存（Node.js 后端需要）
+  redis-e2e:
+    image: redis:7-alpine
+    container_name: go-genai-stack-redis-e2e
+    ports:
+      - "6381:6379"  # 使用不同端口避免与开发环境冲突
+    volumes:
+      # 数据持久化（可选，用于调试）
+      - redis-e2e-data:/data
+    command: redis-server --appendonly yes --protected-mode no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - e2e-network
+
+  # Go 后端服务器
   backend-e2e:
     build:
       context: ../..
@@ -72,10 +91,59 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  # Node.js 后端服务器
+  backend-nodejs-e2e:
+    build:
+      context: ../..
+      dockerfile: backend-nodejs/Dockerfile
+    container_name: go-genai-stack-backend-nodejs-e2e
+    environment:
+      # 数据库配置
+      DATABASE_HOST: postgres-e2e
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: go_genai_stack_e2e
+      DATABASE_SSL_MODE: disable
+      
+      # Redis 配置
+      REDIS_HOST: redis-e2e
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      
+      # JWT 配置
+      JWT_SECRET: e2e-test-secret-key-for-testing-only
+      JWT_ACCESS_TOKEN_EXPIRY: 15m
+      JWT_REFRESH_TOKEN_EXPIRY: 7d
+      JWT_ISSUER: go-genai-stack-e2e
+      
+      # 服务器配置
+      SERVER_PORT: 8080
+      SERVER_HOST: 0.0.0.0
+    ports:
+      - "8082:8080"  # 映射到 8082 避免与开发环境冲突
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+      redis-e2e:
+        condition: service_healthy
+    networks:
+      - e2e-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    restart: unless-stopped
+
 volumes:
   postgres-e2e-data:
     driver: local
     name: go-genai-stack-postgres-e2e-data
+  redis-e2e-data:
+    driver: local
+    name: go-genai-stack-redis-e2e-data
 
 networks:
   e2e-network:

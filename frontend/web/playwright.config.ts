@@ -72,7 +72,10 @@ export default defineConfig({
   ],
 
   // 开发服务器配置
-  // 注意：后端服务由 Docker 提供（http://localhost:8081）
+  // 注意：后端服务由 Docker 提供
+  // 可以通过 E2E_BACKEND_URL 环境变量选择后端：
+  //   - 默认: http://localhost:8081 (Go 后端)
+  //   - Node.js: http://localhost:8082 (Node.js 后端)
   webServer: {
     command: 'pnpm dev',
     port: 5173,
@@ -80,7 +83,8 @@ export default defineConfig({
     timeout: 120000,
     env: {
       // 指向 Docker 中的后端服务
-      VITE_API_BASE_URL: 'http://localhost:8081',
+      // 支持通过 E2E_BACKEND_URL 环境变量切换后端
+      VITE_API_BASE_URL: process.env.E2E_BACKEND_URL || 'http://localhost:8081',
     },
   },
 })

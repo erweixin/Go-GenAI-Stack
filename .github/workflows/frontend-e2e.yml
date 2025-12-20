@@ -2,10 +2,11 @@ name: Frontend E2E Tests
 
 on:
   push:
-    branches: [main, develop, master]
+    branches: [main, develop, master, feat-node]
     paths:
       - 'frontend/web/**'
       - 'backend/**'
+      - 'backend-nodejs/**'
       - 'docker/e2e/**'
       - '.github/workflows/frontend-e2e.yml'
   pull_request:
@@ -13,6 +14,7 @@ on:
     paths:
       - 'frontend/web/**'
       - 'backend/**'
+      - 'backend-nodejs/**'
       - 'docker/e2e/**'
   # 允许手动触发
   workflow_dispatch:
@@ -24,9 +26,21 @@ concurrency:
 
 jobs:
   e2e:
-    name: E2E Tests (Docker)
+    name: E2E Tests (${{ matrix.backend }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      matrix:
+        backend: [go, nodejs]
+        include:
+          - backend: go
+            backend_url: http://localhost:8081
+            backend_name: Go Backend
+            container_name: go-genai-stack-backend-e2e
+          - backend: nodejs
+            backend_url: http://localhost:8082
+            backend_name: Node.js Backend
+            container_name: go-genai-stack-backend-nodejs-e2e
     
     steps:
       - name: Checkout code
@@ -116,6 +130,7 @@ jobs:
           COMPOSE_DOCKER_CLI_BUILD: 1
         run: |
           echo "🐳 Building and starting E2E environment..."
+          echo "📋 Testing against: ${{ matrix.backend_name }}"
           docker compose build --build-arg BUILDKIT_INLINE_CACHE=1
           docker compose up -d
           
@@ -123,8 +138,12 @@ jobs:
           timeout 60s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-postgres-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
           echo " ✅"
           
-          echo "⏳ Waiting for Backend to be healthy..."
-          timeout 90s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-backend-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
+          echo "⏳ Waiting for Redis to be healthy..."
+          timeout 30s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-redis-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
+          echo " ✅"
+          
+          echo "⏳ Waiting for ${{ matrix.backend_name }} to be healthy..."
+          timeout 90s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }})" == "healthy" ]; do echo -n "."; sleep 2; done'
           echo " ✅"
           
           echo "✅ All services are ready"
@@ -132,23 +151,25 @@ jobs:
       
       - name: Verify backend health
         run: |
-          echo "🔍 Checking backend health..."
-          curl -f http://localhost:8081/health || (echo "❌ Backend health check failed" && exit 1)
-          echo "✅ Backend is healthy"
+          echo "🔍 Checking ${{ matrix.backend_name }} health..."
+          curl -f ${{ matrix.backend_url }}/health || (echo "❌ ${{ matrix.backend_name }} health check failed" && exit 1)
+          echo "✅ ${{ matrix.backend_name }} is healthy"
       
       - name: Run E2E tests
         working-directory: frontend/web
         env:
           CI: true
+          E2E_BACKEND_URL: ${{ matrix.backend_url }}
         run: |
-          echo "🧪 Running E2E tests..."
+          echo "🧪 Running E2E tests against ${{ matrix.backend_name }}..."
+          echo "📡 Backend URL: ${{ matrix.backend_url }}"
           pnpm e2e:ci
       
       - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.backend }}
           path: frontend/web/playwright-report/
           retention-days: 7
       
@@ -156,22 +177,23 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.backend }}
           path: frontend/web/test-results/
           retention-days: 7
       
       - name: E2E Test Summary
         if: always()
         run: |
-          echo "## 🎭 E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎭 E2E Test Results (${{ matrix.backend_name }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ -f frontend/web/test-results/results.json ]; then
-            echo "✅ E2E tests completed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ E2E tests completed for ${{ matrix.backend_name }}" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📊 Backend: ${{ matrix.backend_url }}" >> $GITHUB_STEP_SUMMARY
             echo "📊 [View Playwright Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ No test results found" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No test results found for ${{ matrix.backend_name }}" >> $GITHUB_STEP_SUMMARY
           fi
       
       - name: Show Docker logs on failure
@@ -183,13 +205,18 @@ jobs:
           echo ""
           echo "🔍 Health Status:"
           docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-postgres-e2e || echo "postgres-e2e: not found"
+          docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-redis-e2e || echo "redis-e2e: not found"
           docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-backend-e2e || echo "backend-e2e: not found"
+          docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-backend-nodejs-e2e || echo "backend-nodejs-e2e: not found"
           echo ""
           echo "📋 Postgres Logs:"
           docker compose logs --tail=50 postgres-e2e
           echo ""
-          echo "📋 Backend Logs:"
-          docker compose logs --tail=100 backend-e2e
+          echo "📋 Redis Logs:"
+          docker compose logs --tail=50 redis-e2e
+          echo ""
+          echo "📋 ${{ matrix.backend_name }} Logs:"
+          docker compose logs --tail=100 ${{ matrix.container_name }}
       
       - name: Stop E2E environment
         if: always()
