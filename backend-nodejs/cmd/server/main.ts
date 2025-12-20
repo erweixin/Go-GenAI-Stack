@@ -3,18 +3,26 @@
  * 初始化配置、数据库、服务器并启动服务
  */
 
+import 'dotenv/config';
 import { loadConfig } from '../../infrastructure/config/config.js';
 import { createDatabaseConnection } from '../../infrastructure/persistence/postgres/connection.js';
+import {
+  createRedisConnection,
+  connectRedis,
+  testRedisConnection,
+  closeRedisConnection,
+} from '../../infrastructure/persistence/redis/connection.js';
 import {
   createServer,
   registerMiddleware,
   registerRoutes,
 } from '../../infrastructure/bootstrap/server.js';
+import type { RedisClientType } from 'redis';
 
 async function main() {
   console.log('\n🚀 Starting Go-GenAI-Stack Backend (Node.js)...\n');
 
-  // 1. 加载配置
+  // 1. 加载配置（.env 文件已通过 dotenv/config 自动加载）
   console.log('📋 Loading configuration...');
   const config = loadConfig();
   console.log('✅ Configuration loaded:');
@@ -38,19 +46,39 @@ async function main() {
     process.exit(1);
   }
 
-  // 3. 创建 Fastify 服务器
+  // 3. 初始化 Redis 连接
+  console.log('\n🔴 Connecting to Redis...');
+  let redis: RedisClientType | null = null;
+  try {
+    redis = createRedisConnection(config.redis);
+    await connectRedis(redis);
+    const redisOk = await testRedisConnection(redis);
+    if (redisOk) {
+      console.log('✅ Redis connected');
+    } else {
+      console.warn('⚠️  Redis connection test failed (continuing without cache)');
+      await closeRedisConnection(redis);
+      redis = null;
+    }
+  } catch (error) {
+    console.warn('⚠️  Redis connection failed:', error);
+    console.warn('   Continuing without cache');
+    redis = null;
+  }
+
+  // 4. 创建 Fastify 服务器
   console.log('\n🚀 Creating HTTP server...');
   const fastify = createServer(config);
 
-  // 4. 注册中间件
+  // 5. 注册中间件
   console.log('📦 Registering middleware...');
   await registerMiddleware(fastify);
 
-  // 5. 注册路由
+  // 6. 注册路由
   console.log('🛣️  Registering routes...');
-  registerRoutes(fastify, db);
+  registerRoutes(fastify, db, redis);
 
-  // 6. 启动服务器
+  // 7. 启动服务器
   const address = `http://${config.server.host}:${config.server.port}`;
   try {
     await fastify.listen({
@@ -68,12 +96,15 @@ async function main() {
     process.exit(1);
   }
 
-  // 7. 优雅关闭
+  // 8. 优雅关闭
   const shutdown = async (signal: string) => {
     console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
     try {
       await fastify.close();
       await db.destroy();
+      if (redis) {
+        await closeRedisConnection(redis);
+      }
       console.log('✅ Server exited');
       process.exit(0);
     } catch (error) {

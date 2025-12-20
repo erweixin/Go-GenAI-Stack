@@ -8,6 +8,7 @@ import cors from '@fastify/cors';
 import type { Config } from '../config/config.js';
 import type { Kysely } from 'kysely';
 import type { Database } from '../persistence/postgres/database.js';
+import type { RedisClientType } from 'redis';
 import { checkHealth } from '../monitoring/health/health.js';
 
 /**
@@ -86,11 +87,12 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
  */
 export function registerRoutes(
   fastify: FastifyInstance,
-  db: Kysely<Database>
+  db: Kysely<Database>,
+  redis: RedisClientType | null = null
 ): void {
   // 健康检查端点
   fastify.get('/health', async (_request: unknown, reply) => {
-    const health = await checkHealth(db);
+    const health = await checkHealth(db, redis);
     const statusCode = health.status === 'healthy' ? 200 : 503;
     return reply.code(statusCode).send(health);
   });

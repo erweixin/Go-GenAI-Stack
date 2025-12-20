@@ -1,0 +1,68 @@
+# ============================================
+# Node.js 后端调试环境（数据库 + Redis）
+# ============================================
+# 用途：为 Node.js 后端开发提供独立的数据库和 Redis 环境
+# 使用：cd docker/backend-nodejs-debug && docker compose up -d
+# 说明：后端代码在本地 IDE 中运行和调试
+# ============================================
+
+services:
+  # PostgreSQL 开发数据库
+  postgres-backend-nodejs-debug:
+    image: postgres:16-alpine
+    container_name: go-genai-stack-postgres-backend-nodejs-debug
+    environment:
+      POSTGRES_USER: genai
+      POSTGRES_PASSWORD: genai_password
+      POSTGRES_DB: go_genai_stack
+    ports:
+      - "5436:5432"  # 使用不同端口避免与其他环境冲突
+    volumes:
+      # Schema（统一管理，直接引用源文件）
+      - ../../backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      # 测试数据（环境独立）
+      - ./seed-data.sql:/docker-entrypoint-initdb.d/02-seed-data.sql:ro
+      # 数据持久化
+      - postgres-backend-nodejs-debug-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U genai -d go_genai_stack"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - backend-nodejs-debug-network
+
+  # Redis 开发缓存
+  redis-backend-nodejs-debug:
+    image: redis:7-alpine
+    container_name: go-genai-stack-redis-backend-nodejs-debug
+    ports:
+      - "6380:6379"  # 使用不同端口避免与其他环境冲突
+    volumes:
+      # 数据持久化
+      - redis-backend-nodejs-debug-data:/data
+    # 开发环境不需要密码，使用默认配置
+    command: redis-server --appendonly yes --protected-mode no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - backend-nodejs-debug-network
+
+volumes:
+  postgres-backend-nodejs-debug-data:
+    driver: local
+    name: go-genai-stack-postgres-backend-nodejs-debug-data
+  redis-backend-nodejs-debug-data:
+    driver: local
+    name: go-genai-stack-redis-backend-nodejs-debug-data
+
+networks:
+  backend-nodejs-debug-network:
+    driver: bridge
+    name: go-genai-stack-backend-nodejs-debug-network
+
