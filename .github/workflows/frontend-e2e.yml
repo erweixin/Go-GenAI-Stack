@@ -143,57 +143,55 @@ jobs:
           echo " ✅"
           
           echo "⏳ Waiting for ${{ matrix.backend_name }} to be healthy..."
-          timeout 180s bash -c '
+          CONTAINER_NAME="${{ matrix.container_name }}"
+          timeout 180s bash -c "
             max_attempts=90
             attempt=0
-            while [ $attempt -lt $max_attempts ]; do
-              # 检查容器是否存在
-              if ! docker ps --format "{{.Names}}" | grep -q "^${{ matrix.container_name }}$"; then
-                echo " ❌ Container ${{ matrix.container_name }} not found"
+            while [ \$attempt -lt \$max_attempts ]; do
+              if ! docker ps --format '{{.Names}}' | grep -q \"^\${CONTAINER_NAME}\$\"; then
+                echo \" ❌ Container \${CONTAINER_NAME} not found\"
                 exit 1
               fi
-              
-              # 获取健康状态
-              status=$(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }} 2>/dev/null || echo "starting")
-              
-              if [ "$status" == "healthy" ]; then
-                echo " ✅"
+              status=\$(docker inspect --format='{{.State.Health.Status}}' \${CONTAINER_NAME} 2>/dev/null || echo 'starting')
+              if [ \"\$status\" == 'healthy' ]; then
+                echo \" ✅\"
                 exit 0
               fi
-              
-              # 每 10 次尝试输出一次状态信息
-              if [ $((attempt % 10)) -eq 0 ] && [ $attempt -gt 0 ]; then
-                echo ""
-                echo "   Attempt $attempt/$max_attempts, Status: $status"
-                # 如果是 unhealthy，显示详细的 health check 信息
-                if [ "$status" == "unhealthy" ] || [ "$status" == "starting" ]; then
-                  echo "   Health check details:"
-                  # 获取最后一次 health check 的详细信息
-                  docker inspect ${{ matrix.container_name }} --format='{{range .State.Health.Log}}{{.ExitCode}}|{{.Output}}{{end}}' 2>/dev/null | tail -1 | awk -F'|' '{print "ExitCode: " $1; print "Output: " $2}' || true
-                  echo "   Container state:"
-                  docker inspect ${{ matrix.container_name }} --format='Status: {{.State.Status}}, Health: {{.State.Health.Status}}, Started: {{.State.StartedAt}}' 2>/dev/null || true
+              if [ \$((attempt % 10)) -eq 0 ] && [ \$attempt -gt 0 ]; then
+                echo \"\"
+                echo \"   Attempt \$attempt/\$max_attempts, Status: \$status\"
+                if [ \"\$status\" == 'unhealthy' ] || [ \"\$status\" == 'starting' ]; then
+                  echo \"   Health check details:\"
+                  health_log=\$(docker inspect \${CONTAINER_NAME} --format='{{range .State.Health.Log}}{{.ExitCode}}|{{.Output}}{{end}}' 2>/dev/null | tail -1)
+                  if [ -n \"\$health_log\" ]; then
+                    exit_code=\$(echo \"\$health_log\" | cut -d'|' -f1)
+                    output=\$(echo \"\$health_log\" | cut -d'|' -f2-)
+                    echo \"   ExitCode: \${exit_code}\"
+                    echo \"   Output: \${output}\"
+                  fi
+                  echo \"   Container state:\"
+                  docker inspect \${CONTAINER_NAME} --format='Status: {{.State.Status}}, Health: {{.State.Health.Status}}, Started: {{.State.StartedAt}}' 2>/dev/null || true
                 fi
               fi
-              
-              echo -n "."
+              echo -n \".\"
               sleep 2
-              attempt=$((attempt + 1))
+              attempt=\$((attempt + 1))
             done
-            echo ""
-            echo " ❌ Health check timeout after $((max_attempts * 2)) seconds"
-            echo "Container: ${{ matrix.container_name }}"
-            echo "Final status: $(docker inspect --format="{{.State.Health.Status}}" ${{ matrix.container_name }} 2>/dev/null || echo "unknown")"
-            echo ""
-            echo "Container logs (last 50 lines):"
-            docker logs --tail=50 ${{ matrix.container_name }} || true
-            echo ""
-            echo "Health check history (last 5 attempts):"
-            docker inspect ${{ matrix.container_name }} --format='{{range .State.Health.Log}}[{{.Start}}] ExitCode: {{.ExitCode}} Output: {{.Output}}{{end}}' 2>/dev/null | tail -5 || true
-            echo ""
-            echo "Testing health endpoint directly:"
-            docker exec ${{ matrix.container_name }} node -e "require('http').get('http://localhost:8080/health', (r) => {let d='';r.on('data',x=>d+=x);r.on('end',()=>{console.log('Status:',r.statusCode);console.log('Response:',d);process.exit(r.statusCode===200?0:1)})}).on('error',e=>{console.error('Error:',e.message);process.exit(1)})" 2>&1 || true
+            echo \"\"
+            echo \" ❌ Health check timeout after \$((max_attempts * 2)) seconds\"
+            echo \"Container: \${CONTAINER_NAME}\"
+            echo \"Final status: \$(docker inspect --format='{{.State.Health.Status}}' \${CONTAINER_NAME} 2>/dev/null || echo 'unknown')\"
+            echo \"\"
+            echo \"Container logs (last 50 lines):\"
+            docker logs --tail=50 \${CONTAINER_NAME} || true
+            echo \"\"
+            echo \"Health check history (last 5 attempts):\"
+            docker inspect \${CONTAINER_NAME} --format='{{range .State.Health.Log}}[{{.Start}}] ExitCode: {{.ExitCode}} Output: {{.Output}}{{end}}' 2>/dev/null | tail -5 || true
+            echo \"\"
+            echo \"Testing health endpoint directly:\"
+            docker exec \${CONTAINER_NAME} node -e \"require('http').get('http://localhost:8080/health', (r) => {let d='';r.on('data',x=>d+=x);r.on('end',()=>{console.log('Status:',r.statusCode);console.log('Response:',d);process.exit(r.statusCode===200?0:1)})}).on('error',e=>{console.error('Error:',e.message);process.exit(1)})\" 2>&1 || true
             exit 1
-          '
+          "
           
           echo "✅ All services are ready"
           docker compose ps
