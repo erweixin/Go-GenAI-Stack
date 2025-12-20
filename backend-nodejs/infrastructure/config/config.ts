@@ -6,6 +6,44 @@
 import { z } from 'zod';
 
 /**
+ * 解析时间字符串为秒数
+ * 支持格式：15m, 1h, 7d, 3600 (纯数字表示秒)
+ */
+function parseTimeToSeconds(timeStr: string | undefined): number {
+  if (!timeStr) {
+    return 0;
+  }
+  
+  // 如果是纯数字，直接返回
+  const numOnly = /^\d+$/.test(timeStr);
+  if (numOnly) {
+    return parseInt(timeStr, 10);
+  }
+  
+  // 解析带单位的时间字符串
+  const match = timeStr.match(/^(\d+)([smhd])$/i);
+  if (!match) {
+    throw new Error(`Invalid time format: ${timeStr}. Expected format: 15m, 1h, 7d, or 3600`);
+  }
+  
+  const value = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+  
+  switch (unit) {
+    case 's':
+      return value;
+    case 'm':
+      return value * 60;
+    case 'h':
+      return value * 3600;
+    case 'd':
+      return value * 86400;
+    default:
+      throw new Error(`Unknown time unit: ${unit}`);
+  }
+}
+
+/**
  * 配置 Schema（使用 Zod 进行验证）
  */
 const ConfigSchema = z.object({
@@ -36,8 +74,24 @@ const ConfigSchema = z.object({
       (val) => val.length >= 32 || process.env.NODE_ENV === 'test',
       { message: 'JWT secret must be at least 32 characters (except in test mode)' }
     ),
-    accessTokenExpiry: z.coerce.number().int().positive().default(3600), // 1 小时
-    refreshTokenExpiry: z.coerce.number().int().positive().default(604800), // 7 天
+    accessTokenExpiry: z.preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          return parseTimeToSeconds(val);
+        }
+        return typeof val === 'number' ? val : parseTimeToSeconds(String(val));
+      },
+      z.number().int().positive()
+    ).default(3600), // 1 小时（默认）
+    refreshTokenExpiry: z.preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          return parseTimeToSeconds(val);
+        }
+        return typeof val === 'number' ? val : parseTimeToSeconds(String(val));
+      },
+      z.number().int().positive()
+    ).default(604800), // 7 天（默认）
     issuer: z.string().default('go-genai-stack'),
   }),
 });
