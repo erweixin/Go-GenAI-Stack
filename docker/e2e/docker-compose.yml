@@ -128,6 +128,7 @@ services:
       JWT_ISSUER: go-genai-stack-e2e
       
       # 服务器配置
+      NODE_ENV: test
       SERVER_PORT: 8080
       SERVER_HOST: 0.0.0.0
     ports:
@@ -142,9 +143,9 @@ services:
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
     restart: unless-stopped
 
 volumes:
