@@ -4,6 +4,7 @@
  */
 
 import type { Task } from '../model/task.js';
+import type { RequestContext } from '../../../shared/types/context.js';
 
 export interface TaskFilter {
   // 筛选条件
@@ -31,31 +32,31 @@ export interface TaskRepository {
   /**
    * 创建任务
    */
-  create(ctx: unknown, task: Task): Promise<void>;
+  create(ctx: RequestContext, task: Task): Promise<void>;
 
   /**
    * 根据 ID 查找任务
    */
-  findById(ctx: unknown, taskId: string): Promise<Task | null>;
+  findById(ctx: RequestContext, taskId: string): Promise<Task | null>;
 
   /**
    * 更新任务
    */
-  update(ctx: unknown, task: Task): Promise<void>;
+  update(ctx: RequestContext, task: Task): Promise<void>;
 
   /**
    * 删除任务
    */
-  delete(ctx: unknown, taskId: string): Promise<void>;
+  delete(ctx: RequestContext, taskId: string): Promise<void>;
 
   /**
    * 列出任务
    */
-  list(ctx: unknown, filter: TaskFilter): Promise<{ tasks: Task[]; total: number }>;
+  list(ctx: RequestContext, filter: TaskFilter): Promise<{ tasks: Task[]; total: number }>;
 
   /**
    * 检查任务是否存在
    */
-  exists(ctx: unknown, taskId: string): Promise<boolean>;
+  exists(ctx: RequestContext, taskId: string): Promise<boolean>;
 }
 

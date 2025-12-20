@@ -9,40 +9,22 @@ import {
   toRefreshTokenInput,
   toRefreshTokenResponse,
 } from './converters.js';
-import { parseErrorCode } from '../errors/errors.js';
+import { createContextFromRequest } from '../../../shared/types/context.js';
 
+/**
+ * RefreshToken Handler
+ * HTTP 适配层：处理刷新 Token 的 HTTP 请求
+ * 错误由全局错误处理中间件统一处理
+ */
 export async function refreshTokenHandler(
   deps: HandlerDependencies,
   req: FastifyRequest<{ Body: RefreshTokenRequest }>,
   reply: FastifyReply
 ): Promise<void> {
-  try {
-    const body = req.body;
+  const input = toRefreshTokenInput(req.body);
+  const ctx = createContextFromRequest({ ...req });
+  const output = await deps.authService.refreshToken(ctx, input);
 
-    const input = toRefreshTokenInput(body);
-    const output = await deps.authService.refreshToken(req, input);
-
-    reply.code(200).send(toRefreshTokenResponse(output));
-  } catch (error) {
-    const errorCode = parseErrorCode(error);
-    const statusCode = getStatusCode(errorCode);
-    reply.code(statusCode).send({
-      error: errorCode,
-      message: error instanceof Error ? error.message : '刷新 Token 失败',
-    });
-  }
-}
-
-function getStatusCode(errorCode: string): number {
-  if (errorCode === 'INVALID_REFRESH_TOKEN' || errorCode === 'INVALID_TOKEN') {
-    return 401;
-  }
-  if (errorCode === 'USER_NOT_FOUND') {
-    return 404;
-  }
-  if (errorCode === 'USER_BANNED' || errorCode === 'USER_INACTIVE') {
-    return 403;
-  }
-  return 500;
+  reply.code(200).send(toRefreshTokenResponse(output));
 }
 

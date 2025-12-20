@@ -7,11 +7,13 @@ import type { Kysely } from 'kysely';
 import type { Database } from '../../../infrastructure/persistence/postgres/database.js';
 import { User } from '../model/user.js';
 import type { UserRepository } from './interface.js';
+import { createError } from '../../../shared/errors/errors.js';
+import type { RequestContext } from '../../../shared/types/context.js';
 
 export class UserRepositoryImpl implements UserRepository {
   constructor(private db: Kysely<Database>) {}
 
-  async create(_ctx: unknown, user: User): Promise<void> {
+  async create(_ctx: RequestContext, user: User): Promise<void> {
     try {
       await this.db
         .insertInto('users')
@@ -34,17 +36,17 @@ export class UserRepositoryImpl implements UserRepository {
       if (error.code === '23505') {
         // unique_violation
         if (error.constraint === 'users_email_key' || error.constraint === 'idx_users_email') {
-          throw new Error('EMAIL_ALREADY_EXISTS: 邮箱已被占用');
+          throw createError('EMAIL_ALREADY_EXISTS', '邮箱已被占用');
         }
         if (error.constraint === 'users_username_key' || error.constraint === 'idx_users_username') {
-          throw new Error('USERNAME_ALREADY_EXISTS: 用户名已被占用');
+          throw createError('VALIDATION_ERROR', '用户名已被占用');
         }
       }
-      throw new Error(`创建用户失败: ${error.message}`);
+      throw createError('INTERNAL_SERVER_ERROR', `创建用户失败: ${error.message}`);
     }
   }
 
-  async getById(_ctx: unknown, userId: string): Promise<User | null> {
+  async getById(_ctx: RequestContext, userId: string): Promise<User | null> {
     const userRow = await this.db
       .selectFrom('users')
       .selectAll()
@@ -58,7 +60,7 @@ export class UserRepositoryImpl implements UserRepository {
     return this.toDomainModel(userRow);
   }
 
-  async getByEmail(_ctx: unknown, email: string): Promise<User | null> {
+  async getByEmail(_ctx: RequestContext, email: string): Promise<User | null> {
     const normalizedEmail = email.toLowerCase().trim();
     const userRow = await this.db
       .selectFrom('users')
@@ -73,7 +75,7 @@ export class UserRepositoryImpl implements UserRepository {
     return this.toDomainModel(userRow);
   }
 
-  async getByUsername(_ctx: unknown, username: string): Promise<User | null> {
+  async getByUsername(_ctx: RequestContext, username: string): Promise<User | null> {
     const userRow = await this.db
       .selectFrom('users')
       .selectAll()
@@ -87,7 +89,7 @@ export class UserRepositoryImpl implements UserRepository {
     return this.toDomainModel(userRow);
   }
 
-  async update(_ctx: unknown, user: User): Promise<void> {
+  async update(_ctx: RequestContext, user: User): Promise<void> {
     try {
       const result = await this.db
         .updateTable('users')
@@ -106,37 +108,39 @@ export class UserRepositoryImpl implements UserRepository {
         .execute();
 
       if (result.length === 0) {
-        throw new Error('USER_NOT_FOUND: 用户不存在');
+        throw createError('USER_NOT_FOUND', '用户不存在');
       }
     } catch (error: any) {
+      // 如果是 DomainError，直接抛出
+      if (error.name === 'DomainError') {
+        throw error;
+      }
+      
       // 检查是否是唯一性约束冲突
       if (error.code === '23505') {
         if (error.constraint === 'users_email_key' || error.constraint === 'idx_users_email') {
-          throw new Error('EMAIL_ALREADY_EXISTS: 邮箱已被占用');
+          throw createError('EMAIL_ALREADY_EXISTS', '邮箱已被占用');
         }
         if (error.constraint === 'users_username_key' || error.constraint === 'idx_users_username') {
-          throw new Error('USERNAME_ALREADY_EXISTS: 用户名已被占用');
+          throw createError('VALIDATION_ERROR', '用户名已被占用');
         }
       }
-      if (error.message.includes('USER_NOT_FOUND')) {
-        throw error;
-      }
-      throw new Error(`更新用户失败: ${error.message}`);
+      throw createError('INTERNAL_SERVER_ERROR', `更新用户失败: ${error.message}`);
     }
   }
 
-  async delete(_ctx: unknown, userId: string): Promise<void> {
+  async delete(_ctx: RequestContext, userId: string): Promise<void> {
     const result = await this.db
       .deleteFrom('users')
       .where('id', '=', userId)
       .execute();
 
     if (result.length === 0) {
-      throw new Error('USER_NOT_FOUND: 用户不存在');
+      throw createError('USER_NOT_FOUND', '用户不存在');
     }
   }
 
-  async existsByEmail(_ctx: unknown, email: string): Promise<boolean> {
+  async existsByEmail(_ctx: RequestContext, email: string): Promise<boolean> {
     const normalizedEmail = email.toLowerCase().trim();
     const result = await this.db
       .selectFrom('users')
@@ -147,7 +151,7 @@ export class UserRepositoryImpl implements UserRepository {
     return Number(result?.count || 0) > 0;
   }
 
-  async existsByUsername(_ctx: unknown, username: string): Promise<boolean> {
+  async existsByUsername(_ctx: RequestContext, username: string): Promise<boolean> {
     const result = await this.db
       .selectFrom('users')
       .select((eb) => eb.fn.count('id').as('count'))
@@ -180,4 +184,5 @@ export class UserRepositoryImpl implements UserRepository {
     );
   }
 }
+
 

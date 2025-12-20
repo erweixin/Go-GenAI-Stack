@@ -4,6 +4,7 @@
  */
 
 import type { Task } from '../model/task.js';
+import { createError } from '../../../shared/errors/errors.js';
 import type {
   CreateTaskRequest,
   CreateTaskResponse,
@@ -46,7 +47,7 @@ export function toCreateTaskInput(
   if (req.due_date) {
     const dueDate = new Date(req.due_date);
     if (isNaN(dueDate.getTime())) {
-      throw new Error('INVALID_DUE_DATE: 截止日期格式无效');
+      throw createError('VALIDATION_ERROR', '截止日期格式无效');
     }
     input.dueDate = dueDate;
   }
@@ -89,7 +90,7 @@ export function toUpdateTaskInput(
   if (req.due_date !== undefined) {
     const dueDate = new Date(req.due_date);
     if (isNaN(dueDate.getTime())) {
-      throw new Error('INVALID_DUE_DATE: 截止日期格式无效');
+      throw createError('VALIDATION_ERROR', '截止日期格式无效');
     }
     input.dueDate = dueDate;
   }

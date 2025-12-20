@@ -6,6 +6,10 @@
 import type { FastifyInstance } from 'fastify';
 import type { HandlerDependencies } from '../handlers/dependencies.js';
 import type { UpdateUserProfileRequest, ChangePasswordRequest } from './dto/user.js';
+import {
+  UpdateUserProfileRequestSchema,
+  ChangePasswordRequestSchema,
+} from './dto/user.js';
 import { getUserProfileHandler } from '../handlers/get_user_profile.handler.js';
 import { updateUserProfileHandler } from '../handlers/update_user_profile.handler.js';
 import { changePasswordHandler } from '../handlers/change_password.handler.js';
@@ -31,18 +35,28 @@ export function registerUserRoutes(
   // PUT /api/users/me - 更新用户资料（需要认证）
   app.put<{ Body: UpdateUserProfileRequest }>(
     '/api/users/me',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        body: UpdateUserProfileRequestSchema,
+      },
+    },
     async (req, reply) => {
-      await updateUserProfileHandler(deps, req as any, reply);
+      await updateUserProfileHandler(deps, req, reply);
     }
   );
 
   // POST /api/users/me/change-password - 修改密码（需要认证）
   app.post<{ Body: ChangePasswordRequest }>(
     '/api/users/me/change-password',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        body: ChangePasswordRequestSchema,
+      },
+    },
     async (req, reply) => {
-      await changePasswordHandler(deps, req as any, reply);
+      await changePasswordHandler(deps, req, reply);
     }
   );
 }

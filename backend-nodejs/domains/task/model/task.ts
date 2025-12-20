@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from 'crypto';
+import { createError } from '../../../shared/errors/errors.js';
 
 // 任务状态
 export type TaskStatus = 'pending' | 'in_progress' | 'completed';
@@ -79,19 +80,19 @@ export class Task {
     priority: Priority = Priorities.Medium
   ): Task {
     if (!userId || userId.trim().length === 0) {
-      throw new Error('USER_ID_REQUIRED: 用户 ID 不能为空');
+      throw createError('VALIDATION_ERROR', '用户 ID 不能为空');
     }
     if (!title || title.trim().length === 0) {
-      throw new Error('TASK_TITLE_EMPTY: 任务标题不能为空');
+      throw createError('TASK_TITLE_EMPTY', '任务标题不能为空');
     }
     if (title.length > 200) {
-      throw new Error('TASK_TITLE_TOO_LONG: 标题过长，最大 200 字符');
+      throw createError('VALIDATION_ERROR', '标题过长，最大 200 字符');
     }
     if (description.length > 5000) {
-      throw new Error('TASK_DESCRIPTION_TOO_LONG: 描述过长，最大 5000 字符');
+      throw createError('VALIDATION_ERROR', '描述过长，最大 5000 字符');
     }
     if (!isValidPriority(priority)) {
-      throw new Error('INVALID_PRIORITY: 优先级无效');
+      throw createError('INVALID_PRIORITY', '优先级无效');
     }
 
     const now = new Date();
@@ -115,29 +116,29 @@ export class Task {
    */
   update(title?: string, description?: string, priority?: Priority): void {
     if (this.status === TaskStatuses.Completed) {
-      throw new Error('TASK_ALREADY_COMPLETED: 已完成的任务不能更新');
+      throw createError('TASK_ALREADY_COMPLETED', '已完成的任务不能更新');
     }
 
     if (title !== undefined) {
       if (!title || title.trim().length === 0) {
-        throw new Error('TASK_TITLE_EMPTY: 任务标题不能为空');
+        throw createError('TASK_TITLE_EMPTY', '任务标题不能为空');
       }
       if (title.length > 200) {
-        throw new Error('TASK_TITLE_TOO_LONG: 标题过长，最大 200 字符');
+        throw createError('VALIDATION_ERROR', '标题过长，最大 200 字符');
       }
       this.title = title.trim();
     }
 
     if (description !== undefined) {
       if (description.length > 5000) {
-        throw new Error('TASK_DESCRIPTION_TOO_LONG: 描述过长，最大 5000 字符');
+        throw createError('VALIDATION_ERROR', '描述过长，最大 5000 字符');
       }
       this.description = description;
     }
 
     if (priority !== undefined) {
       if (!isValidPriority(priority)) {
-        throw new Error('INVALID_PRIORITY: 优先级无效');
+        throw createError('INVALID_PRIORITY', '优先级无效');
       }
       this.priority = priority;
     }
@@ -150,7 +151,7 @@ export class Task {
    */
   setDueDate(dueDate: Date): void {
     if (dueDate < this.createdAt) {
-      throw new Error('INVALID_DUE_DATE: 截止日期不能早于创建日期');
+      throw createError('VALIDATION_ERROR', '截止日期不能早于创建日期');
     }
     this.dueDate = dueDate;
     this.updatedAt = new Date();
@@ -161,7 +162,7 @@ export class Task {
    */
   complete(): void {
     if (this.status === TaskStatuses.Completed) {
-      throw new Error('TASK_ALREADY_COMPLETED: 任务已完成，不能再次完成');
+      throw createError('TASK_ALREADY_COMPLETED', '任务已完成，不能再次完成');
     }
     this.status = TaskStatuses.Completed;
     this.completedAt = new Date();
@@ -173,14 +174,14 @@ export class Task {
    */
   addTag(tag: Tag): void {
     if (!tag.name || tag.name.trim().length === 0) {
-      throw new Error('TAG_NAME_EMPTY: 标签名不能为空');
+      throw createError('VALIDATION_ERROR', '标签名不能为空');
     }
     if (this.tags.length >= 10) {
-      throw new Error('TOO_MANY_TAGS: 标签过多，最多 10 个');
+      throw createError('VALIDATION_ERROR', '标签过多，最多 10 个');
     }
     // 检查重复
     if (this.tags.some((t) => t.name === tag.name)) {
-      throw new Error('DUPLICATE_TAG: 标签重复');
+      throw createError('VALIDATION_ERROR', '标签重复');
     }
     this.tags.push(tag);
     this.updatedAt = new Date();

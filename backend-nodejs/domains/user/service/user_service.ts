@@ -5,6 +5,8 @@
 
 import type { User } from '../model/user.js';
 import type { UserRepository } from '../repository/interface.js';
+import { createError } from '../../../shared/errors/errors.js';
+import type { RequestContext } from '../../../shared/types/context.js';
 
 export interface GetUserProfileInput {
   userId: string;
@@ -45,11 +47,11 @@ export class UserService {
   /**
    * 获取用户资料
    */
-  async getUserProfile(ctx: unknown, input: GetUserProfileInput): Promise<GetUserProfileOutput> {
+  async getUserProfile(ctx: RequestContext, input: GetUserProfileInput): Promise<GetUserProfileOutput> {
     // Step 1: 从数据库获取用户
     const user = await this.userRepo.getById(ctx, input.userId);
     if (!user) {
-      throw new Error('USER_NOT_FOUND: 用户不存在');
+      throw createError('USER_NOT_FOUND', '用户不存在');
     }
 
     // Step 2: 返回用户信息（不包含敏感字段）
@@ -60,7 +62,7 @@ export class UserService {
    * 更新用户资料
    */
   async updateUserProfile(
-    ctx: unknown,
+    ctx: RequestContext,
     input: UpdateUserProfileInput
   ): Promise<UpdateUserProfileOutput> {
     // Step 1: 验证输入（由 Model 层的验证逻辑处理）
@@ -68,14 +70,14 @@ export class UserService {
     // Step 2: 获取用户
     const user = await this.userRepo.getById(ctx, input.userId);
     if (!user) {
-      throw new Error('USER_NOT_FOUND: 用户不存在');
+      throw createError('USER_NOT_FOUND', '用户不存在');
     }
 
     // Step 3: 检查用户名是否已被占用（如果修改了用户名）
     if (input.username && input.username !== user.username) {
       const exists = await this.userRepo.existsByUsername(ctx, input.username);
       if (exists) {
-        throw new Error('USERNAME_ALREADY_EXISTS: 用户名已被占用');
+        throw createError('VALIDATION_ERROR', '用户名已被占用');
       }
     }
 
@@ -99,7 +101,7 @@ export class UserService {
    * 修改密码
    */
   async changePassword(
-    ctx: unknown,
+    ctx: RequestContext,
     input: ChangePasswordInput
   ): Promise<ChangePasswordOutput> {
     // Step 1: 验证输入（密码强度由 Model 层验证）
@@ -107,13 +109,13 @@ export class UserService {
     // Step 2: 获取用户
     const user = await this.userRepo.getById(ctx, input.userId);
     if (!user) {
-      throw new Error('USER_NOT_FOUND: 用户不存在');
+      throw createError('USER_NOT_FOUND', '用户不存在');
     }
 
     // Step 3: 验证旧密码
     const isValid = await user.verifyPassword(input.oldPassword);
     if (!isValid) {
-      throw new Error('INVALID_PASSWORD: 密码错误');
+      throw createError('VALIDATION_ERROR', '密码错误');
     }
 
     // Step 4 & 5: 更新密码（包含哈希）

@@ -6,6 +6,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { HandlerDependencies } from '../handlers/dependencies.js';
 import type { CreateTaskRequest, UpdateTaskRequest, ListTasksQuery } from './dto/task.js';
+import {
+  CreateTaskRequestSchema,
+  UpdateTaskRequestSchema,
+  ListTasksQuerySchema,
+} from './dto/task.js';
 import { createTaskHandler } from '../handlers/create_task.handler.js';
 import { updateTaskHandler } from '../handlers/update_task.handler.js';
 import { completeTaskHandler } from '../handlers/complete_task.handler.js';
@@ -25,54 +30,109 @@ export function registerTaskRoutes(
   // POST /api/tasks - 创建任务（需要认证）
   app.post<{ Body: CreateTaskRequest }>(
     '/api/tasks',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        body: CreateTaskRequestSchema,
+      },
+    },
     async (req, reply) => {
-      await createTaskHandler(deps, req as any, reply);
+      await createTaskHandler(deps, req, reply);
     }
   );
 
   // GET /api/tasks - 列出任务（需要认证）
   app.get<{ Querystring: ListTasksQuery }>(
     '/api/tasks',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        querystring: ListTasksQuerySchema,
+      },
+    },
     async (req, reply) => {
-      await listTasksHandler(deps, req as any, reply);
+      await listTasksHandler(deps, req, reply);
     }
   );
 
   // GET /api/tasks/:id - 获取任务详情（需要认证）
   app.get<{ Params: { id: string } }>(
     '/api/tasks/:id',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+      },
+    },
     async (req, reply) => {
-      await getTaskHandler(deps, req as any, reply);
+      await getTaskHandler(deps, req, reply);
     }
   );
 
   // PUT /api/tasks/:id - 更新任务（需要认证）
   app.put<{ Params: { id: string }; Body: UpdateTaskRequest }>(
     '/api/tasks/:id',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+        body: UpdateTaskRequestSchema,
+      },
+    },
     async (req, reply) => {
-      await updateTaskHandler(deps, req as any, reply);
+      await updateTaskHandler(deps, req, reply);
     }
   );
 
   // POST /api/tasks/:id/complete - 完成任务（需要认证）
   app.post<{ Params: { id: string } }>(
     '/api/tasks/:id/complete',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+      },
+    },
     async (req, reply) => {
-      await completeTaskHandler(deps, req as any, reply);
+      await completeTaskHandler(deps, req, reply);
     }
   );
 
   // DELETE /api/tasks/:id - 删除任务（需要认证）
   app.delete<{ Params: { id: string } }>(
     '/api/tasks/:id',
-    { preHandler: authMiddleware },
+    {
+      preHandler: authMiddleware,
+      schema: {
+        params: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+          },
+          required: ['id'],
+        },
+      },
+    },
     async (req, reply) => {
-      await deleteTaskHandler(deps, req as any, reply);
+      await deleteTaskHandler(deps, req, reply);
     }
   );
 }

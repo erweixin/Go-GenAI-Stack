@@ -6,6 +6,8 @@
 import type { UserRepository } from '../../user/repository/interface.js';
 import { User } from '../../user/model/user.js';
 import type { JWTService } from './jwt_service.js';
+import { createError } from '../../../shared/errors/errors.js';
+import type { RequestContext } from '../../../shared/types/context.js';
 
 export interface RegisterInput {
   email: string;
@@ -57,20 +59,20 @@ export class AuthService {
   /**
    * 用户注册
    */
-  async register(ctx: unknown, input: RegisterInput): Promise<RegisterOutput> {
+  async register(ctx: RequestContext, input: RegisterInput): Promise<RegisterOutput> {
     // Step 1: 验证输入（由 Model 层的验证逻辑处理）
 
     // Step 2: 检查邮箱是否已被注册
     const emailExists = await this.userRepo.existsByEmail(ctx, input.email);
     if (emailExists) {
-      throw new Error('EMAIL_ALREADY_EXISTS: 邮箱已被占用');
+      throw createError('EMAIL_ALREADY_EXISTS', '邮箱已被占用');
     }
 
     // Step 3: 检查用户名是否已被占用（如果提供）
     if (input.username) {
       const usernameExists = await this.userRepo.existsByUsername(ctx, input.username);
       if (usernameExists) {
-        throw new Error('USERNAME_ALREADY_EXISTS: 用户名已被占用');
+        throw createError('VALIDATION_ERROR', '用户名已被占用');
       }
     }
 
@@ -107,21 +109,21 @@ export class AuthService {
   /**
    * 用户登录
    */
-  async login(ctx: unknown, input: LoginInput): Promise<LoginOutput> {
+  async login(ctx: RequestContext, input: LoginInput): Promise<LoginOutput> {
     // Step 1: 验证输入（由 Model 层的验证逻辑处理）
 
     // Step 2: 根据邮箱获取用户
     const user = await this.userRepo.getByEmail(ctx, input.email);
     if (!user) {
       // 统一返回错误消息，不泄露是邮箱还是密码错误
-      throw new Error('INVALID_CREDENTIALS: 邮箱或密码错误');
+      throw createError('INVALID_CREDENTIALS', '邮箱或密码错误');
     }
 
     // Step 3: 验证密码
     const isValid = await user.verifyPassword(input.password);
     if (!isValid) {
       // 统一返回错误消息
-      throw new Error('INVALID_CREDENTIALS: 邮箱或密码错误');
+      throw createError('INVALID_CREDENTIALS', '邮箱或密码错误');
     }
 
     // Step 4: 检查用户状态
@@ -162,19 +164,19 @@ export class AuthService {
   /**
    * 刷新 Token
    */
-  async refreshToken(ctx: unknown, input: RefreshTokenInput): Promise<RefreshTokenOutput> {
+  async refreshToken(ctx: RequestContext, input: RefreshTokenInput): Promise<RefreshTokenOutput> {
     // Step 1: 验证 Refresh Token
     let claims;
     try {
       claims = this.jwtService.verifyRefreshToken(input.refreshToken);
     } catch (error) {
-      throw new Error('INVALID_REFRESH_TOKEN: Refresh Token 无效或已过期');
+      throw createError('REFRESH_TOKEN_INVALID', 'Refresh Token 无效或已过期');
     }
 
     // Step 2: 获取用户信息
     const user = await this.userRepo.getById(ctx, claims.user_id);
     if (!user) {
-      throw new Error('USER_NOT_FOUND: 用户不存在');
+      throw createError('USER_NOT_FOUND', '用户不存在');
     }
 
     // Step 3: 检查用户状态

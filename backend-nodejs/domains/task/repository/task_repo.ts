@@ -3,39 +3,45 @@
  * 使用 Kysely 进行类型安全的数据库操作
  */
 
-import type { Kysely } from 'kysely';
+import type { Kysely, Transaction } from 'kysely';
 import type { Database } from '../../../infrastructure/persistence/postgres/database.js';
 import { Task } from '../model/task.js';
 import type { TaskRepository, TaskFilter } from './interface.js';
+import { createError } from '../../../shared/errors/errors.js';
+import { withTransaction } from '../../../infrastructure/persistence/postgres/transaction.js';
+import type { RequestContext } from '../../../shared/types/context.js';
 
 export class TaskRepositoryImpl implements TaskRepository {
   constructor(private db: Kysely<Database>) {}
 
-  async create(_ctx: unknown, task: Task): Promise<void> {
-    // 插入任务
-    await this.db
-      .insertInto('tasks')
-      .values({
-        id: task.id,
-        user_id: task.userId,
-        title: task.title,
-        description: task.description,
-        status: task.status,
-        priority: task.priority,
-        due_date: task.dueDate,
-        created_at: task.createdAt,
-        updated_at: task.updatedAt,
-        completed_at: task.completedAt,
-      })
-      .execute();
+  async create(_ctx: RequestContext, task: Task): Promise<void> {
+    // 在事务中执行：插入任务和保存标签
+    await withTransaction(this.db, async (trx) => {
+      // 插入任务
+      await trx
+        .insertInto('tasks')
+        .values({
+          id: task.id,
+          user_id: task.userId,
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          priority: task.priority,
+          due_date: task.dueDate,
+          created_at: task.createdAt,
+          updated_at: task.updatedAt,
+          completed_at: task.completedAt,
+        })
+        .execute();
 
-    // 保存标签
-    if (task.tags.length > 0) {
-      await this.saveTags(task.id, task.tags);
-    }
+      // 保存标签（在同一事务中）
+      if (task.tags.length > 0) {
+        await this.saveTagsInTransaction(trx, task.id, task.tags);
+      }
+    });
   }
 
-  async findById(_ctx: unknown, taskId: string): Promise<Task | null> {
+  async findById(_ctx: RequestContext, taskId: string): Promise<Task | null> {
     const taskRow = await this.db
       .selectFrom('tasks')
       .selectAll()
@@ -52,47 +58,50 @@ export class TaskRepositoryImpl implements TaskRepository {
     return this.toDomainModel(taskRow, tags);
   }
 
-  async update(_ctx: unknown, task: Task): Promise<void> {
-    const result = await this.db
-      .updateTable('tasks')
-      .set({
-        title: task.title,
-        description: task.description,
-        status: task.status,
-        priority: task.priority,
-        due_date: task.dueDate,
-        updated_at: task.updatedAt,
-        completed_at: task.completedAt,
-      })
-      .where('id', '=', task.id)
-      .execute();
+  async update(_ctx: RequestContext, task: Task): Promise<void> {
+    // 在事务中执行：更新任务和标签
+    await withTransaction(this.db, async (trx) => {
+      const result = await trx
+        .updateTable('tasks')
+        .set({
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          priority: task.priority,
+          due_date: task.dueDate,
+          updated_at: task.updatedAt,
+          completed_at: task.completedAt,
+        })
+        .where('id', '=', task.id)
+        .execute();
 
-    if (result.length === 0) {
-      throw new Error('TASK_NOT_FOUND: 任务不存在');
-    }
+      if (result.length === 0) {
+        throw createError('TASK_NOT_FOUND', '任务不存在');
+      }
 
-    // 更新标签（先删除旧的，再插入新的）
-    await this.deleteTags(task.id);
-    if (task.tags.length > 0) {
-      await this.saveTags(task.id, task.tags);
-    }
+      // 更新标签（先删除旧的，再插入新的，在同一事务中）
+      await this.deleteTagsInTransaction(trx, task.id);
+      if (task.tags.length > 0) {
+        await this.saveTagsInTransaction(trx, task.id, task.tags);
+      }
+    });
   }
 
-  async delete(_ctx: unknown, taskId: string): Promise<void> {
+  async delete(_ctx: RequestContext, taskId: string): Promise<void> {
     const result = await this.db
       .deleteFrom('tasks')
       .where('id', '=', taskId)
       .execute();
 
     if (result.length === 0) {
-      throw new Error('TASK_NOT_FOUND: 任务不存在');
+      throw createError('TASK_NOT_FOUND', '任务不存在');
     }
 
     // 标签会通过外键级联删除
   }
 
   async list(
-    _ctx: unknown,
+    _ctx: RequestContext,
     filter: TaskFilter
   ): Promise<{ tasks: Task[]; total: number }> {
     // 构建查询
@@ -154,17 +163,32 @@ export class TaskRepositoryImpl implements TaskRepository {
     // 执行查询
     const taskRows = await query.selectAll().execute();
 
-    // 加载标签并转换为领域模型
-    const tasks: Task[] = [];
-    for (const row of taskRows) {
-      const tags = await this.loadTags(row.id);
-      tasks.push(this.toDomainModel(row, tags));
+    // 批量加载所有标签（修复 N+1 查询问题）
+    const taskIds = taskRows.map((row) => row.id);
+    const allTags = await this.loadTagsBatch(taskIds);
+
+    // 构建标签映射
+    const tagsMap = new Map<string, Array<{ name: string; color: string }>>();
+    for (const tag of allTags) {
+      if (!tagsMap.has(tag.task_id)) {
+        tagsMap.set(tag.task_id, []);
+      }
+      tagsMap.get(tag.task_id)!.push({
+        name: tag.tag_name,
+        color: tag.tag_color || '#808080',
+      });
     }
+
+    // 转换为领域模型
+    const tasks = taskRows.map((row) => {
+      const tags = tagsMap.get(row.id) || [];
+      return this.toDomainModel(row, tags);
+    });
 
     return { tasks, total };
   }
 
-  async exists(_ctx: unknown, taskId: string): Promise<boolean> {
+  async exists(_ctx: RequestContext, taskId: string): Promise<boolean> {
     const result = await this.db
       .selectFrom('tasks')
       .select((eb) => eb.fn.count('id').as('count'))
@@ -179,49 +203,64 @@ export class TaskRepositoryImpl implements TaskRepository {
   // ============================================
 
   /**
-   * 保存标签
+   * 保存标签（在事务中）
    */
-  private async saveTags(taskId: string, tags: Array<{ name: string; color: string }>): Promise<void> {
+  private async saveTagsInTransaction(
+    trx: Transaction<Database>,
+    taskId: string,
+    tags: Array<{ name: string; color: string }>
+  ): Promise<void> {
     if (tags.length === 0) {
       return;
     }
 
-    // 检查并插入标签（避免重复）
-    for (const tag of tags) {
-      const existing = await this.db
-        .selectFrom('task_tags')
-        .select('task_id')
-        .where('task_id', '=', taskId)
-        .where('tag_name', '=', tag.name)
-        .executeTakeFirst();
+    // 批量插入标签（使用 INSERT ... ON CONFLICT DO NOTHING 避免重复）
+    const tagValues = tags.map((tag) => ({
+      task_id: taskId,
+      tag_name: tag.name,
+      tag_color: tag.color || '#808080',
+    }));
 
-      if (!existing) {
-        // 不存在，插入
-        await this.db
-          .insertInto('task_tags')
-          .values({
-            task_id: taskId,
-            tag_name: tag.name,
-            tag_color: tag.color || '#808080',
-          })
-          .execute();
-      }
-      // 已存在，跳过
-    }
+    await trx
+      .insertInto('task_tags')
+      .values(tagValues)
+      .onConflict((oc) => oc
+        .columns(['task_id', 'tag_name'])
+        .doNothing()
+      )
+      .execute();
   }
 
   /**
-   * 删除标签
+   * 删除标签（在事务中）
    */
-  private async deleteTags(taskId: string): Promise<void> {
-    await this.db
+  private async deleteTagsInTransaction(trx: Transaction<Database>, taskId: string): Promise<void> {
+    await trx
       .deleteFrom('task_tags')
       .where('task_id', '=', taskId)
       .execute();
   }
 
+
   /**
-   * 加载标签
+   * 批量加载标签（修复 N+1 查询问题）
+   */
+  private async loadTagsBatch(
+    taskIds: string[]
+  ): Promise<Array<{ task_id: string; tag_name: string; tag_color: string | null }>> {
+    if (taskIds.length === 0) {
+      return [];
+    }
+
+    return await this.db
+      .selectFrom('task_tags')
+      .select(['task_id', 'tag_name', 'tag_color'])
+      .where('task_id', 'in', taskIds)
+      .execute();
+  }
+
+  /**
+   * 加载单个任务的标签（保留用于兼容）
    */
   private async loadTags(taskId: string): Promise<Array<{ name: string; color: string }>> {
     const tagRows = await this.db

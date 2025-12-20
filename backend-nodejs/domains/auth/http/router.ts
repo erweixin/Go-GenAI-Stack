@@ -6,6 +6,11 @@
 import type { FastifyInstance } from 'fastify';
 import type { HandlerDependencies } from '../handlers/dependencies.js';
 import type { RegisterRequest, LoginRequest, RefreshTokenRequest } from './dto/auth.js';
+import {
+  RegisterRequestSchema,
+  LoginRequestSchema,
+  RefreshTokenRequestSchema,
+} from './dto/auth.js';
 import { registerHandler } from '../handlers/register.handler.js';
 import { loginHandler } from '../handlers/login.handler.js';
 import { refreshTokenHandler } from '../handlers/refresh_token.handler.js';
@@ -18,18 +23,42 @@ export function registerAuthRoutes(
   deps: HandlerDependencies
 ): void {
   // POST /api/auth/register - 用户注册
-  app.post<{ Body: RegisterRequest }>('/api/auth/register', async (req, reply) => {
-    await registerHandler(deps, req, reply);
-  });
+  app.post<{ Body: RegisterRequest }>(
+    '/api/auth/register',
+    {
+      schema: {
+        body: RegisterRequestSchema,
+      },
+    },
+    async (req, reply) => {
+      await registerHandler(deps, req, reply);
+    }
+  );
 
   // POST /api/auth/login - 用户登录
-  app.post<{ Body: LoginRequest }>('/api/auth/login', async (req, reply) => {
-    await loginHandler(deps, req, reply);
-  });
+  app.post<{ Body: LoginRequest }>(
+    '/api/auth/login',
+    {
+      schema: {
+        body: LoginRequestSchema,
+      },
+    },
+    async (req, reply) => {
+      await loginHandler(deps, req, reply);
+    }
+  );
 
   // POST /api/auth/refresh - 刷新 Token
-  app.post<{ Body: RefreshTokenRequest }>('/api/auth/refresh', async (req, reply) => {
-    await refreshTokenHandler(deps, req, reply);
-  });
+  app.post<{ Body: RefreshTokenRequest }>(
+    '/api/auth/refresh',
+    {
+      schema: {
+        body: RefreshTokenRequestSchema,
+      },
+    },
+    async (req, reply) => {
+      await refreshTokenHandler(deps, req, reply);
+    }
+  );
 }
 

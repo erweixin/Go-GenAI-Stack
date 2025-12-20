@@ -10,58 +10,31 @@ import {
   toCreateTaskInput,
   toCreateTaskResponse,
 } from './converters.js';
-import { parseErrorCode } from '../errors/errors.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
+import { createContextFromRequest } from '../../../shared/types/context.js';
 
+/**
+ * CreateTask Handler
+ * HTTP 适配层：处理创建任务的 HTTP 请求
+ * 错误由全局错误处理中间件统一处理
+ */
 export async function createTaskHandler(
   deps: HandlerDependencies,
   req: FastifyRequest<{ Body: CreateTaskRequest }>,
   reply: FastifyReply
 ): Promise<void> {
-  try {
-    // 1. 获取用户 ID（从 JWT Token 中提取）
-    const userId = requireUserId(req);
+  // 1. 获取用户 ID（从 JWT Token 中提取）
+  const userId = requireUserId(req);
 
-    // 2. 解析 HTTP 请求
-    const body = req.body;
+  // 2. 转换为 Domain Input
+  const input = toCreateTaskInput(userId, req.body);
 
-    // 3. 转换为 Domain Input
-    const input = toCreateTaskInput(userId, body);
+  // 3. 创建请求上下文
+  const ctx = createContextFromRequest({ userId, ...req });
 
-    // 4. 调用 Domain Service
-    const output = await deps.taskService.createTask(req, input);
+  // 4. 调用 Domain Service（错误会自动向上抛出，由全局错误处理中间件处理）
+  const output = await deps.taskService.createTask(ctx, input);
 
-    // 5. 转换为 HTTP 响应
-    reply.code(200).send(toCreateTaskResponse(output.task));
-  } catch (error) {
-    const errorCode = parseErrorCode(error);
-    const statusCode = getStatusCode(errorCode);
-    reply.code(statusCode).send({
-      error: errorCode,
-      message: error instanceof Error ? error.message : '创建任务失败',
-    });
-  }
-}
-
-function getStatusCode(errorCode: string): number {
-  if (errorCode === 'UNAUTHORIZED') {
-    return 401;
-  }
-  if (errorCode === 'TASK_NOT_FOUND') {
-    return 404;
-  }
-  if (errorCode === 'UNAUTHORIZED_ACCESS') {
-    return 403;
-  }
-  if (
-    errorCode.startsWith('TASK_') ||
-    errorCode === 'INVALID_PRIORITY' ||
-    errorCode === 'INVALID_DUE_DATE' ||
-    errorCode === 'TOO_MANY_TAGS' ||
-    errorCode === 'DUPLICATE_TAG' ||
-    errorCode === 'TAG_NAME_EMPTY'
-  ) {
-    return 400;
-  }
-  return 500;
+  // 4. 转换为 HTTP 响应
+  reply.code(200).send(toCreateTaskResponse(output.task));
 }

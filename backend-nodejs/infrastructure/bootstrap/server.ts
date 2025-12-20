@@ -10,6 +10,8 @@ import type { Kysely } from 'kysely';
 import type { Database } from '../persistence/postgres/database.js';
 import type { RedisClientType } from 'redis';
 import { checkHealth } from '../monitoring/health/health.js';
+import type { AuthMiddleware } from '../middleware/types.js';
+import { isDomainError } from '../../shared/errors/errors.js';
 
 /**
  * 创建 Fastify 服务器
@@ -51,21 +53,33 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
     reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   });
 
-  // Error handling (手动实现，因为 @fastify/sensible 不支持 Fastify 5)
-  fastify.setErrorHandler((error: Error & { statusCode?: number }, request, reply) => {
-    const statusCode = error.statusCode || 500;
-    const message = error.message || 'Internal Server Error';
-
+  // Error handling (统一错误处理)
+  fastify.setErrorHandler((error: Error, request: FastifyRequest, reply: FastifyReply) => {
     request.log.error({
       err: error,
       url: request.url,
       method: request.method,
     }, 'Request error');
 
-    reply.code(statusCode).send({
+    // 处理领域错误
+    if (isDomainError(error)) {
+      return reply.code(error.statusCode).send({
+        error: {
+          code: error.code,
+          message: error.message,
+        },
+      });
+    }
+
+    // 处理其他错误（包含 statusCode 的 HTTP 错误）
+    const httpError = error as Error & { statusCode?: number };
+    const statusCode = httpError.statusCode || 500;
+    const message = httpError.message || 'Internal Server Error';
+
+    return reply.code(statusCode).send({
       error: {
-        message,
-        statusCode,
+        code: 'INTERNAL_SERVER_ERROR',
+        message: statusCode === 500 ? 'Internal server error' : message,
       },
     });
   });
@@ -114,7 +128,7 @@ export function registerRoutes(
 export async function registerDomainRoutes(
   fastify: FastifyInstance,
   handlerDeps: Record<string, unknown>,
-  authMiddleware: unknown
+  authMiddleware: AuthMiddleware
 ): Promise<void> {
   // 动态导入并注册 Task 路由
   if (handlerDeps.task) {

@@ -4,6 +4,7 @@
  */
 
 import jwt, { type JwtPayload } from 'jsonwebtoken';
+import { createError } from '../../../shared/errors/errors.js';
 
 export type TokenType = 'access' | 'refresh';
 
@@ -95,7 +96,7 @@ export class JWTService {
 
       // 验证 Issuer
       if (decoded.iss !== this.config.issuer) {
-        throw new Error('INVALID_ISSUER: Issuer 不匹配');
+        throw createError('VALIDATION_ERROR', 'Issuer 不匹配');
       }
 
       // 转换为 JWTPayload
@@ -112,10 +113,10 @@ export class JWTService {
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'TokenExpiredError') {
-          throw new Error('INVALID_TOKEN: Token 已过期');
+          throw createError('TOKEN_EXPIRED', 'Token 已过期');
         }
         if (error.name === 'JsonWebTokenError') {
-          throw new Error('INVALID_TOKEN: Token 验证失败');
+          throw createError('INVALID_TOKEN', 'Token 验证失败');
         }
       }
       throw error;
@@ -129,7 +130,7 @@ export class JWTService {
     const payload = this.verifyToken(tokenString);
 
     if (payload.type !== 'access') {
-      throw new Error('INVALID_TOKEN_TYPE: Token 类型必须是 access');
+      throw createError('VALIDATION_ERROR', 'Token 类型必须是 access');
     }
 
     return payload;
@@ -142,7 +143,7 @@ export class JWTService {
     const payload = this.verifyToken(tokenString);
 
     if (payload.type !== 'refresh') {
-      throw new Error('INVALID_TOKEN_TYPE: Token 类型必须是 refresh');
+      throw createError('VALIDATION_ERROR', 'Token 类型必须是 refresh');
     }
 
     return payload;

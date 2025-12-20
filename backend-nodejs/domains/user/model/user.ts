@@ -5,6 +5,7 @@
 
 import { randomUUID } from 'crypto';
 import * as bcrypt from 'bcryptjs';
+import { createError } from '../../../shared/errors/errors.js';
 
 // 用户状态
 export type UserStatus = 'active' | 'inactive' | 'banned';
@@ -62,7 +63,7 @@ export class User {
     // 验证邮箱
     const normalizedEmail = normalizeEmail(email);
     if (!isValidEmail(normalizedEmail)) {
-      throw new Error('INVALID_EMAIL: 邮箱格式无效');
+      throw createError('INVALID_EMAIL', '邮箱格式无效');
     }
 
     // 验证密码
@@ -117,7 +118,7 @@ export class User {
     // 验证用户名（如果提供）
     if (username !== undefined && username !== '') {
       if (!isValidUsername(username)) {
-        throw new Error('INVALID_USERNAME: 用户名格式无效（3-30 字符，仅字母数字下划线）');
+        throw createError('VALIDATION_ERROR', '用户名格式无效（3-30 字符，仅字母数字下划线）');
       }
       this.username = username;
     }
@@ -125,7 +126,7 @@ export class User {
     // 验证全名
     if (fullName !== undefined && fullName !== '') {
       if (fullName.length > 100) {
-        throw new Error('FULL_NAME_TOO_LONG: 全名过长（最多 100 字符）');
+        throw createError('VALIDATION_ERROR', '全名过长（最多 100 字符）');
       }
       this.fullName = fullName;
     }
@@ -133,7 +134,7 @@ export class User {
     // 验证头像 URL（如果提供）
     if (avatarURL !== undefined && avatarURL !== '') {
       if (!avatarURL.startsWith('http://') && !avatarURL.startsWith('https://')) {
-        throw new Error('INVALID_AVATAR_URL: 头像 URL 格式无效');
+        throw createError('VALIDATION_ERROR', '头像 URL 格式无效');
       }
       this.avatarURL = avatarURL;
     }
@@ -179,7 +180,7 @@ export class User {
    */
   canLogin(): void {
     if (this.status === UserStatuses.Banned) {
-      throw new Error('USER_BANNED: 用户已被禁用');
+      throw createError('UNAUTHORIZED', '用户已被禁用');
     }
     // 注意：我们允许 Inactive 用户登录，但可能限制某些功能
   }
@@ -217,10 +218,10 @@ function isValidUsername(username: string): boolean {
  */
 function validatePassword(password: string): void {
   if (password.length < 8) {
-    throw new Error('WEAK_PASSWORD: 密码强度不足（至少 8 字符）');
+    throw createError('PASSWORD_TOO_SHORT', '密码强度不足（至少 8 字符）');
   }
   if (password.length > 128) {
-    throw new Error('PASSWORD_TOO_LONG: 密码过长（最多 128 字符）');
+    throw createError('VALIDATION_ERROR', '密码过长（最多 128 字符）');
   }
 }
 

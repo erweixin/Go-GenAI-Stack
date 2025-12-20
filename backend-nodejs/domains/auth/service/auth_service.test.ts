@@ -8,6 +8,7 @@ import { AuthService } from './auth_service.js';
 import { JWTService } from './jwt_service.js';
 import type { UserRepository } from '../../user/repository/interface.js';
 import { User } from '../../user/model/user.js';
+import type { RequestContext } from '../../../shared/types/context.js';
 
 // Mock UserRepository
 class MockUserRepository implements UserRepository {
@@ -15,7 +16,7 @@ class MockUserRepository implements UserRepository {
   private emails: Set<string> = new Set();
   private usernames: Set<string> = new Set();
 
-  async create(_ctx: unknown, user: User): Promise<void> {
+  async create(_ctx: RequestContext, user: User): Promise<void> {
     this.users.set(user.id, user);
     this.emails.add(user.email.toLowerCase());
     if (user.username) {
@@ -23,11 +24,11 @@ class MockUserRepository implements UserRepository {
     }
   }
 
-  async getById(_ctx: unknown, userId: string): Promise<User | null> {
+  async getById(_ctx: RequestContext, userId: string): Promise<User | null> {
     return this.users.get(userId) || null;
   }
 
-  async getByEmail(_ctx: unknown, email: string): Promise<User | null> {
+  async getByEmail(_ctx: RequestContext, email: string): Promise<User | null> {
     const normalizedEmail = email.toLowerCase();
     for (const user of this.users.values()) {
       if (user.email.toLowerCase() === normalizedEmail) {
@@ -37,18 +38,18 @@ class MockUserRepository implements UserRepository {
     return null;
   }
 
-  async update(_ctx: unknown, user: User): Promise<void> {
+  async update(_ctx: RequestContext, user: User): Promise<void> {
     this.users.set(user.id, user);
     if (user.username) {
       this.usernames.add(user.username);
     }
   }
 
-  async existsByEmail(_ctx: unknown, email: string): Promise<boolean> {
+  async existsByEmail(_ctx: RequestContext, email: string): Promise<boolean> {
     return this.emails.has(email.toLowerCase());
   }
 
-  async existsByUsername(_ctx: unknown, username: string): Promise<boolean> {
+  async existsByUsername(_ctx: RequestContext, username: string): Promise<boolean> {
     return this.usernames.has(username);
   }
 }

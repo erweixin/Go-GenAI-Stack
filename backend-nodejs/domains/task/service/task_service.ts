@@ -5,6 +5,8 @@
 
 import { Task } from '../model/task.js';
 import type { TaskRepository, TaskFilter } from '../repository/interface.js';
+import { createError } from '../../../shared/errors/errors.js';
+import type { RequestContext } from '../../../shared/types/context.js';
 
 export interface CreateTaskInput {
   userId: string;
@@ -82,13 +84,13 @@ export class TaskService {
   /**
    * 创建任务
    */
-  async createTask(ctx: unknown, input: CreateTaskInput): Promise<CreateTaskOutput> {
+  async createTask(ctx: RequestContext, input: CreateTaskInput): Promise<CreateTaskOutput> {
     // Step 1: ValidateInput
     if (!input.userId || input.userId.trim().length === 0) {
-      throw new Error('USER_ID_REQUIRED: 用户 ID 不能为空');
+      throw createError('VALIDATION_ERROR', '用户 ID 不能为空');
     }
     if (!input.title || input.title.trim().length === 0) {
-      throw new Error('TASK_TITLE_EMPTY: 任务标题不能为空');
+      throw createError('TASK_TITLE_EMPTY', '任务标题不能为空');
     }
 
     // Step 2 & 3: CreateTaskEntity
@@ -102,7 +104,7 @@ export class TaskService {
 
     // 添加标签
     if (input.tags && input.tags.length > 10) {
-      throw new Error('TOO_MANY_TAGS: 标签过多，最多 10 个');
+      throw createError('VALIDATION_ERROR', '标签过多，最多 10 个');
     }
 
     if (input.tags) {
@@ -126,26 +128,26 @@ export class TaskService {
   /**
    * 更新任务
    */
-  async updateTask(ctx: unknown, input: UpdateTaskInput): Promise<UpdateTaskOutput> {
+  async updateTask(ctx: RequestContext, input: UpdateTaskInput): Promise<UpdateTaskOutput> {
     // Step 1: ValidateUserID
     if (!input.userId || input.userId.trim().length === 0) {
-      throw new Error('USER_ID_REQUIRED: 用户 ID 不能为空');
+      throw createError('VALIDATION_ERROR', '用户 ID 不能为空');
     }
 
     // Step 2: GetTask
     const task = await this.taskRepo.findById(ctx, input.taskId);
     if (!task) {
-      throw new Error('TASK_NOT_FOUND: 任务不存在');
+      throw createError('TASK_NOT_FOUND', '任务不存在');
     }
 
     // Step 2.1: CheckOwnership
     if (task.userId !== input.userId) {
-      throw new Error('UNAUTHORIZED_ACCESS: 无权访问此任务');
+      throw createError('UNAUTHORIZED', '无权访问此任务');
     }
 
     // Step 3: CheckIfCompleted
     if (task.status === 'completed') {
-      throw new Error('TASK_ALREADY_COMPLETED: 已完成的任务不能更新');
+      throw createError('TASK_ALREADY_COMPLETED', '已完成的任务不能更新');
     }
 
     // Step 4: UpdateTaskFields
@@ -185,21 +187,21 @@ export class TaskService {
   /**
    * 完成任务
    */
-  async completeTask(ctx: unknown, input: CompleteTaskInput): Promise<CompleteTaskOutput> {
+  async completeTask(ctx: RequestContext, input: CompleteTaskInput): Promise<CompleteTaskOutput> {
     // Step 1: ValidateUserID
     if (!input.userId || input.userId.trim().length === 0) {
-      throw new Error('USER_ID_REQUIRED: 用户 ID 不能为空');
+      throw createError('VALIDATION_ERROR', '用户 ID 不能为空');
     }
 
     // Step 2: GetTask
     const task = await this.taskRepo.findById(ctx, input.taskId);
     if (!task) {
-      throw new Error('TASK_NOT_FOUND: 任务不存在');
+      throw createError('TASK_NOT_FOUND', '任务不存在');
     }
 
     // Step 3: CheckOwnership
     if (task.userId !== input.userId) {
-      throw new Error('UNAUTHORIZED_ACCESS: 无权访问此任务');
+      throw createError('UNAUTHORIZED', '无权访问此任务');
     }
 
     // Step 4 & 5: CheckStatus & MarkAsCompleted
@@ -215,21 +217,21 @@ export class TaskService {
   /**
    * 删除任务
    */
-  async deleteTask(ctx: unknown, input: DeleteTaskInput): Promise<DeleteTaskOutput> {
+  async deleteTask(ctx: RequestContext, input: DeleteTaskInput): Promise<DeleteTaskOutput> {
     // Step 1: ValidateUserID
     if (!input.userId || input.userId.trim().length === 0) {
-      throw new Error('USER_ID_REQUIRED: 用户 ID 不能为空');
+      throw createError('VALIDATION_ERROR', '用户 ID 不能为空');
     }
 
     // Step 2: GetTask
     const task = await this.taskRepo.findById(ctx, input.taskId);
     if (!task) {
-      throw new Error('TASK_NOT_FOUND: 任务不存在');
+      throw createError('TASK_NOT_FOUND', '任务不存在');
     }
 
     // Step 3: CheckOwnership
     if (task.userId !== input.userId) {
-      throw new Error('UNAUTHORIZED_ACCESS: 无权访问此任务');
+      throw createError('UNAUTHORIZED', '无权访问此任务');
     }
 
     // Step 4: DeleteTaskRecord
@@ -245,21 +247,21 @@ export class TaskService {
   /**
    * 获取任务详情
    */
-  async getTask(ctx: unknown, input: GetTaskInput): Promise<GetTaskOutput> {
+  async getTask(ctx: RequestContext, input: GetTaskInput): Promise<GetTaskOutput> {
     // Step 1: ValidateUserID
     if (!input.userId || input.userId.trim().length === 0) {
-      throw new Error('USER_ID_REQUIRED: 用户 ID 不能为空');
+      throw createError('VALIDATION_ERROR', '用户 ID 不能为空');
     }
 
     // Step 2: GetTask
     const task = await this.taskRepo.findById(ctx, input.taskId);
     if (!task) {
-      throw new Error('TASK_NOT_FOUND: 任务不存在');
+      throw createError('TASK_NOT_FOUND', '任务不存在');
     }
 
     // Step 3: CheckOwnership
     if (task.userId !== input.userId) {
-      throw new Error('UNAUTHORIZED_ACCESS: 无权访问此任务');
+      throw createError('UNAUTHORIZED', '无权访问此任务');
     }
 
     return { task };
@@ -268,7 +270,7 @@ export class TaskService {
   /**
    * 列出任务
    */
-  async listTasks(ctx: unknown, input: ListTasksInput): Promise<ListTasksOutput> {
+  async listTasks(ctx: RequestContext, input: ListTasksInput): Promise<ListTasksOutput> {
     // Step 2 & 3: QueryTasks + CountTotalTasks
     const { tasks, total } = await this.taskRepo.list(ctx, input.filter);
 

@@ -9,9 +9,14 @@ import {
   toUpdateTaskInput,
   toUpdateTaskResponse,
 } from './converters.js';
-import { parseErrorCode } from '../errors/errors.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
+import { createContextFromRequest } from '../../../shared/types/context.js';
 
+/**
+ * UpdateTask Handler
+ * HTTP 适配层：处理更新任务的 HTTP 请求
+ * 错误由全局错误处理中间件统一处理
+ */
 export async function updateTaskHandler(
   deps: HandlerDependencies,
   req: FastifyRequest<{
@@ -20,36 +25,13 @@ export async function updateTaskHandler(
   }>,
   reply: FastifyReply
 ): Promise<void> {
-  try {
-    const userId = requireUserId(req);
-    const taskId = req.params.id;
+  const userId = requireUserId(req);
+  const taskId = req.params.id;
 
-    const input = toUpdateTaskInput(userId, taskId, req.body);
-    const output = await deps.taskService.updateTask(req, input);
+  const input = toUpdateTaskInput(userId, taskId, req.body);
+  const ctx = createContextFromRequest({ userId, ...req });
+  const output = await deps.taskService.updateTask(ctx, input);
 
-    reply.code(200).send(toUpdateTaskResponse(output.task));
-  } catch (error) {
-    const errorCode = parseErrorCode(error);
-    const statusCode = getStatusCode(errorCode);
-    reply.code(statusCode).send({
-      error: errorCode,
-      message: error instanceof Error ? error.message : '更新任务失败',
-    });
-  }
-}
-
-function getStatusCode(errorCode: string): number {
-  // 先检查特定错误码
-  if (errorCode === 'TASK_NOT_FOUND') {
-    return 404;
-  }
-  if (errorCode === 'UNAUTHORIZED_ACCESS') {
-    return 403;
-  }
-  // 再检查通用错误码
-  if (errorCode.startsWith('TASK_') || errorCode === 'INVALID_PRIORITY' || errorCode === 'INVALID_DUE_DATE') {
-    return 400;
-  }
-  return 500;
+  reply.code(200).send(toUpdateTaskResponse(output.task));
 }
 
