@@ -107,3 +107,16 @@ export function registerRoutes(
   });
 }
 
+/**
+ * 注册领域路由
+ * 接收 HandlerDependencies 并注册所有领域路由
+ */
+export async function registerDomainRoutes(
+  fastify: FastifyInstance,
+  handlerDeps: unknown
+): Promise<void> {
+  // 动态导入并注册 Task 路由
+  const taskRouter = await import('../../domains/task/http/router.js');
+  taskRouter.registerTaskRoutes(fastify, handlerDeps as Parameters<typeof taskRouter.registerTaskRoutes>[1]);
+}
+

@@ -16,8 +16,12 @@ import {
   createServer,
   registerMiddleware,
   registerRoutes,
+  registerDomainRoutes,
 } from '../../infrastructure/bootstrap/server.js';
 import type { RedisClientType } from 'redis';
+import { TaskRepositoryImpl } from '../../domains/task/repository/task_repo.js';
+import { TaskService } from '../../domains/task/service/task_service.js';
+import type { HandlerDependencies } from '../../domains/task/handlers/dependencies.js';
 
 async function main() {
   console.log('\n🚀 Starting Go-GenAI-Stack Backend (Node.js)...\n');
@@ -74,11 +78,23 @@ async function main() {
   console.log('📦 Registering middleware...');
   await registerMiddleware(fastify);
 
-  // 6. 注册路由
+  // 6. 注册基础路由
   console.log('🛣️  Registering routes...');
   registerRoutes(fastify, db, redis);
 
-  // 7. 启动服务器
+  // 7. 初始化领域服务
+  console.log('🏗️  Initializing domain services...');
+  const taskRepo = new TaskRepositoryImpl(db);
+  const taskService = new TaskService(taskRepo);
+  const handlerDeps: HandlerDependencies = {
+    taskService,
+  };
+
+  // 8. 注册领域路由
+  console.log('📚 Registering domain routes...');
+  await registerDomainRoutes(fastify, handlerDeps);
+
+  // 9. 启动服务器
   const address = `http://${config.server.host}:${config.server.port}`;
   try {
     await fastify.listen({
@@ -96,7 +112,7 @@ async function main() {
     process.exit(1);
   }
 
-  // 8. 优雅关闭
+  // 10. 优雅关闭
   const shutdown = async (signal: string) => {
     console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
     try {

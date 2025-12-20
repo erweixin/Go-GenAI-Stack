@@ -27,10 +27,14 @@ export interface Database {
     status: 'pending' | 'in_progress' | 'completed';
     priority: 'low' | 'medium' | 'high';
     due_date: Date | null;
-    tags: string[] | null;
     created_at: Date;
     updated_at: Date;
     completed_at: Date | null;
+  };
+  task_tags: {
+    task_id: string;
+    tag_name: string;
+    tag_color: string | null;
   };
 }
 
