@@ -141,7 +141,7 @@ services:
     networks:
       - e2e-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.on('error', (e) => {console.error('Health check error:', e);process.exit(1)});r.on('data', () => {});r.on('end', () => {process.exit(r.statusCode === 200 ? 0 : 1)})}).on('error', (e) => {console.error('Request error:', e);process.exit(1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.on('error', (e) => {process.stderr.write('Health check response error: ' + e.message + '\\n');process.exit(1)});r.on('data', () => {});r.on('end', () => {if (r.statusCode !== 200) {process.stderr.write('Health check failed: status code ' + r.statusCode + '\\n');}process.exit(r.statusCode === 200 ? 0 : 1)})}).on('error', (e) => {process.stderr.write('Health check request error: ' + e.message + '\\n');process.exit(1)})"]
       interval: 5s
       timeout: 5s
       retries: 20

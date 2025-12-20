@@ -64,7 +64,7 @@ EXPOSE 8080
 
 # 健康检查
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:8080/health', (r) => {r.on('error', (e) => {console.error('Health check error:', e);process.exit(1)});r.on('data', () => {});r.on('end', () => {process.exit(r.statusCode === 200 ? 0 : 1)})}).on('error', (e) => {console.error('Request error:', e);process.exit(1)})"
+    CMD node -e "require('http').get('http://localhost:8080/health', (r) => {r.on('error', (e) => {process.stderr.write('Health check response error: ' + e.message + '\\n');process.exit(1)});r.on('data', () => {});r.on('end', () => {if (r.statusCode !== 200) {process.stderr.write('Health check failed: status code ' + r.statusCode + '\\n');}process.exit(r.statusCode === 200 ? 0 : 1)})}).on('error', (e) => {process.stderr.write('Health check request error: ' + e.message + '\\n');process.exit(1)})"
 
 # 启动应用
 CMD ["node", "dist/cmd/server/main.js"]

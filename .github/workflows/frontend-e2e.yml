@@ -165,10 +165,12 @@ jobs:
               if [ $((attempt % 10)) -eq 0 ] && [ $attempt -gt 0 ]; then
                 echo ""
                 echo "   Attempt $attempt/$max_attempts, Status: $status"
-                # 如果是 unhealthy，显示最近的 health check 日志
-                if [ "$status" == "unhealthy" ]; then
-                  echo "   Recent health check logs:"
-                  docker inspect --format="{{range .State.Health.Log}}{{.Output}}{{end}}" ${{ matrix.container_name }} 2>/dev/null | tail -3 || true
+                # 如果是 unhealthy，显示详细的 health check 信息
+                if [ "$status" == "unhealthy" ] || [ "$status" == "starting" ]; then
+                  echo "   Health check details:"
+                  docker inspect ${{ matrix.container_name }} --format='{{json .State.Health.Log}}' 2>/dev/null | python3 -c "import sys, json; logs = json.load(sys.stdin); last = logs[-1] if logs else {}; print(f\"ExitCode: {last.get('ExitCode', 'N/A')}\"); print(f\"Output: {last.get('Output', 'N/A')}\")" 2>/dev/null || docker inspect ${{ matrix.container_name }} --format='{{range .State.Health.Log}}{{.Output}}{{end}}' 2>/dev/null | tail -1 || true
+                  echo "   Container state:"
+                  docker inspect ${{ matrix.container_name }} --format='Status: {{.State.Status}}, Health: {{.State.Health.Status}}, Started: {{.State.StartedAt}}' 2>/dev/null || true
                 fi
               fi
               
@@ -184,8 +186,11 @@ jobs:
             echo "Container logs (last 50 lines):"
             docker logs --tail=50 ${{ matrix.container_name }} || true
             echo ""
-            echo "Health check history:"
-            docker inspect --format="{{range .State.Health.Log}}{{.Output}}{{end}}" ${{ matrix.container_name }} 2>/dev/null || true
+            echo "Health check history (last 5 attempts):"
+            docker inspect ${{ matrix.container_name }} --format='{{json .State.Health.Log}}' 2>/dev/null | python3 -c "import sys, json; logs = json.load(sys.stdin); [print(f\"[{log.get('Start', 'N/A')}] ExitCode: {log.get('ExitCode', 'N/A')}\\nOutput: {log.get('Output', 'N/A')}\\n---\") for log in logs[-5:]]" 2>/dev/null || docker inspect ${{ matrix.container_name }} --format='{{range .State.Health.Log}}{{.Output}}{{end}}' 2>/dev/null || true
+            echo ""
+            echo "Testing health endpoint directly:"
+            docker exec ${{ matrix.container_name }} node -e "require('http').get('http://localhost:8080/health', (r) => {let d='';r.on('data',x=>d+=x);r.on('end',()=>{console.log('Status:',r.statusCode);console.log('Response:',d);process.exit(r.statusCode===200?0:1)})}).on('error',e=>{console.error('Error:',e.message);process.exit(1)})" 2>&1 || true
             exit 1
           '
           
