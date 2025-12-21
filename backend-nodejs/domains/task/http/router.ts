@@ -61,17 +61,20 @@ export function registerTaskRoutes(
     '/api/tasks/:id',
     {
       preHandler: authMiddleware,
-      schema: {
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-          required: ['id'],
-        },
-      },
+      // 不定义 params schema，避免 fastify-type-provider-zod 尝试用 Zod 验证
+      // 改为在 handler 中手动验证
     },
     async (req, reply) => {
+      // 手动验证 params（因为 fastify-type-provider-zod 对 params 的支持有限）
+      const paramsResult = TaskParamsSchema.safeParse(req.params);
+      if (!paramsResult.success) {
+        return reply.code(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: '任务 ID 格式无效',
+          },
+        });
+      }
       await getTaskHandler(deps, req, reply);
     }
   );
@@ -82,13 +85,8 @@ export function registerTaskRoutes(
     {
       preHandler: authMiddleware,
       schema: {
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-          required: ['id'],
-        },
+        // 不定义 params schema，避免 fastify-type-provider-zod 尝试用 Zod 验证
+        // 改为在 handler 中手动验证
         body: UpdateTaskRequestSchema,
       },
     },
@@ -112,17 +110,20 @@ export function registerTaskRoutes(
     '/api/tasks/:id/complete',
     {
       preHandler: authMiddleware,
-      schema: {
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-          required: ['id'],
-        },
-      },
+      // 不定义 params schema，避免 fastify-type-provider-zod 尝试用 Zod 验证
+      // 改为在 handler 中手动验证
     },
     async (req, reply) => {
+      // 手动验证 params（因为 fastify-type-provider-zod 对 params 的支持有限）
+      const paramsResult = TaskParamsSchema.safeParse(req.params);
+      if (!paramsResult.success) {
+        return reply.code(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: '任务 ID 格式无效',
+          },
+        });
+      }
       await completeTaskHandler(deps, req, reply);
     }
   );
@@ -132,17 +133,20 @@ export function registerTaskRoutes(
     '/api/tasks/:id',
     {
       preHandler: authMiddleware,
-      schema: {
-        params: {
-          type: 'object',
-          properties: {
-            id: { type: 'string' },
-          },
-          required: ['id'],
-        },
-      },
+      // 不定义 params schema，避免 fastify-type-provider-zod 尝试用 Zod 验证
+      // 改为在 handler 中手动验证
     },
     async (req, reply) => {
+      // 手动验证 params（因为 fastify-type-provider-zod 对 params 的支持有限）
+      const paramsResult = TaskParamsSchema.safeParse(req.params);
+      if (!paramsResult.success) {
+        return reply.code(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: '任务 ID 格式无效',
+          },
+        });
+      }
       await deleteTaskHandler(deps, req, reply);
     }
   );
