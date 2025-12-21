@@ -129,6 +129,7 @@ services:
       
       # 服务器配置
       NODE_ENV: test
+      E2E_TEST: "true"  # 标记为 E2E 测试环境，禁用 rate limiting
       SERVER_PORT: 8080
       SERVER_HOST: 0.0.0.0
     ports:

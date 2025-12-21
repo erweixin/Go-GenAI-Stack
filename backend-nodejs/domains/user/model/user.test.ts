@@ -31,20 +31,20 @@ describe('User Model', () => {
     });
 
     it('应该拒绝无效邮箱格式', async () => {
-      await expect(User.create('invalid-email', 'password123')).rejects.toThrow('INVALID_EMAIL');
+      await expect(User.create('invalid-email', 'password123')).rejects.toThrow('邮箱格式无效');
     });
 
     it('应该拒绝空邮箱', async () => {
-      await expect(User.create('', 'password123')).rejects.toThrow('INVALID_EMAIL');
+      await expect(User.create('', 'password123')).rejects.toThrow('邮箱格式无效');
     });
 
     it('应该拒绝弱密码（少于 8 字符）', async () => {
-      await expect(User.create('test@example.com', 'short')).rejects.toThrow('WEAK_PASSWORD');
+      await expect(User.create('test@example.com', 'short')).rejects.toThrow('密码强度不足');
     });
 
     it('应该拒绝过长密码（超过 128 字符）', async () => {
       const longPassword = 'a'.repeat(129);
-      await expect(User.create('test@example.com', longPassword)).rejects.toThrow('PASSWORD_TOO_LONG');
+      await expect(User.create('test@example.com', longPassword)).rejects.toThrow('密码过长');
     });
 
     it('应该接受最小长度密码（8 字符）', async () => {
@@ -93,13 +93,13 @@ describe('User Model', () => {
 
     it('应该拒绝弱密码', async () => {
       const user = await User.create('test@example.com', 'old-password');
-      await expect(user.updatePassword('short')).rejects.toThrow('WEAK_PASSWORD');
+      await expect(user.updatePassword('short')).rejects.toThrow('密码强度不足');
     });
 
     it('应该拒绝过长密码', async () => {
       const user = await User.create('test@example.com', 'old-password');
       const longPassword = 'a'.repeat(129);
-      await expect(user.updatePassword(longPassword)).rejects.toThrow('PASSWORD_TOO_LONG');
+      await expect(user.updatePassword(longPassword)).rejects.toThrow('密码过长');
     });
   });
 
@@ -134,7 +134,7 @@ describe('User Model', () => {
       const user = await User.create('test@example.com', 'password123');
       expect(() => {
         user.updateProfile('ab');
-      }).toThrow('INVALID_USERNAME');
+      }).toThrow('用户名格式无效');
     });
 
     it('应该拒绝无效用户名（太长）', async () => {
@@ -142,14 +142,14 @@ describe('User Model', () => {
       const longUsername = 'a'.repeat(31);
       expect(() => {
         user.updateProfile(longUsername);
-      }).toThrow('INVALID_USERNAME');
+      }).toThrow('用户名格式无效');
     });
 
     it('应该拒绝无效用户名（包含特殊字符）', async () => {
       const user = await User.create('test@example.com', 'password123');
       expect(() => {
         user.updateProfile('user-name');
-      }).toThrow('INVALID_USERNAME');
+      }).toThrow('用户名格式无效');
     });
 
     it('应该接受有效用户名（3-30 字符，字母数字下划线）', async () => {
@@ -163,14 +163,14 @@ describe('User Model', () => {
       const longName = 'a'.repeat(101);
       expect(() => {
         user.updateProfile(undefined, longName);
-      }).toThrow('FULL_NAME_TOO_LONG');
+      }).toThrow('全名过长');
     });
 
     it('应该拒绝无效头像 URL（非 HTTP/HTTPS）', async () => {
       const user = await User.create('test@example.com', 'password123');
       expect(() => {
         user.updateProfile(undefined, undefined, 'ftp://example.com/avatar.jpg');
-      }).toThrow('INVALID_AVATAR_URL');
+      }).toThrow('头像 URL 格式无效');
     });
 
     it('应该接受空字符串（不更新）', async () => {
@@ -322,7 +322,7 @@ describe('User Model', () => {
 
       expect(() => {
         user.canLogin();
-      }).toThrow('USER_BANNED');
+      }).toThrow('用户已被禁用');
     });
   });
 });

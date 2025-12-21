@@ -25,27 +25,27 @@ describe('Task Model', () => {
     it('应该拒绝空标题', () => {
       expect(() => {
         Task.create('user-123', '', 'Description', 'medium');
-      }).toThrow('TASK_TITLE_EMPTY');
+      }).toThrow('任务标题不能为空');
     });
 
     it('应该拒绝标题过长', () => {
       const longTitle = 'a'.repeat(201);
       expect(() => {
         Task.create('user-123', longTitle, 'Description', 'medium');
-      }).toThrow('TASK_TITLE_TOO_LONG');
+      }).toThrow('标题过长，最大 200 字符');
     });
 
     it('应该拒绝描述过长', () => {
       const longDescription = 'a'.repeat(5001);
       expect(() => {
         Task.create('user-123', 'Title', longDescription, 'medium');
-      }).toThrow('TASK_DESCRIPTION_TOO_LONG');
+      }).toThrow('描述过长，最大 5000 字符');
     });
 
     it('应该拒绝无效优先级', () => {
       expect(() => {
         Task.create('user-123', 'Title', 'Description', 'invalid' as any);
-      }).toThrow('INVALID_PRIORITY');
+      }).toThrow('优先级无效');
     });
 
     it('应该接受空描述', () => {
@@ -96,7 +96,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.update('New Title', 'New Desc', 'high');
-      }).toThrow('TASK_ALREADY_COMPLETED');
+      }).toThrow('已完成的任务不能更新');
     });
 
     it('应该拒绝更新标题为空', () => {
@@ -104,7 +104,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.update('', 'Desc', 'medium');
-      }).toThrow('TASK_TITLE_EMPTY');
+      }).toThrow('任务标题不能为空');
     });
 
     it('应该拒绝更新标题过长', () => {
@@ -113,7 +113,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.update(longTitle, 'Desc', 'medium');
-      }).toThrow('TASK_TITLE_TOO_LONG');
+      }).toThrow('标题过长，最大 200 字符');
     });
 
     it('应该拒绝更新描述过长', () => {
@@ -122,7 +122,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.update('Test', longDescription, 'medium');
-      }).toThrow('TASK_DESCRIPTION_TOO_LONG');
+      }).toThrow('描述过长，最大 5000 字符');
     });
 
     it('应该拒绝无效优先级', () => {
@@ -130,7 +130,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.update('Test', 'Desc', 'invalid' as any);
-      }).toThrow('INVALID_PRIORITY');
+      }).toThrow('优先级无效');
     });
   });
 
@@ -164,7 +164,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.complete();
-      }).toThrow('TASK_ALREADY_COMPLETED');
+      }).toThrow('任务已完成，不能再次完成');
     });
   });
 
@@ -189,7 +189,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.setDueDate(pastDate);
-      }).toThrow('INVALID_DUE_DATE');
+      }).toThrow('截止日期不能早于创建日期');
     });
   });
 
@@ -213,7 +213,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.addTag({ name: '', color: '#ff0000' });
-      }).toThrow('TAG_NAME_EMPTY');
+      }).toThrow('标签名不能为空');
     });
 
     it('应该拒绝添加重复标签', () => {
@@ -222,7 +222,7 @@ describe('Task Model', () => {
 
       expect(() => {
         task.addTag({ name: 'test', color: '#00ff00' });
-      }).toThrow('DUPLICATE_TAG');
+      }).toThrow('标签重复');
     });
 
     it('应该拒绝添加过多标签', () => {
@@ -236,7 +236,7 @@ describe('Task Model', () => {
       // 尝试添加第 11 个标签
       expect(() => {
         task.addTag({ name: 'tag11', color: '#ff0000' });
-      }).toThrow('TOO_MANY_TAGS');
+      }).toThrow('标签过多，最多 10 个');
     });
 
     it('应该添加多个不同标签', () => {

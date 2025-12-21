@@ -10,6 +10,7 @@ import {
   CreateTaskRequestSchema,
   UpdateTaskRequestSchema,
   ListTasksQuerySchema,
+  TaskParamsSchema,
 } from './dto/task.js';
 import { createTaskHandler } from '../handlers/create_task.handler.js';
 import { updateTaskHandler } from '../handlers/update_task.handler.js';
@@ -92,6 +93,16 @@ export function registerTaskRoutes(
       },
     },
     async (req, reply) => {
+      // 手动验证 params（因为 fastify-type-provider-zod 对 params 的支持有限）
+      const paramsResult = TaskParamsSchema.safeParse(req.params);
+      if (!paramsResult.success) {
+        return reply.code(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: '任务 ID 格式无效',
+          },
+        });
+      }
       await updateTaskHandler(deps, req, reply);
     }
   );

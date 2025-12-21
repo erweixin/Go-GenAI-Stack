@@ -180,7 +180,7 @@ export class User {
    */
   canLogin(): void {
     if (this.status === UserStatuses.Banned) {
-      throw createError('UNAUTHORIZED', '用户已被禁用');
+      throw createError('USER_BANNED', '用户已被禁用');
     }
     // 注意：我们允许 Inactive 用户登录，但可能限制某些功能
   }

@@ -125,10 +125,13 @@ export function toCompleteTaskInput(
 }
 
 export function toCompleteTaskResponse(task: Task): CompleteTaskResponse {
+  if (!task.completedAt) {
+    throw createError('INTERNAL_SERVER_ERROR', '任务完成时间未设置');
+  }
   return {
     task_id: task.id,
     status: task.status,
-    completed_at: task.completedAt!.toISOString(),
+    completed_at: task.completedAt.toISOString(),
   };
 }
 

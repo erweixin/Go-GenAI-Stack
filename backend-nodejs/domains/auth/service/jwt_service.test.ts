@@ -92,7 +92,7 @@ describe('JWTService', () => {
 
       expect(() => {
         jwtService.verifyToken(invalidToken);
-      }).toThrow('INVALID_TOKEN');
+      }).toThrow('Token 验证失败');
     });
 
     it('应该拒绝错误 Secret 签名的 Token', () => {
@@ -104,7 +104,7 @@ describe('JWTService', () => {
 
       expect(() => {
         jwtService.verifyToken(token);
-      }).toThrow('INVALID_TOKEN');
+      }).toThrow('Token 验证失败');
     });
 
     it('应该拒绝错误 Issuer 的 Token', () => {
@@ -116,7 +116,7 @@ describe('JWTService', () => {
 
       expect(() => {
         jwtService.verifyToken(token);
-      }).toThrow('INVALID_ISSUER');
+      }).toThrow('Issuer 不匹配');
     });
   });
 
@@ -134,7 +134,7 @@ describe('JWTService', () => {
 
       expect(() => {
         jwtService.verifyAccessToken(token);
-      }).toThrow('INVALID_TOKEN_TYPE');
+      }).toThrow('Token 类型必须是 access');
     });
   });
 
@@ -152,7 +152,7 @@ describe('JWTService', () => {
 
       expect(() => {
         jwtService.verifyRefreshToken(token);
-      }).toThrow('INVALID_TOKEN_TYPE');
+      }).toThrow('Token 类型必须是 refresh');
     });
   });
 

@@ -48,6 +48,16 @@ export interface UpdateTaskResponse {
 }
 
 // ========================================
+// Params Schemas (for route params)
+// ========================================
+
+export const TaskParamsSchema = z.object({
+  id: z.string().min(1, '任务 ID 不能为空'),
+});
+
+export type TaskParams = z.infer<typeof TaskParamsSchema>;
+
+// ========================================
 // CompleteTask
 // ========================================
 

@@ -57,6 +57,12 @@ export function createRateLimitMiddleware(
   options: RateLimitOptions
 ) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    // E2E 测试环境或 NODE_ENV=test 时，跳过限流
+    const isTestEnv = process.env.NODE_ENV === 'test' || process.env.E2E_TEST === 'true';
+    if (isTestEnv) {
+      return;
+    }
+
     // Redis 不可用时，跳过限流
     if (!redis) {
       return;

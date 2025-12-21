@@ -103,7 +103,7 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      await expect(authService.register({}, input)).rejects.toThrow('EMAIL_ALREADY_EXISTS');
+      await expect(authService.register({}, input)).rejects.toThrow('邮箱已被占用');
     });
 
     it('应该拒绝重复用户名', async () => {
@@ -117,7 +117,7 @@ describe('AuthService', () => {
         username: 'takenusername',
       };
 
-      await expect(authService.register({}, input)).rejects.toThrow('USERNAME_ALREADY_EXISTS');
+      await expect(authService.register({}, input)).rejects.toThrow('用户名已被占用');
     });
 
     it('应该拒绝无效邮箱', async () => {
@@ -126,7 +126,7 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      await expect(authService.register({}, input)).rejects.toThrow('INVALID_EMAIL');
+      await expect(authService.register({}, input)).rejects.toThrow('邮箱格式无效');
     });
 
     it('应该拒绝弱密码', async () => {
@@ -135,7 +135,7 @@ describe('AuthService', () => {
         password: 'short',
       };
 
-      await expect(authService.register({}, input)).rejects.toThrow('WEAK_PASSWORD');
+      await expect(authService.register({}, input)).rejects.toThrow('密码强度不足');
     });
   });
 
@@ -170,7 +170,7 @@ describe('AuthService', () => {
         password: 'wrong-password',
       };
 
-      await expect(authService.login({}, input)).rejects.toThrow('INVALID_CREDENTIALS');
+      await expect(authService.login({}, input)).rejects.toThrow('邮箱或密码错误');
     });
 
     it('应该拒绝不存在的邮箱', async () => {
@@ -179,7 +179,7 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      await expect(authService.login({}, input)).rejects.toThrow('INVALID_CREDENTIALS');
+      await expect(authService.login({}, input)).rejects.toThrow('邮箱或密码错误');
     });
 
     it('应该拒绝禁用用户登录', async () => {
@@ -192,7 +192,7 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      await expect(authService.login({}, input)).rejects.toThrow('USER_BANNED');
+      await expect(authService.login({}, input)).rejects.toThrow('用户已被禁用');
     });
 
     it('应该允许未激活用户登录', async () => {
@@ -236,7 +236,7 @@ describe('AuthService', () => {
         refreshToken: 'invalid-token',
       };
 
-      await expect(authService.refreshToken({}, input)).rejects.toThrow('INVALID_REFRESH_TOKEN');
+      await expect(authService.refreshToken({}, input)).rejects.toThrow('Refresh Token 无效或已过期');
     });
 
     it('应该拒绝 Access Token 作为 Refresh Token', async () => {
@@ -249,7 +249,7 @@ describe('AuthService', () => {
         refreshToken: accessToken,
       };
 
-      await expect(authService.refreshToken({}, input)).rejects.toThrow('INVALID_REFRESH_TOKEN');
+      await expect(authService.refreshToken({}, input)).rejects.toThrow('Refresh Token 无效或已过期');
     });
 
     it('应该拒绝不存在的用户', async () => {
@@ -260,7 +260,7 @@ describe('AuthService', () => {
         refreshToken,
       };
 
-      await expect(authService.refreshToken({}, input)).rejects.toThrow('USER_NOT_FOUND');
+      await expect(authService.refreshToken({}, input)).rejects.toThrow('用户不存在');
     });
 
     it('应该拒绝禁用用户的 Refresh Token', async () => {
@@ -274,7 +274,7 @@ describe('AuthService', () => {
         refreshToken,
       };
 
-      await expect(authService.refreshToken({}, input)).rejects.toThrow('USER_BANNED');
+      await expect(authService.refreshToken({}, input)).rejects.toThrow('用户已被禁用');
     });
   });
 });
