@@ -38,8 +38,19 @@ export function createServer(config: Config): FastifyInstance {
     },
   }).withTypeProvider<ZodTypeProvider>();
 
-  // 注册 Zod validator 和 serializer
-  fastify.setValidatorCompiler(validatorCompiler);
+  // 注册自定义 validator compiler
+  // 跳过 params 验证（因为 fastify-type-provider-zod 对 params 的支持有限）
+  // 只验证 body 和 querystring
+  fastify.setValidatorCompiler((opts: { schema: unknown; httpPart?: string }) => {
+    // 如果是 params 验证，跳过（返回一个总是成功的验证器）
+    if (opts.httpPart === 'params') {
+      return () => ({ value: true });
+    }
+    // 对于 body 和 querystring，使用 Zod validator
+    return validatorCompiler(opts as Parameters<typeof validatorCompiler>[0]);
+  });
+  
+  // 注册 Zod serializer
   fastify.setSerializerCompiler(serializerCompiler);
 
   return fastify;

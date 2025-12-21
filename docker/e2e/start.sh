@@ -2,7 +2,8 @@
 
 # E2E 测试环境启动脚本
 # 用途：启动 Postgres 和 Backend E2E 测试环境
-# 使用：./docker/e2e/start.sh
+# 使用：./docker/e2e/start.sh [--no-cache]
+#       --no-cache: 强制完全重新构建镜像（不使用缓存）
 
 set -e
 
@@ -12,6 +13,13 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
+
+# 检查是否使用 --no-cache 参数
+NO_CACHE_FLAG=""
+if [ "$1" = "--no-cache" ]; then
+    NO_CACHE_FLAG="--no-cache"
+    echo -e "${YELLOW}⚠️  Using --no-cache flag (slower but ensures fresh build)${NC}"
+fi
 
 # 脚本目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -44,7 +52,14 @@ if docker ps --filter "name=postgres-e2e" --filter "status=running" | grep -q "p
     exit 0
 fi
 
-# 启动 Docker Compose
+# 构建并启动 Docker Compose（确保使用最新代码）
+echo -e "${BLUE}🔨 Building Docker images (with latest code)...${NC}"
+if [ -n "$NO_CACHE_FLAG" ]; then
+    $DOCKER_COMPOSE build $NO_CACHE_FLAG backend-e2e backend-nodejs-e2e
+else
+    $DOCKER_COMPOSE build --build-arg BUILDKIT_INLINE_CACHE=1 backend-e2e backend-nodejs-e2e
+fi
+
 echo -e "${BLUE}📦 Starting Docker containers...${NC}"
 $DOCKER_COMPOSE up -d
 
