@@ -35,17 +35,24 @@ pnpm e2e:setup
 
 这会启动：
 - ✅ Postgres 数据库（localhost:5433）
-- ✅ 后端服务器（http://localhost:8081）
+- ✅ Redis 缓存（localhost:6381）
+- ✅ Go 后端服务器（http://localhost:8081）
+- ✅ Node.js 后端服务器（http://localhost:8082）
 - ✅ 预置测试用户和数据
 
 #### 3. 运行 E2E 测试
 
 ```bash
 # 在 frontend/web 目录
+# 测试 Go 后端（默认）
 pnpm e2e              # 运行所有测试
 pnpm e2e:ui           # UI 模式（推荐，可视化调试）⭐
 pnpm e2e:headed       # 有头模式（显示浏览器）
 pnpm e2e:debug        # 调试模式
+
+# 测试 Node.js 后端
+pnpm e2e:nodejs       # 运行所有测试
+pnpm e2e:nodejs:ui    # UI 模式（推荐）⭐
 ```
 
 #### 4. 停止 E2E 环境
@@ -120,10 +127,49 @@ e2e/
 
 ### 环境变量
 
-创建 `.env.e2e` 文件：
+#### 选择后端实现
+
+E2E 测试支持两种后端实现：
+
+1. **Go 后端**（默认）：`http://localhost:8081`
+2. **Node.js 后端**：`http://localhost:8082`
+
+#### 方式 1：使用 npm 脚本（推荐）
 
 ```bash
-VITE_API_BASE_URL=http://localhost:8080
+# 测试 Go 后端（默认）
+pnpm e2e              # 命令行模式
+pnpm e2e:ui           # UI 模式
+
+# 测试 Node.js 后端
+pnpm e2e:nodejs       # 命令行模式
+pnpm e2e:nodejs:ui    # UI 模式
+
+# 一键运行（包含环境启动和清理）
+pnpm e2e:all          # Go 后端
+pnpm e2e:nodejs:all   # Node.js 后端
+```
+
+#### 方式 2：使用环境变量
+
+```bash
+# 测试 Go 后端（默认）
+E2E_BACKEND_URL=http://localhost:8081 pnpm e2e
+
+# 测试 Node.js 后端
+E2E_BACKEND_URL=http://localhost:8082 pnpm e2e
+```
+
+#### 方式 3：创建 `.env.e2e` 文件（可选）
+
+在 `frontend/web/` 目录下创建 `.env.e2e` 文件：
+
+```bash
+# 选择后端（二选一）
+E2E_BACKEND_URL=http://localhost:8081  # Go 后端
+# E2E_BACKEND_URL=http://localhost:8082  # Node.js 后端
+
+# 前端地址（通常不需要修改）
 E2E_BASE_URL=http://localhost:5173
 ```
 

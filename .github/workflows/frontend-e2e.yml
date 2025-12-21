@@ -2,10 +2,11 @@ name: Frontend E2E Tests
 
 on:
   push:
-    branches: [main, develop, master]
+    branches: [main, develop, master, feat-node]
     paths:
       - 'frontend/web/**'
       - 'backend/**'
+      - 'backend-nodejs/**'
       - 'docker/e2e/**'
       - '.github/workflows/frontend-e2e.yml'
   pull_request:
@@ -13,6 +14,7 @@ on:
     paths:
       - 'frontend/web/**'
       - 'backend/**'
+      - 'backend-nodejs/**'
       - 'docker/e2e/**'
   # 允许手动触发
   workflow_dispatch:
@@ -24,9 +26,21 @@ concurrency:
 
 jobs:
   e2e:
-    name: E2E Tests (Docker)
+    name: E2E Tests (${{ matrix.backend }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      matrix:
+        backend: [go, nodejs]
+        include:
+          - backend: go
+            backend_url: http://localhost:8081
+            backend_name: Go Backend
+            container_name: go-genai-stack-backend-e2e
+          - backend: nodejs
+            backend_url: http://localhost:8082
+            backend_name: Node.js Backend
+            container_name: go-genai-stack-backend-nodejs-e2e
     
     steps:
       - name: Checkout code
@@ -116,6 +130,7 @@ jobs:
           COMPOSE_DOCKER_CLI_BUILD: 1
         run: |
           echo "🐳 Building and starting E2E environment..."
+          echo "📋 Testing against: ${{ matrix.backend_name }}"
           docker compose build --build-arg BUILDKIT_INLINE_CACHE=1
           docker compose up -d
           
@@ -123,32 +138,85 @@ jobs:
           timeout 60s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-postgres-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
           echo " ✅"
           
-          echo "⏳ Waiting for Backend to be healthy..."
-          timeout 90s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-backend-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
+          echo "⏳ Waiting for Redis to be healthy..."
+          timeout 30s bash -c 'until [ "$(docker inspect --format="{{.State.Health.Status}}" go-genai-stack-redis-e2e)" == "healthy" ]; do echo -n "."; sleep 2; done'
           echo " ✅"
+          
+          echo "⏳ Waiting for ${{ matrix.backend_name }} to be healthy..."
+          timeout 180s bash -c "
+            max_attempts=90
+            attempt=0
+            container_name='${{ matrix.container_name }}'
+            while [ \$attempt -lt \$max_attempts ]; do
+              if ! docker ps --format '{{.Names}}' | grep -q \"^\${container_name}\$\"; then
+                echo \" ❌ Container \${container_name} not found\"
+                exit 1
+              fi
+              status=\$(docker inspect --format='{{.State.Health.Status}}' \${container_name} 2>/dev/null || echo 'starting')
+              if [ \"\$status\" == 'healthy' ]; then
+                echo \" ✅\"
+                exit 0
+              fi
+              if [ \$((attempt % 10)) -eq 0 ] && [ \$attempt -gt 0 ]; then
+                echo \"\"
+                echo \"   Attempt \$attempt/\$max_attempts, Status: \$status\"
+                if [ \"\$status\" == 'unhealthy' ] || [ \"\$status\" == 'starting' ]; then
+                  echo \"   Health check details:\"
+                  health_log=\$(docker inspect \${container_name} --format='{{range .State.Health.Log}}{{.ExitCode}}|{{.Output}}{{end}}' 2>/dev/null | tail -1)
+                  if [ -n \"\$health_log\" ]; then
+                    exit_code=\$(echo \"\$health_log\" | cut -d'|' -f1)
+                    output=\$(echo \"\$health_log\" | cut -d'|' -f2-)
+                    echo \"   ExitCode: \${exit_code}\"
+                    echo \"   Output: \${output}\"
+                  fi
+                  echo \"   Container state:\"
+                  docker inspect \${container_name} --format='Status: {{.State.Status}}, Health: {{.State.Health.Status}}, Started: {{.State.StartedAt}}' 2>/dev/null || true
+                fi
+              fi
+              echo -n \".\"
+              sleep 2
+              attempt=\$((attempt + 1))
+            done
+            echo \"\"
+            echo \" ❌ Health check timeout after \$((max_attempts * 2)) seconds\"
+            echo \"Container: \${container_name}\"
+            echo \"Final status: \$(docker inspect --format='{{.State.Health.Status}}' \${container_name} 2>/dev/null || echo 'unknown')\"
+            echo \"\"
+            echo \"Container logs (last 50 lines):\"
+            docker logs --tail=50 \${container_name} || true
+            echo \"\"
+            echo \"Health check history (last 5 attempts):\"
+            docker inspect \${container_name} --format='{{range .State.Health.Log}}[{{.Start}}] ExitCode: {{.ExitCode}} Output: {{.Output}}{{end}}' 2>/dev/null | tail -5 || true
+            echo \"\"
+            echo \"Testing health endpoint directly:\"
+            docker exec \${container_name} node -e \"require('http').get('http://localhost:8080/health', (r) => {let d='';r.on('data',x=>d+=x);r.on('end',()=>{console.log('Status:',r.statusCode);console.log('Response:',d);process.exit(r.statusCode===200?0:1)})}).on('error',e=>{console.error('Error:',e.message);process.exit(1)})\" 2>&1 || true
+            exit 1
+          "
           
           echo "✅ All services are ready"
           docker compose ps
       
       - name: Verify backend health
         run: |
-          echo "🔍 Checking backend health..."
-          curl -f http://localhost:8081/health || (echo "❌ Backend health check failed" && exit 1)
-          echo "✅ Backend is healthy"
+          echo "🔍 Checking ${{ matrix.backend_name }} health..."
+          curl -f ${{ matrix.backend_url }}/health || (echo "❌ ${{ matrix.backend_name }} health check failed" && exit 1)
+          echo "✅ ${{ matrix.backend_name }} is healthy"
       
       - name: Run E2E tests
         working-directory: frontend/web
         env:
           CI: true
+          E2E_BACKEND_URL: ${{ matrix.backend_url }}
         run: |
-          echo "🧪 Running E2E tests..."
+          echo "🧪 Running E2E tests against ${{ matrix.backend_name }}..."
+          echo "📡 Backend URL: ${{ matrix.backend_url }}"
           pnpm e2e:ci
       
       - name: Upload Playwright Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.backend }}
           path: frontend/web/playwright-report/
           retention-days: 7
       
@@ -156,22 +224,23 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.backend }}
           path: frontend/web/test-results/
           retention-days: 7
       
       - name: E2E Test Summary
         if: always()
         run: |
-          echo "## 🎭 E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎭 E2E Test Results (${{ matrix.backend_name }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ -f frontend/web/test-results/results.json ]; then
-            echo "✅ E2E tests completed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ E2E tests completed for ${{ matrix.backend_name }}" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📊 Backend: ${{ matrix.backend_url }}" >> $GITHUB_STEP_SUMMARY
             echo "📊 [View Playwright Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⚠️ No test results found" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No test results found for ${{ matrix.backend_name }}" >> $GITHUB_STEP_SUMMARY
           fi
       
       - name: Show Docker logs on failure
@@ -183,13 +252,22 @@ jobs:
           echo ""
           echo "🔍 Health Status:"
           docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-postgres-e2e || echo "postgres-e2e: not found"
+          docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-redis-e2e || echo "redis-e2e: not found"
           docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-backend-e2e || echo "backend-e2e: not found"
+          docker inspect --format='{{.Name}}: {{.State.Health.Status}}' go-genai-stack-backend-nodejs-e2e || echo "backend-nodejs-e2e: not found"
           echo ""
           echo "📋 Postgres Logs:"
           docker compose logs --tail=50 postgres-e2e
           echo ""
-          echo "📋 Backend Logs:"
-          docker compose logs --tail=100 backend-e2e
+          echo "📋 Redis Logs:"
+          docker compose logs --tail=50 redis-e2e
+          echo ""
+          echo "📋 ${{ matrix.backend_name }} Logs:"
+          if [ "${{ matrix.backend }}" == "nodejs" ]; then
+            docker compose logs --tail=100 backend-nodejs-e2e || echo "Could not retrieve logs for backend-nodejs-e2e"
+          else
+            docker compose logs --tail=100 backend-e2e || echo "Could not retrieve logs for backend-e2e"
+          fi
       
       - name: Stop E2E environment
         if: always()

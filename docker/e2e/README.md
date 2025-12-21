@@ -53,7 +53,7 @@ pnpm e2e:ui           # UI 模式（推荐）
 
 ### docker-compose.yml
 
-包含两个服务：
+包含四个服务：
 
 #### 1. postgres-e2e（测试数据库）
 
@@ -66,247 +66,143 @@ pnpm e2e:ui           # UI 模式（推荐）
   1. 自动加载 Schema (`backend/database/schema.sql`)
   2. 自动加载测试数据 (`seed-data.sql`)
 
-#### 2. backend-e2e（后端服务）
+#### 2. redis-e2e（Redis 缓存）
+
+- **镜像**: redis:7-alpine
+- **端口**: 6381（避免与开发环境冲突）
+- **数据卷**: redis-e2e-data
+- **用途**: Node.js 后端需要 Redis 支持
+- **配置**: 
+  - 禁用 RDB 持久化（`--save ""`）
+  - 禁用 AOF 持久化（`--appendonly no`）
+  - 最大内存：256MB
+  - 淘汰策略：allkeys-lru
+- **注意**: 已配置以减少内存 overcommit 警告
+
+#### 3. backend-e2e（Go 后端服务）
 
 - **构建**: backend/Dockerfile
 - **端口**: 8081（映射到容器的 8080）
 - **数据库**: postgres-e2e:5432
 - **JWT Secret**: e2e-test-secret-key-for-testing-only
 - **环境**: test
-- **健康检查**: /ping 端点
+- **健康检查**: /health 端点
+
+#### 4. backend-nodejs-e2e（Node.js 后端服务）
+
+- **构建**: backend-nodejs/Dockerfile
+- **端口**: 8082（映射到容器的 8080）
+- **数据库**: postgres-e2e:5432
+- **Redis**: redis-e2e:6379
+- **JWT Secret**: e2e-test-secret-key-for-testing-only
+- **健康检查**: /health 端点
 
 ---
 
-## 📊 测试数据
+## 🔧 故障排查
 
-### 数据加载机制
+### Redis 内存 Overcommit 警告
 
-E2E 环境使用两阶段初始化：
-
-1. **Schema（统一管理）**
-   - 来源：`backend/database/schema.sql`
-   - 内容：表结构、触发器、函数
-   - 自动加载为 `01-schema.sql`
-
-2. **测试数据（环境独立）**
-   - 来源：`seed-data.sql`（本目录下）
-   - 内容：E2E 测试专用数据
-   - 自动加载为 `02-seed-data.sql`
-
-### 测试数据内容
-
-自动创建：
-
-1. **表结构**
-   - users（用户表）
-   - tasks（任务表）
-   - task_tags（任务标签表）
-
-2. **测试用户**
-   - Email: `e2e-test@example.com`
-   - Password: `Test123456!`
-   - 自动创建，预验证
-
-3. **示例任务**
-   - 一个预置任务用于测试列表
-
----
-
-## 🔧 脚本说明
-
-### start.sh
-
-**功能**：
-- ✅ 检查 Docker 是否运行
-- ✅ 启动 Docker Compose 服务
-- ✅ 等待服务健康检查通过
-- ✅ 显示服务信息和测试凭据
-
-**输出示例**：
-
+如果看到以下警告：
 ```
-✅ E2E Test Environment is Ready!
-
-📋 Service Information:
-  ┌─────────────────────────────────────────────┐
-  │ Service   │ URL / Connection                │
-  ├───────────┼─────────────────────────────────┤
-  │ Postgres  │ localhost:5433                  │
-  │ Backend   │ http://localhost:8081           │
-  │ Frontend  │ http://localhost:5173 (Host)    │
-  └─────────────────────────────────────────────┘
-
-👤 Test User Credentials:
-  Email:    e2e-test@example.com
-  Password: Test123456!
+WARNING Memory overcommit must be enabled!
 ```
 
-### stop.sh
+**原因**：
+- Redis 在低内存条件下进行后台保存或复制时可能会失败
+- 需要启用 `vm.overcommit_memory = 1`
 
-**功能**：
-- ✅ 停止所有服务
-- ✅ 可选：清理数据卷
+**解决方案**：
+1. **E2E 测试环境**（已配置）：
+   - 禁用 RDB 持久化（`--save ""`）
+   - 禁用 AOF 持久化（`--appendonly no`）
+   - 这样可以避免触发后台保存操作
 
-**参数**：
-- 无参数：停止服务但保留数据
-- `--clean`：停止服务并删除所有数据
+2. **生产环境**：
+   - 在宿主机上配置 `vm.overcommit_memory = 1`
+   - 或在 Docker Compose 中使用 `sysctls`（需要特权模式）
 
----
+**当前配置**（E2E 测试）：
+```yaml
+command: >
+  redis-server
+  --save ""
+  --appendonly no
+  --protected-mode no
+  --maxmemory 256mb
+  --maxmemory-policy allkeys-lru
+```
 
-## 🌐 网络配置
+这个配置会：
+- ✅ 禁用持久化（E2E 测试不需要）
+- ✅ 减少内存 overcommit 警告
+- ✅ 设置内存限制和淘汰策略
 
-### 端口映射
+### 服务启动失败
 
-| 服务 | 容器端口 | 主机端口 | 说明 |
-|------|---------|---------|------|
-| Postgres | 5432 | 5433 | 避免与开发环境冲突 |
-| Backend | 8080 | 8081 | 避免与开发环境冲突 |
-| Frontend | - | 5173 | 在 Host 运行 |
+**检查服务状态**：
+```bash
+cd docker/e2e
+docker compose ps
+```
 
-### 网络
-
-- **网络名**: go-genai-stack-e2e-network
-- **驱动**: bridge
-- **内部通信**: 服务间通过容器名访问
-
----
-
-## 🔍 调试和故障排查
-
-### 查看日志
-
+**查看日志**：
 ```bash
 # 查看所有服务日志
-cd docker/e2e && docker compose logs -f
+docker compose logs
 
 # 查看特定服务日志
-cd docker/e2e && docker compose logs -f postgres-e2e
-cd docker/e2e && docker compose logs -f backend-e2e
+docker compose logs postgres-e2e
+docker compose logs redis-e2e
+docker compose logs backend-e2e
+docker compose logs backend-nodejs-e2e
 ```
 
-### 检查服务状态
-
+**检查健康状态**：
 ```bash
-cd docker/e2e && docker compose ps
+docker inspect --format='{{.State.Health.Status}}' go-genai-stack-postgres-e2e
+docker inspect --format='{{.State.Health.Status}}' go-genai-stack-redis-e2e
+docker inspect --format='{{.State.Health.Status}}' go-genai-stack-backend-e2e
+docker inspect --format='{{.State.Health.Status}}' go-genai-stack-backend-nodejs-e2e
 ```
 
-### 进入容器
+### 端口冲突
 
-```bash
-# 进入 Postgres 容器
-docker exec -it go-genai-stack-postgres-e2e psql -U postgres -d go_genai_stack_e2e
-
-# 进入 Backend 容器
-docker exec -it go-genai-stack-backend-e2e sh
-```
-
-### 手动测试后端
-
-```bash
-# 健康检查
-curl http://localhost:8081/ping
-
-# 登录测试
-curl -X POST http://localhost:8081/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"e2e-test@example.com","password":"Test123456!"}'
-```
-
-### 常见问题
-
-#### 问题 1：端口已被占用
-
-**错误**：`port is already allocated`
-
-**解决**：
-```bash
-# 检查端口占用
-lsof -i :5433
-lsof -i :8081
-
-# 停止占用端口的服务或修改 docker/e2e/docker-compose.yml 中的端口映射
-```
-
-#### 问题 2：服务启动失败
-
-**解决**：
-```bash
-# 查看日志
-cd docker/e2e && docker compose logs
-
-# 重新构建并启动
-cd docker/e2e && docker compose up -d --build
-```
-
-#### 问题 3：数据库连接失败
-
-**解决**：
-```bash
-# 检查 Postgres 健康状态
-cd docker/e2e && docker compose ps postgres-e2e
-
-# 手动连接测试
-docker exec -it go-genai-stack-postgres-e2e psql -U postgres -d go_genai_stack_e2e -c "SELECT 1"
-```
+如果遇到端口冲突：
+- **PostgreSQL**: 默认使用 5433（开发环境使用 5432）
+- **Redis**: 默认使用 6381（开发环境使用 6379）
+- **Go Backend**: 默认使用 8081（开发环境使用 8080）
+- **Node.js Backend**: 默认使用 8082（开发环境使用 8081）
 
 ---
 
-## 🧹 清理
+## 📊 健康检查
 
-### 完全清理
+所有服务都配置了健康检查：
 
-```bash
-# 停止服务并删除数据卷
-./docker/e2e/stop.sh --clean
-
-# 或使用 Docker Compose
-cd docker/e2e && docker compose down -v
-
-# 清理未使用的镜像
-docker image prune -f
-```
+| 服务 | 健康检查命令 | 间隔 | 超时 | 重试 |
+|------|------------|------|------|------|
+| postgres-e2e | `pg_isready -U postgres -d go_genai_stack_e2e` | 3s | 3s | 10 |
+| redis-e2e | `redis-cli ping` | 3s | 3s | 10 |
+| backend-e2e | `wget --quiet --tries=1 --spider http://localhost:8080/health` | 5s | 3s | 10 |
+| backend-nodejs-e2e | `node -e "require('http').get('http://localhost:8080/health', ...)"` | 5s | 3s | 10 |
 
 ---
 
-## ⚙️ 高级配置
+## 🔄 CI/CD 集成
 
-### 修改测试数据
+在 GitHub Actions 中，E2E 测试会自动：
+1. 启动所有服务
+2. 等待服务健康检查通过
+3. 运行 E2E 测试
+4. 清理环境
 
-编辑 `seed-data.sql` 文件，然后：
-
-```bash
-# 重新创建环境
-./docker/e2e/stop.sh --clean
-./docker/e2e/start.sh
-```
-
-### 修改后端配置
-
-编辑 `docker/e2e/docker-compose.yml` 中的环境变量，然后重启：
-
-```bash
-cd docker/e2e && docker compose restart backend-e2e
-```
-
-### 使用自定义环境变量
-
-创建 `.env.e2e` 文件（在项目根目录）：
-
-```bash
-DATABASE_URL=postgres://postgres:postgres@localhost:5433/go_genai_stack_e2e?sslmode=disable
-BACKEND_URL=http://localhost:8081
-```
+**相关文件**：
+- `.github/workflows/frontend-e2e.yml` - E2E 测试工作流
 
 ---
 
 ## 📚 相关文档
 
-- [E2E 测试文档](../../frontend/web/e2e/README.md)
-- [E2E 测试方案](../../docs/FRONTEND_E2E_PLAN.md)
-- [E2E 完成报告](../../docs/FRONTEND_E2E_COMPLETE.md)
-
----
-
-**维护者**: AI Assistant  
-**最后更新**: 2025-11-27
-
+- [E2E 测试指南](../../frontend/web/doc/e2e-testing.md)
+- [Docker 部署指南](../../docs/Guides/docker-deployment.md)

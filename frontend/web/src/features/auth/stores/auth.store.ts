@@ -68,7 +68,11 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           })
         } catch (error: any) {
-          const errorMessage = error.response?.data?.message || '登录失败'
+          // 支持两种错误格式：
+          // 1. backend-nodejs: {error: {code, message}}
+          // 2. backend-go: {message}
+          const errorMessage =
+            error.response?.data?.error?.message || error.response?.data?.message || '登录失败'
           set({ error: errorMessage, isLoading: false })
           throw error
         }
@@ -105,7 +109,11 @@ export const useAuthStore = create<AuthState>()(
             email: user.email,
           })
         } catch (error: any) {
-          const errorMessage = error.response?.data?.message || '注册失败'
+          // 支持两种错误格式：
+          // 1. backend-nodejs: {error: {code, message}}
+          // 2. backend-go: {message}
+          const errorMessage =
+            error.response?.data?.error?.message || error.response?.data?.message || '注册失败'
           set({ error: errorMessage, isLoading: false })
           throw error
         }

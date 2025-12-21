@@ -1,0 +1,365 @@
+# Auth Domain Use Cases
+# 认证领域用例声明文件
+
+version: "1.0"
+domain: auth
+
+usecases:
+  # ========================================
+  # 用例 1: 用户注册
+  # ========================================
+  Register:
+    description: "用户注册新账户"
+    sensitivity: high
+    http:
+      method: POST
+      path: /api/auth/register
+      auth_required: false
+    
+    input:
+      email:
+        type: string
+        required: true
+        validation: "required,email,max=255"
+        description: "邮箱"
+      password:
+        type: string
+        required: true
+        validation: "required,min=8,max=128"
+        description: "密码"
+      username:
+        type: string
+        required: false
+        validation: "omitempty,min=3,max=30,alphanum"
+        description: "用户名（可选）"
+      full_name:
+        type: string
+        required: false
+        validation: "omitempty,max=100"
+        description: "全名（可选）"
+    
+    output:
+      user_id:
+        type: string
+        description: "用户 ID"
+      email:
+        type: string
+        description: "邮箱"
+      access_token:
+        type: string
+        description: "访问令牌 (JWT)"
+      refresh_token:
+        type: string
+        description: "刷新令牌"
+      expires_in:
+        type: int
+        description: "令牌过期时间（秒）"
+    
+    steps:
+      - name: ValidateInput
+        type: sync
+        description: "验证输入参数"
+        on_fail: abort
+      
+      - name: CheckEmailExists
+        type: sync
+        description: "检查邮箱是否已被注册"
+        on_fail: abort
+        error: EMAIL_ALREADY_EXISTS
+      
+      - name: CheckUsernameExists
+        type: sync
+        description: "检查用户名是否已被占用（如果提供）"
+        on_fail: abort
+        error: USERNAME_ALREADY_EXISTS
+      
+      - name: CreateUser
+        type: sync
+        description: "创建用户实体（调用 User Domain）"
+        on_fail: abort
+      
+      - name: SaveUser
+        type: sync
+        description: "保存用户到数据库"
+        on_fail: abort
+      
+      - name: GenerateTokens
+        type: sync
+        description: "生成 JWT Access Token 和 Refresh Token"
+      
+      - name: PublishUserCreatedEvent
+        type: event
+        event_type: UserCreated
+        description: "发布用户创建事件"
+        on_fail: log
+    
+    errors:
+      - code: EMAIL_ALREADY_EXISTS
+        message: "邮箱已被注册"
+        http_status: 400
+      - code: USERNAME_ALREADY_EXISTS
+        message: "用户名已被占用"
+        http_status: 400
+      - code: INVALID_EMAIL
+        message: "邮箱格式无效"
+        http_status: 400
+      - code: WEAK_PASSWORD
+        message: "密码强度不足（至少 8 字符）"
+        http_status: 400
+      - code: REGISTRATION_FAILED
+        message: "注册失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 2: 用户登录
+  # ========================================
+  Login:
+    description: "用户登录系统"
+    sensitivity: high
+    http:
+      method: POST
+      path: /api/auth/login
+      auth_required: false
+    
+    input:
+      email:
+        type: string
+        required: true
+        validation: "required,email"
+        description: "邮箱"
+      password:
+        type: string
+        required: true
+        validation: "required"
+        description: "密码"
+    
+    output:
+      user_id:
+        type: string
+        description: "用户 ID"
+      email:
+        type: string
+        description: "邮箱"
+      access_token:
+        type: string
+        description: "访问令牌 (JWT)"
+      refresh_token:
+        type: string
+        description: "刷新令牌"
+      expires_in:
+        type: int
+        description: "令牌过期时间（秒）"
+    
+    steps:
+      - name: ValidateInput
+        type: sync
+        description: "验证输入参数"
+        on_fail: abort
+      
+      - name: GetUserByEmail
+        type: sync
+        description: "根据邮箱获取用户"
+        on_fail: abort
+        error: INVALID_CREDENTIALS
+      
+      - name: VerifyPassword
+        type: sync
+        description: "验证密码"
+        on_fail: abort
+        error: INVALID_CREDENTIALS
+      
+      - name: CheckUserStatus
+        type: sync
+        description: "检查用户状态（是否被禁用）"
+        on_fail: abort
+        error: USER_BANNED
+      
+      - name: GenerateTokens
+        type: sync
+        description: "生成 JWT Access Token 和 Refresh Token"
+      
+      - name: RecordLoginTime
+        type: sync
+        description: "记录最后登录时间"
+        on_fail: log
+      
+      - name: PublishLoginSucceededEvent
+        type: event
+        event_type: LoginSucceeded
+        description: "发布登录成功事件"
+        on_fail: log
+    
+    errors:
+      - code: INVALID_CREDENTIALS
+        message: "邮箱或密码错误"
+        http_status: 401
+      - code: USER_BANNED
+        message: "用户已被禁用"
+        http_status: 403
+      - code: LOGIN_FAILED
+        message: "登录失败"
+        http_status: 500
+
+  # ========================================
+  # 用例 3: 刷新令牌
+  # ========================================
+  RefreshToken:
+    description: "使用 Refresh Token 获取新的 Access Token"
+    sensitivity: high
+    http:
+      method: POST
+      path: /api/auth/refresh
+      auth_required: false
+    
+    input:
+      refresh_token:
+        type: string
+        required: true
+        validation: "required"
+        description: "刷新令牌"
+    
+    output:
+      access_token:
+        type: string
+        description: "新的访问令牌"
+      refresh_token:
+        type: string
+        description: "新的刷新令牌"
+      expires_in:
+        type: int
+        description: "令牌过期时间（秒）"
+    
+    steps:
+      - name: ValidateRefreshToken
+        type: sync
+        description: "验证 Refresh Token"
+        on_fail: abort
+        error: INVALID_REFRESH_TOKEN
+      
+      - name: GetUserByID
+        type: sync
+        description: "获取用户信息"
+        on_fail: abort
+        error: USER_NOT_FOUND
+      
+      - name: CheckUserStatus
+        type: sync
+        description: "检查用户状态"
+        on_fail: abort
+        error: USER_BANNED
+      
+      - name: GenerateNewTokens
+        type: sync
+        description: "生成新的 Access Token 和 Refresh Token"
+    
+    errors:
+      - code: INVALID_REFRESH_TOKEN
+        message: "Refresh Token 无效或已过期"
+        http_status: 401
+      - code: USER_NOT_FOUND
+        message: "用户不存在"
+        http_status: 404
+      - code: USER_BANNED
+        message: "用户已被禁用"
+        http_status: 403
+
+  # ========================================
+  # 用例 4: 登出（扩展点）
+  # ========================================
+  Logout:
+    description: "用户登出系统（撤销 Token）"
+    sensitivity: medium
+    http:
+      method: POST
+      path: /api/auth/logout
+      auth_required: true
+    
+    input:
+      user_id:
+        type: string
+        required: true
+        source: context
+        description: "用户 ID (from JWT)"
+    
+    output:
+      success:
+        type: bool
+        description: "是否成功"
+      message:
+        type: string
+        description: "提示消息"
+    
+    steps:
+      - name: RevokeToken
+        type: sync
+        description: "撤销当前 Token（添加到黑名单）"
+      
+      - name: PublishLogoutEvent
+        type: event
+        event_type: UserLogout
+        on_fail: log
+    
+    errors:
+      - code: LOGOUT_FAILED
+        message: "登出失败"
+        http_status: 500
+
+# ========================================
+# 全局配置
+# ========================================
+config:
+  jwt:
+    access_token_expiry: 1h
+    refresh_token_expiry: 7d
+    issuer: "go-genai-stack"
+    algorithm: "HS256"
+  
+  default_timeout: 30s
+  enable_tracing: true
+  enable_metrics: true
+
+# ========================================
+# 依赖关系
+# ========================================
+dependencies:
+  external:
+    - name: User Domain
+      description: "调用 User Domain 创建和验证用户"
+  
+  infrastructure:
+    - name: database
+      type: PostgreSQL
+      description: "用户数据存储"
+    - name: redis
+      type: Redis
+      description: "Token 黑名单（扩展点）"
+      required: false
+
+# ========================================
+# 扩展点
+# ========================================
+extensions:
+  - name: OAuth2 Integration
+    description: "集成 Google、GitHub 等第三方登录"
+    status: not_implemented
+  
+  - name: Token Blacklist
+    description: "使用 Redis 存储撤销的 Token（登出功能）"
+    status: not_implemented
+  
+  - name: Email Verification
+    description: "注册后发送邮箱验证链接"
+    status: not_implemented
+  
+  - name: Password Reset
+    description: "忘记密码流程"
+    status: not_implemented
+  
+  - name: Rate Limiting
+    description: "登录失败次数限制（防止暴力破解）"
+    status: not_implemented
+  
+  - name: Multi-Factor Authentication
+    description: "多因素认证（TOTP、SMS）"
+    status: not_implemented
+

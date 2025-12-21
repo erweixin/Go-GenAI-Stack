@@ -31,21 +31,29 @@
 ```bash
 cd frontend/web
 
-# 启动环境 → 运行测试 → 清理环境
+# 测试 Go 后端（默认）
 pnpm e2e:all
+
+# 测试 Node.js 后端
+pnpm e2e:nodejs:all
 ```
 
 ### 分步运行
 
 ```bash
-# 1. 启动 E2E 环境（Docker）
+# 1. 启动 E2E 环境（Docker，包含 Go 和 Node.js 两个后端）
 pnpm e2e:setup
 
-# 2. 运行测试
+# 2. 运行测试（选择后端）
+# Go 后端（默认）
 pnpm e2e              # 命令行模式
 pnpm e2e:ui           # UI 模式（推荐）⭐
 pnpm e2e:headed       # 有头模式（显示浏览器）
 pnpm e2e:debug        # 调试模式
+
+# Node.js 后端
+pnpm e2e:nodejs       # 命令行模式
+pnpm e2e:nodejs:ui    # UI 模式（推荐）⭐
 
 # 3. 停止环境
 pnpm e2e:teardown     # 保留数据

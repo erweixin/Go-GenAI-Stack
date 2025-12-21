@@ -32,7 +32,36 @@ services:
     networks:
       - e2e-network
 
-  # 后端服务器
+  # Redis 测试缓存（Node.js 后端需要）
+  redis-e2e:
+    image: redis:7-alpine
+    container_name: go-genai-stack-redis-e2e
+    ports:
+      - "6381:6379"  # 使用不同端口避免与开发环境冲突
+    volumes:
+      # 数据持久化（可选，用于调试）
+      - redis-e2e-data:/data
+    # 配置 Redis 以减少内存 overcommit 警告
+    # --save "" 禁用 RDB 持久化（E2E 测试不需要持久化）
+    # --appendonly yes 启用 AOF（如果需要持久化）
+    # 或者使用 --save "" --appendonly no 完全禁用持久化（推荐用于 E2E 测试）
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --protected-mode no
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - e2e-network
+
+  # Go 后端服务器
   backend-e2e:
     build:
       context: ../..
@@ -72,10 +101,61 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  # Node.js 后端服务器
+  backend-nodejs-e2e:
+    build:
+      context: ../..
+      dockerfile: backend-nodejs/Dockerfile
+    container_name: go-genai-stack-backend-nodejs-e2e
+    environment:
+      # 数据库配置
+      DATABASE_HOST: postgres-e2e
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: go_genai_stack_e2e
+      DATABASE_SSL_MODE: disable
+      
+      # Redis 配置
+      REDIS_HOST: redis-e2e
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      
+      # JWT 配置（E2E 测试环境，secret 长度至少 32 字符）
+      JWT_SECRET: e2e-test-secret-key-for-testing-only-32chars
+      JWT_ACCESS_TOKEN_EXPIRY: 15m
+      JWT_REFRESH_TOKEN_EXPIRY: 7d
+      JWT_ISSUER: go-genai-stack-e2e
+      
+      # 服务器配置
+      NODE_ENV: test
+      E2E_TEST: "true"  # 标记为 E2E 测试环境，禁用 rate limiting
+      SERVER_PORT: 8080
+      SERVER_HOST: 0.0.0.0
+    ports:
+      - "8082:8080"  # 映射到 8082 避免与开发环境冲突
+    depends_on:
+      postgres-e2e:
+        condition: service_healthy
+      redis-e2e:
+        condition: service_healthy
+    networks:
+      - e2e-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.on('error', (e) => {process.stderr.write('Health check response error: ' + e.message + '\\n');process.exit(1)});r.on('data', () => {});r.on('end', () => {if (r.statusCode !== 200) {process.stderr.write('Health check failed: status code ' + r.statusCode + '\\n');}process.exit(r.statusCode === 200 ? 0 : 1)})}).on('error', (e) => {process.stderr.write('Health check request error: ' + e.message + '\\n');process.exit(1)})"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   postgres-e2e-data:
     driver: local
     name: go-genai-stack-postgres-e2e-data
+  redis-e2e-data:
+    driver: local
+    name: go-genai-stack-redis-e2e-data
 
 networks:
   e2e-network:
