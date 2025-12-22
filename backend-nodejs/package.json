@@ -54,6 +54,7 @@
     "@types/pg": "^8.10.9",
     "@typescript-eslint/eslint-plugin": "^7.13.0",
     "@typescript-eslint/parser": "^7.13.0",
+    "@vitest/coverage-v8": "^1.6.0",
     "eslint": "^8.57.0",
     "pino-pretty": "^11.2.2",
     "prettier": "^3.2.5",
