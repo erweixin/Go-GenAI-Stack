@@ -53,7 +53,7 @@
         "RefreshToken"
       ]
     }
-  },
+  ],
   "use_cases": [
     {
       "name": "Register",
