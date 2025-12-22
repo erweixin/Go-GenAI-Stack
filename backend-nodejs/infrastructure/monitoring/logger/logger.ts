@@ -1,7 +1,7 @@
 /**
  * 结构化日志模块
  * 基于 Pino 的高性能日志库，支持日志轮转、多输出、压缩归档
- * 
+ *
  * 功能：
  *   - 支持 JSON 和 Pretty 格式
  *   - 支持多种输出（stdout, stderr, file）
@@ -20,15 +20,15 @@ import { createStream } from 'rotating-file-stream';
  * 日志配置接口
  */
 export interface LoggerConfig {
-  enabled: boolean;        // 是否启用结构化日志
+  enabled: boolean; // 是否启用结构化日志
   level: 'debug' | 'info' | 'warn' | 'error';
   format: 'json' | 'pretty';
   output: 'stdout' | 'stderr' | 'file';
-  outputPath?: string;     // 日志文件路径（当 output=file 时）
-  maxSize?: number;        // 日志文件最大大小（MB）
-  maxBackups?: number;     // 保留的旧日志文件数量
-  maxAge?: number;         // 保留旧日志文件的最大天数
-  compress?: boolean;      // 是否压缩旧日志
+  outputPath?: string; // 日志文件路径（当 output=file 时）
+  maxSize?: number; // 日志文件最大大小（MB）
+  maxBackups?: number; // 保留的旧日志文件数量
+  maxAge?: number; // 保留旧日志文件的最大天数
+  compress?: boolean; // 是否压缩旧日志
 }
 
 /**
@@ -152,10 +152,10 @@ function createOutputStream(config: LoggerConfig): NodeJS.WritableStream {
       const streamOptions: any = {
         // 按大小轮转
         size: config.maxSize ? `${config.maxSize}M` : '100M',
-        
+
         // 保留的旧日志文件数量
         maxFiles: config.maxBackups || 3,
-        
+
         // 压缩旧日志文件
         compress: config.compress ? 'gzip' : false,
       };
@@ -168,7 +168,7 @@ function createOutputStream(config: LoggerConfig): NodeJS.WritableStream {
       const rotatingStream = createStream(config.outputPath, streamOptions);
 
       // 错误处理
-      rotatingStream.on('error', (err) => {
+      rotatingStream.on('error', err => {
         console.error('Log rotation error:', err);
       });
 
@@ -183,7 +183,7 @@ function createOutputStream(config: LoggerConfig): NodeJS.WritableStream {
 
 /**
  * 创建 Logger 实例
- * 
+ *
  * @param config 日志配置
  * @returns Logger 实例，如果 enabled=false 则返回 null
  */
@@ -198,26 +198,9 @@ export function createLogger(config: LoggerConfig): Logger | null {
   // 创建 Pino Logger
   // 如果使用 pretty 格式，使用 transport（自动处理输出）
   // 否则使用指定的 stream
-  const pinoLogger = config.format === 'pretty'
-    ? pino({
-        level: config.level,
-        formatters: {
-          level: (label: string) => {
-            return { level: label.toUpperCase() };
-          },
-        },
-        timestamp: pino.stdTimeFunctions.isoTime,
-        transport: {
-          target: 'pino-pretty',
-          options: {
-            translateTime: 'HH:MM:ss Z',
-            ignore: 'pid,hostname',
-            colorize: true,
-          },
-        },
-      })
-    : pino(
-        {
+  const pinoLogger =
+    config.format === 'pretty'
+      ? pino({
           level: config.level,
           formatters: {
             level: (label: string) => {
@@ -225,9 +208,27 @@ export function createLogger(config: LoggerConfig): Logger | null {
             },
           },
           timestamp: pino.stdTimeFunctions.isoTime,
-        },
-        stream
-      );
+          transport: {
+            target: 'pino-pretty',
+            options: {
+              translateTime: 'HH:MM:ss Z',
+              ignore: 'pid,hostname',
+              colorize: true,
+            },
+          },
+        })
+      : pino(
+          {
+            level: config.level,
+            formatters: {
+              level: (label: string) => {
+                return { level: label.toUpperCase() };
+              },
+            },
+            timestamp: pino.stdTimeFunctions.isoTime,
+          },
+          stream
+        );
 
   return new Logger(pinoLogger);
 }
@@ -239,7 +240,7 @@ let globalLogger: Logger | null = null;
 
 /**
  * 初始化全局 Logger
- * 
+ *
  * @param config 日志配置
  * @throws {Error} 配置错误时抛出异常
  */
@@ -259,7 +260,7 @@ export function initGlobalLogger(config: LoggerConfig): void {
 
 /**
  * 获取全局 Logger
- * 
+ *
  * @returns Logger 实例，如果未初始化则返回 null
  */
 export function getGlobalLogger(): Logger | null {
@@ -301,4 +302,3 @@ export async function flush(): Promise<void> {
     await globalLogger.flush();
   }
 }
-

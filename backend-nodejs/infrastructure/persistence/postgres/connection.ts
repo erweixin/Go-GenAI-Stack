@@ -45,4 +45,3 @@ export async function testConnection(db: Kysely<Database>): Promise<boolean> {
     return false;
   }
 }
-

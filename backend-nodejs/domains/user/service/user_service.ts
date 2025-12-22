@@ -8,10 +8,7 @@ import type { UserRepository } from '../repository/interface.js';
 import { createError } from '../../../shared/errors/errors.js';
 import type { RequestContext } from '../../../shared/types/context.js';
 import type { EventBus } from '../../shared/events/event_bus.js';
-import {
-  UserUpdatedEvent,
-  PasswordChangedEvent,
-} from '../events/user_events.js';
+import { UserUpdatedEvent, PasswordChangedEvent } from '../events/user_events.js';
 
 export interface GetUserProfileInput {
   userId: string;
@@ -45,7 +42,7 @@ export interface ChangePasswordOutput {
 
 /**
  * UserService 用户领域服务
- * 
+ *
  * 示例：订阅 Task 领域的事件（如任务创建时更新用户统计）
  * 这展示了如何通过事件总线实现领域间解耦通信
  */
@@ -73,7 +70,10 @@ export class UserService {
   /**
    * 获取用户资料
    */
-  async getUserProfile(ctx: RequestContext, input: GetUserProfileInput): Promise<GetUserProfileOutput> {
+  async getUserProfile(
+    ctx: RequestContext,
+    input: GetUserProfileInput
+  ): Promise<GetUserProfileOutput> {
     // Step 1: 从数据库获取用户
     const user = await this.userRepo.getById(ctx, input.userId);
     if (!user) {
@@ -172,4 +172,3 @@ export class UserService {
     };
   }
 }
-

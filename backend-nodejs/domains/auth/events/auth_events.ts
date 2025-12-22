@@ -60,4 +60,3 @@ export class LoginFailedEvent extends BaseEvent {
     super('LoginFailed', 'auth', payload);
   }
 }
-

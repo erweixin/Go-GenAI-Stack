@@ -157,4 +157,3 @@ export class JWTService {
     return payload.user_id;
   }
 }
-

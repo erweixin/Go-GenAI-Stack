@@ -5,7 +5,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
-import { Logger, createLogger, initGlobalLogger, getGlobalLogger, debug, info, warn, error, flush } from './logger.js';
+import {
+  Logger,
+  createLogger,
+  initGlobalLogger,
+  getGlobalLogger,
+  debug,
+  info,
+  warn,
+  error,
+  flush,
+} from './logger.js';
 import type { LoggerConfig } from './logger.js';
 
 describe('Logger', () => {
@@ -20,19 +30,19 @@ describe('Logger', () => {
       warn: vi.fn(),
       error: vi.fn(),
       fatal: vi.fn(),
-      child: vi.fn((fields) => ({
+      child: vi.fn(fields => ({
         ...mockPinoLogger,
         childFields: fields,
       })),
     };
-    
+
     logger = new Logger(mockPinoLogger);
   });
 
   describe('debug', () => {
     it('应该调用 Pino logger 的 debug 方法', () => {
       logger.debug('Debug message');
-      
+
       expect(mockPinoLogger.debug).toHaveBeenCalledTimes(1);
       expect(mockPinoLogger.debug).toHaveBeenCalledWith({}, 'Debug message');
     });
@@ -40,13 +50,13 @@ describe('Logger', () => {
     it('应该支持传递字段', () => {
       const fields = { userId: '123', action: 'test' };
       logger.debug('Debug message', fields);
-      
+
       expect(mockPinoLogger.debug).toHaveBeenCalledWith(fields, 'Debug message');
     });
 
     it('当不传递字段时应该使用空对象', () => {
       logger.debug('Debug message');
-      
+
       expect(mockPinoLogger.debug).toHaveBeenCalledWith({}, 'Debug message');
     });
   });
@@ -54,7 +64,7 @@ describe('Logger', () => {
   describe('info', () => {
     it('应该调用 Pino logger 的 info 方法', () => {
       logger.info('Info message');
-      
+
       expect(mockPinoLogger.info).toHaveBeenCalledTimes(1);
       expect(mockPinoLogger.info).toHaveBeenCalledWith({}, 'Info message');
     });
@@ -62,7 +72,7 @@ describe('Logger', () => {
     it('应该支持传递字段', () => {
       const fields = { requestId: 'req-123' };
       logger.info('Info message', fields);
-      
+
       expect(mockPinoLogger.info).toHaveBeenCalledWith(fields, 'Info message');
     });
   });
@@ -70,7 +80,7 @@ describe('Logger', () => {
   describe('warn', () => {
     it('应该调用 Pino logger 的 warn 方法', () => {
       logger.warn('Warning message');
-      
+
       expect(mockPinoLogger.warn).toHaveBeenCalledTimes(1);
       expect(mockPinoLogger.warn).toHaveBeenCalledWith({}, 'Warning message');
     });
@@ -78,7 +88,7 @@ describe('Logger', () => {
     it('应该支持传递字段', () => {
       const fields = { errorCode: 'WARN_001' };
       logger.warn('Warning message', fields);
-      
+
       expect(mockPinoLogger.warn).toHaveBeenCalledWith(fields, 'Warning message');
     });
   });
@@ -86,7 +96,7 @@ describe('Logger', () => {
   describe('error', () => {
     it('应该调用 Pino logger 的 error 方法', () => {
       logger.error('Error message');
-      
+
       expect(mockPinoLogger.error).toHaveBeenCalledTimes(1);
       expect(mockPinoLogger.error).toHaveBeenCalledWith({}, 'Error message');
     });
@@ -94,7 +104,7 @@ describe('Logger', () => {
     it('应该支持传递字段', () => {
       const fields = { error: 'Something went wrong', stack: 'stack trace' };
       logger.error('Error message', fields);
-      
+
       expect(mockPinoLogger.error).toHaveBeenCalledWith(fields, 'Error message');
     });
   });
@@ -102,7 +112,7 @@ describe('Logger', () => {
   describe('fatal', () => {
     it('应该调用 Pino logger 的 fatal 方法', () => {
       logger.fatal('Fatal message');
-      
+
       expect(mockPinoLogger.fatal).toHaveBeenCalledTimes(1);
       expect(mockPinoLogger.fatal).toHaveBeenCalledWith({}, 'Fatal message');
     });
@@ -110,7 +120,7 @@ describe('Logger', () => {
     it('应该支持传递字段', () => {
       const fields = { exitCode: 1 };
       logger.fatal('Fatal message', fields);
-      
+
       expect(mockPinoLogger.fatal).toHaveBeenCalledWith(fields, 'Fatal message');
     });
   });
@@ -119,16 +129,16 @@ describe('Logger', () => {
     it('应该创建子 Logger 并传递字段', () => {
       const fields = { userId: '123', requestId: 'req-456' };
       const childLogger = logger.child(fields);
-      
+
       expect(mockPinoLogger.child).toHaveBeenCalledWith(fields);
       expect(childLogger).toBeInstanceOf(Logger);
     });
 
     it('子 Logger 应该可以正常使用', () => {
       const childLogger = logger.child({ userId: '123' });
-      
+
       childLogger.info('Child message');
-      
+
       expect(mockPinoLogger.child).toHaveBeenCalledWith({ userId: '123' });
     });
   });
@@ -142,7 +152,7 @@ describe('Logger', () => {
   describe('getPino', () => {
     it('应该返回原始的 Pino Logger', () => {
       const pinoLogger = logger.getPino();
-      
+
       expect(pinoLogger).toBe(mockPinoLogger);
     });
   });
@@ -156,7 +166,7 @@ describe('createLogger', () => {
     if (existsSync(testLogFile)) {
       unlinkSync(testLogFile);
     }
-    
+
     // 重置环境变量
     delete process.env.NODE_ENV;
   });
@@ -169,9 +179,9 @@ describe('createLogger', () => {
         format: 'json',
         output: 'stdout',
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).toBeNull();
     });
   });
@@ -184,9 +194,9 @@ describe('createLogger', () => {
         format: 'json',
         output: 'stdout',
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).not.toBeNull();
       expect(logger).toBeInstanceOf(Logger);
     });
@@ -198,11 +208,11 @@ describe('createLogger', () => {
         format: 'json',
         output: 'stdout',
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).not.toBeNull();
-      
+
       // 应该可以正常记录日志
       logger!.info('Test message');
     });
@@ -214,11 +224,11 @@ describe('createLogger', () => {
         format: 'json',
         output: 'stderr',
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).not.toBeNull();
-      
+
       logger!.warn('Test warning');
     });
 
@@ -230,16 +240,16 @@ describe('createLogger', () => {
         output: 'file',
         outputPath: testLogFile,
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).not.toBeNull();
-      
+
       logger!.info('Test message to file');
-      
+
       // Pino 是异步的，等待一小段时间让日志写入
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // 验证文件已创建
       expect(existsSync(testLogFile)).toBe(true);
     });
@@ -252,7 +262,7 @@ describe('createLogger', () => {
         output: 'file',
         // outputPath 未提供
       };
-      
+
       expect(() => {
         createLogger(config);
       }).toThrow('outputPath is required when output=file');
@@ -265,9 +275,9 @@ describe('createLogger', () => {
         format: 'json',
         output: 'stdout',
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).not.toBeNull();
       logger!.info('JSON format test');
     });
@@ -279,16 +289,16 @@ describe('createLogger', () => {
         format: 'pretty',
         output: 'stdout',
       };
-      
+
       const logger = createLogger(config);
-      
+
       expect(logger).not.toBeNull();
       logger!.info('Pretty format test');
     });
 
     it('应该支持不同的日志级别', () => {
       const levels: Array<'debug' | 'info' | 'warn' | 'error'> = ['debug', 'info', 'warn', 'error'];
-      
+
       for (const level of levels) {
         const config: LoggerConfig = {
           enabled: true,
@@ -296,7 +306,7 @@ describe('createLogger', () => {
           format: 'json',
           output: 'stdout',
         };
-        
+
         const logger = createLogger(config);
         expect(logger).not.toBeNull();
       }
@@ -324,11 +334,11 @@ describe('全局 Logger', () => {
         format: 'json',
         output: 'stdout',
       };
-      
+
       expect(() => {
         initGlobalLogger(config);
       }).not.toThrow();
-      
+
       const globalLogger = getGlobalLogger();
       expect(globalLogger).not.toBeNull();
     });
@@ -340,9 +350,9 @@ describe('全局 Logger', () => {
         format: 'json',
         output: 'stdout',
       };
-      
+
       initGlobalLogger(config);
-      
+
       const globalLogger = getGlobalLogger();
       expect(globalLogger).toBeNull();
     });
@@ -365,9 +375,9 @@ describe('全局 Logger', () => {
         format: 'json',
         output: 'stdout',
       };
-      
+
       initGlobalLogger(config);
-      
+
       const logger = getGlobalLogger();
       expect(logger).not.toBeNull();
       expect(logger).toBeInstanceOf(Logger);
@@ -388,46 +398,46 @@ describe('全局 Logger', () => {
     it('debug 应该使用全局 Logger', () => {
       const globalLogger = getGlobalLogger();
       const debugSpy = vi.spyOn(globalLogger!, 'debug');
-      
+
       debug('Debug message');
-      
+
       expect(debugSpy).toHaveBeenCalledWith('Debug message', undefined);
     });
 
     it('info 应该使用全局 Logger', () => {
       const globalLogger = getGlobalLogger();
       const infoSpy = vi.spyOn(globalLogger!, 'info');
-      
+
       info('Info message');
-      
+
       expect(infoSpy).toHaveBeenCalledWith('Info message', undefined);
     });
 
     it('warn 应该使用全局 Logger', () => {
       const globalLogger = getGlobalLogger();
       const warnSpy = vi.spyOn(globalLogger!, 'warn');
-      
+
       warn('Warning message');
-      
+
       expect(warnSpy).toHaveBeenCalledWith('Warning message', undefined);
     });
 
     it('error 应该使用全局 Logger', () => {
       const globalLogger = getGlobalLogger();
       const errorSpy = vi.spyOn(globalLogger!, 'error');
-      
+
       error('Error message');
-      
+
       expect(errorSpy).toHaveBeenCalledWith('Error message', undefined);
     });
 
     it('便捷函数应该支持传递字段', () => {
       const globalLogger = getGlobalLogger();
       const infoSpy = vi.spyOn(globalLogger!, 'info');
-      
+
       const fields = { userId: '123', action: 'test' };
       info('Info message', fields);
-      
+
       expect(infoSpy).toHaveBeenCalledWith('Info message', fields);
     });
 
@@ -440,7 +450,7 @@ describe('全局 Logger', () => {
         output: 'stdout',
       };
       initGlobalLogger(config);
-      
+
       // 应该不抛出异常
       expect(() => {
         debug('Debug message');
@@ -460,12 +470,12 @@ describe('全局 Logger', () => {
         output: 'stdout',
       };
       initGlobalLogger(config);
-      
+
       const globalLogger = getGlobalLogger();
       const flushSpy = vi.spyOn(globalLogger!, 'flush');
-      
+
       await flush();
-      
+
       expect(flushSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -477,7 +487,7 @@ describe('全局 Logger', () => {
         output: 'stdout',
       };
       initGlobalLogger(config);
-      
+
       await expect(flush()).resolves.not.toThrow();
     });
   });
@@ -499,16 +509,16 @@ describe('Logger 集成测试', () => {
       format: 'json',
       output: 'stdout',
     };
-    
+
     const logger = createLogger(config);
-    
+
     expect(logger).not.toBeNull();
-    
+
     logger!.debug('Debug message', { step: 1 });
     logger!.info('Info message', { step: 2 });
     logger!.warn('Warning message', { step: 3 });
     logger!.error('Error message', { step: 4 });
-    
+
     // 应该不抛出异常
     expect(true).toBe(true);
   });
@@ -520,12 +530,12 @@ describe('Logger 集成测试', () => {
       format: 'json',
       output: 'stdout',
     };
-    
+
     const logger = createLogger(config);
     const childLogger = logger!.child({ requestId: 'req-123', userId: 'user-456' });
-    
+
     childLogger.info('Child logger message');
-    
+
     // 应该不抛出异常
     expect(true).toBe(true);
   });
@@ -538,17 +548,17 @@ describe('Logger 集成测试', () => {
       output: 'file',
       outputPath: testLogFile,
     };
-    
+
     const logger = createLogger(config);
-    
+
     logger!.info('Test message', { test: true });
-    
+
     // Pino 是异步的，等待一小段时间让日志写入
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     // 验证文件已创建
     expect(existsSync(testLogFile)).toBe(true);
-    
+
     // 验证文件内容（如果可能）
     try {
       const content = readFileSync(testLogFile, 'utf-8');
@@ -567,21 +577,21 @@ describe('Logger 集成测试', () => {
       output: 'file',
       outputPath: testLogFile,
     };
-    
+
     const logger = createLogger(config);
-    
+
     // 写入不同级别的日志
     logger!.debug('Debug message', { level: 'debug' });
     logger!.info('Info message', { level: 'info' });
     logger!.warn('Warning message', { level: 'warn' });
     logger!.error('Error message', { level: 'error' });
-    
+
     // 等待日志写入
     await new Promise(resolve => setTimeout(resolve, 200));
-    
+
     // 验证文件已创建
     expect(existsSync(testLogFile)).toBe(true);
-    
+
     // 验证文件内容包含所有级别的日志
     const content = readFileSync(testLogFile, 'utf-8');
     expect(content).toContain('Debug message');
@@ -598,35 +608,38 @@ describe('Logger 集成测试', () => {
       output: 'file',
       outputPath: testLogFile,
     };
-    
+
     const logger = createLogger(config);
-    
+
     const testFields = {
       userId: 'user-123',
       requestId: 'req-456',
       action: 'test-action',
       timestamp: new Date().toISOString(),
     };
-    
+
     logger!.info('Structured log message', testFields);
-    
+
     // 等待日志写入
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     // 验证文件已创建
     expect(existsSync(testLogFile)).toBe(true);
-    
+
     // 验证文件内容包含结构化字段
     const content = readFileSync(testLogFile, 'utf-8');
     expect(content).toContain('Structured log message');
     expect(content).toContain('user-123');
     expect(content).toContain('req-456');
     expect(content).toContain('test-action');
-    
+
     // 验证 JSON 格式正确（可以解析）
-    const lines = content.trim().split('\n').filter(line => line.trim());
+    const lines = content
+      .trim()
+      .split('\n')
+      .filter(line => line.trim());
     expect(lines.length).toBeGreaterThan(0);
-    
+
     // 验证每行都是有效的 JSON
     for (const line of lines) {
       expect(() => JSON.parse(line)).not.toThrow();
@@ -645,29 +658,32 @@ describe('Logger 集成测试', () => {
       output: 'file',
       outputPath: testLogFile,
     };
-    
+
     const logger = createLogger(config);
-    
+
     // 写入多条日志
     const logCount = 10;
     for (let i = 0; i < logCount; i++) {
       logger!.info(`Log message ${i}`, { index: i, timestamp: Date.now() });
     }
-    
+
     // 等待日志写入
     await new Promise(resolve => setTimeout(resolve, 200));
-    
+
     // 验证文件已创建
     expect(existsSync(testLogFile)).toBe(true);
-    
+
     // 验证文件内容包含所有日志
     const content = readFileSync(testLogFile, 'utf-8');
     for (let i = 0; i < logCount; i++) {
       expect(content).toContain(`Log message ${i}`);
     }
-    
+
     // 验证文件行数（每行一条日志）
-    const lines = content.trim().split('\n').filter(line => line.trim());
+    const lines = content
+      .trim()
+      .split('\n')
+      .filter(line => line.trim());
     expect(lines.length).toBeGreaterThanOrEqual(logCount);
   });
 
@@ -679,36 +695,38 @@ describe('Logger 集成测试', () => {
       output: 'file',
       outputPath: testLogFile,
     };
-    
+
     const logger = createLogger(config);
     const childLogger = logger!.child({
       component: 'TestComponent',
       traceId: 'trace-123',
     });
-    
+
     childLogger.info('Child logger message', { action: 'test' });
-    
+
     // 等待日志写入
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     // 验证文件已创建
     expect(existsSync(testLogFile)).toBe(true);
-    
+
     // 验证文件内容包含上下文字段
     const content = readFileSync(testLogFile, 'utf-8');
     expect(content).toContain('Child logger message');
     expect(content).toContain('TestComponent');
     expect(content).toContain('trace-123');
     expect(content).toContain('test');
-    
+
     // 验证 JSON 包含所有字段
-    const lines = content.trim().split('\n').filter(line => line.trim());
+    const lines = content
+      .trim()
+      .split('\n')
+      .filter(line => line.trim());
     expect(lines.length).toBeGreaterThan(0);
-    
+
     const parsed = JSON.parse(lines[lines.length - 1]);
     expect(parsed).toHaveProperty('component', 'TestComponent');
     expect(parsed).toHaveProperty('traceId', 'trace-123');
     expect(parsed).toHaveProperty('action', 'test');
   });
 });
-

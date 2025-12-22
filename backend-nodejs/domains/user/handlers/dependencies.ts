@@ -8,4 +8,3 @@ import type { UserService } from '../service/user_service.js';
 export interface HandlerDependencies {
   userService: UserService;
 }
-

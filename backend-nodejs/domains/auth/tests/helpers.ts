@@ -106,9 +106,5 @@ export async function ensureTestUser(db: Kysely<Database>): Promise<void> {
  * 清理测试用户（用于注册测试）
  */
 export async function cleanupTestUser(db: Kysely<Database>, email: string): Promise<void> {
-  await db
-    .deleteFrom('users')
-    .where('email', '=', email.toLowerCase())
-    .execute();
+  await db.deleteFrom('users').where('email', '=', email.toLowerCase()).execute();
 }
-

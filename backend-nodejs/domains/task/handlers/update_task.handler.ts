@@ -5,11 +5,11 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { UpdateTaskRequest } from '../http/dto/task.js';
+import { toUpdateTaskInput, toUpdateTaskResponse } from './converters.js';
 import {
-  toUpdateTaskInput,
-  toUpdateTaskResponse,
-} from './converters.js';
-import { getUserIDFromRequest, getRequiredPathParam } from '../../../infrastructure/handler_utils/helpers.js';
+  getUserIDFromRequest,
+  getRequiredPathParam,
+} from '../../../infrastructure/handler_utils/helpers.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
 /**
@@ -35,4 +35,3 @@ export async function updateTaskHandler(
 
   reply.code(200).send(toUpdateTaskResponse(output.task));
 }
-

@@ -38,7 +38,10 @@ export class UserRepositoryImpl implements UserRepository {
         if (error.constraint === 'users_email_key' || error.constraint === 'idx_users_email') {
           throw createError('EMAIL_ALREADY_EXISTS', '邮箱已被占用');
         }
-        if (error.constraint === 'users_username_key' || error.constraint === 'idx_users_username') {
+        if (
+          error.constraint === 'users_username_key' ||
+          error.constraint === 'idx_users_username'
+        ) {
           throw createError('VALIDATION_ERROR', '用户名已被占用');
         }
       }
@@ -115,13 +118,16 @@ export class UserRepositoryImpl implements UserRepository {
       if (error.name === 'DomainError') {
         throw error;
       }
-      
+
       // 检查是否是唯一性约束冲突
       if (error.code === '23505') {
         if (error.constraint === 'users_email_key' || error.constraint === 'idx_users_email') {
           throw createError('EMAIL_ALREADY_EXISTS', '邮箱已被占用');
         }
-        if (error.constraint === 'users_username_key' || error.constraint === 'idx_users_username') {
+        if (
+          error.constraint === 'users_username_key' ||
+          error.constraint === 'idx_users_username'
+        ) {
           throw createError('VALIDATION_ERROR', '用户名已被占用');
         }
       }
@@ -130,10 +136,7 @@ export class UserRepositoryImpl implements UserRepository {
   }
 
   async delete(_ctx: RequestContext, userId: string): Promise<void> {
-    const result = await this.db
-      .deleteFrom('users')
-      .where('id', '=', userId)
-      .execute();
+    const result = await this.db.deleteFrom('users').where('id', '=', userId).execute();
 
     if (result.length === 0) {
       throw createError('USER_NOT_FOUND', '用户不存在');
@@ -144,7 +147,7 @@ export class UserRepositoryImpl implements UserRepository {
     const normalizedEmail = email.toLowerCase().trim();
     const result = await this.db
       .selectFrom('users')
-      .select((eb) => eb.fn.count('id').as('count'))
+      .select(eb => eb.fn.count('id').as('count'))
       .where('email', '=', normalizedEmail)
       .executeTakeFirst();
 
@@ -154,7 +157,7 @@ export class UserRepositoryImpl implements UserRepository {
   async existsByUsername(_ctx: RequestContext, username: string): Promise<boolean> {
     const result = await this.db
       .selectFrom('users')
-      .select((eb) => eb.fn.count('id').as('count'))
+      .select(eb => eb.fn.count('id').as('count'))
       .where('username', '=', username)
       .executeTakeFirst();
 
@@ -184,5 +187,3 @@ export class UserRepositoryImpl implements UserRepository {
     );
   }
 }
-
-

@@ -31,10 +31,7 @@ import type { TaskFilter } from '../repository/interface.js';
 // CreateTask 转换
 // ========================================
 
-export function toCreateTaskInput(
-  userId: string,
-  req: CreateTaskRequest
-): CreateTaskInput {
+export function toCreateTaskInput(userId: string, req: CreateTaskRequest): CreateTaskInput {
   const input: CreateTaskInput = {
     userId,
     title: req.title,
@@ -114,10 +111,7 @@ export function toUpdateTaskResponse(task: Task): UpdateTaskResponse {
 // CompleteTask 转换
 // ========================================
 
-export function toCompleteTaskInput(
-  userId: string,
-  taskId: string
-): CompleteTaskInput {
+export function toCompleteTaskInput(userId: string, taskId: string): CompleteTaskInput {
   return {
     userId,
     taskId,
@@ -139,20 +133,14 @@ export function toCompleteTaskResponse(task: Task): CompleteTaskResponse {
 // DeleteTask 转换
 // ========================================
 
-export function toDeleteTaskInput(
-  userId: string,
-  taskId: string
-): DeleteTaskInput {
+export function toDeleteTaskInput(userId: string, taskId: string): DeleteTaskInput {
   return {
     userId,
     taskId,
   };
 }
 
-export function toDeleteTaskResponse(
-  success: boolean,
-  deletedAt: Date
-): DeleteTaskResponse {
+export function toDeleteTaskResponse(success: boolean, deletedAt: Date): DeleteTaskResponse {
   return {
     success,
     deleted_at: deletedAt.toISOString(),
@@ -177,7 +165,7 @@ export function toGetTaskResponse(task: Task): GetTaskResponse {
     description: task.description,
     status: task.status,
     priority: task.priority,
-    tags: task.tags.map((t) => t.name),
+    tags: task.tags.map(t => t.name),
     created_at: task.createdAt.toISOString(),
     updated_at: task.updatedAt.toISOString(),
   };
@@ -197,10 +185,7 @@ export function toGetTaskResponse(task: Task): GetTaskResponse {
 // ListTasks 转换
 // ========================================
 
-export function toListTasksInput(
-  userId: string,
-  query: ListTasksQuery
-): ListTasksInput {
+export function toListTasksInput(userId: string, query: ListTasksQuery): ListTasksInput {
   const filter: TaskFilter = {
     userId,
     page: query.page || 1,
@@ -238,13 +223,13 @@ export function toListTasksResponse(
   limit: number,
   hasMore: boolean
 ): ListTasksResponse {
-  const taskItems: TaskItem[] = tasks.map((task) => {
+  const taskItems: TaskItem[] = tasks.map(task => {
     const item: TaskItem = {
       task_id: task.id,
       title: task.title,
       status: task.status,
       priority: task.priority,
-      tags: task.tags.map((t) => t.name),
+      tags: task.tags.map(t => t.name),
       created_at: task.createdAt.toISOString(),
     };
 
@@ -263,4 +248,3 @@ export function toListTasksResponse(
     has_more: hasMore,
   };
 }
-

@@ -5,10 +5,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { RefreshTokenRequest } from '../http/dto/auth.js';
-import {
-  toRefreshTokenInput,
-  toRefreshTokenResponse,
-} from './converters.js';
+import { toRefreshTokenInput, toRefreshTokenResponse } from './converters.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
 /**
@@ -27,4 +24,3 @@ export async function refreshTokenHandler(
 
   reply.code(200).send(toRefreshTokenResponse(output));
 }
-

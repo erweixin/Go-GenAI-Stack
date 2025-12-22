@@ -73,7 +73,7 @@ export const ErrorCodes = {
 /**
  * 错误码类型
  */
-export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];
+export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];
 
 /**
  * 默认 HTTP 状态码映射
@@ -109,13 +109,13 @@ const DEFAULT_STATUS_CODES: Record<string, number> = {
 
 /**
  * 创建领域错误
- * 
+ *
  * @param code 错误码（ErrorCodes 中的键）
  * @param message 错误消息
  * @param statusCode 可选的 HTTP 状态码（如果不提供，使用默认值）
  * @param metadata 可选的错误元数据（如 userId, resourceId 等）
  * @returns DomainError 实例
- * 
+ *
  * @example
  * ```typescript
  * throw createError('TASK_NOT_FOUND', 'Task with id 123 not found');
@@ -145,7 +145,7 @@ export function isDomainError(error: unknown): error is DomainError {
 /**
  * 从错误消息解析错误码和消息
  * 支持格式：ERROR_CODE: message
- * 
+ *
  * @example
  * ```typescript
  * parseError('TASK_NOT_FOUND: Task with id 123 not found')
@@ -167,7 +167,7 @@ export function parseError(errorMessage: string): { code: string; message: strin
 /**
  * 从错误消息创建 DomainError
  * 支持格式：ERROR_CODE: message
- * 
+ *
  * @example
  * ```typescript
  * throw fromErrorMessage('TASK_NOT_FOUND: Task with id 123 not found');
@@ -175,10 +175,10 @@ export function parseError(errorMessage: string): { code: string; message: strin
  */
 export function fromErrorMessage(errorMessage: string): DomainError {
   const { code, message } = parseError(errorMessage);
-  
+
   // 检查是否是已知的错误码
   const knownCode = Object.keys(ErrorCodes).find(
-    (key) => ErrorCodes[key as keyof typeof ErrorCodes] === code
+    key => ErrorCodes[key as keyof typeof ErrorCodes] === code
   ) as keyof typeof ErrorCodes | undefined;
 
   if (knownCode) {
@@ -188,4 +188,3 @@ export function fromErrorMessage(errorMessage: string): DomainError {
   // 未知错误码，使用默认状态码
   return new DomainError(code, message, DEFAULT_STATUS_CODES[code] || 400);
 }
-

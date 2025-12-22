@@ -13,9 +13,11 @@
 ## 1. UserRegistered (用户注册事件)
 
 ### 触发时机
+
 用户注册成功，用户记录已保存到数据库
 
 ### Payload
+
 ```go
 type UserRegisteredEvent struct {
     UserID      string    `json:"user_id"`
@@ -27,11 +29,13 @@ type UserRegisteredEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Email Service** - 发送欢迎邮件和验证链接
 - **Analytics Service** - 记录新用户指标
 - **Notification Service** - 通知管理员（如启用）
 
 ### 使用场景
+
 ```go
 // 用户注册成功后
 eventBus.Publish(ctx, UserRegisteredEvent{
@@ -48,9 +52,11 @@ eventBus.Publish(ctx, UserRegisteredEvent{
 ## 2. LoginSucceeded (登录成功事件)
 
 ### 触发时机
+
 用户成功登录系统
 
 ### Payload
+
 ```go
 type LoginSucceededEvent struct {
     UserID     string    `json:"user_id"`
@@ -63,15 +69,18 @@ type LoginSucceededEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Analytics Service** - 统计活跃用户
 - **Security Service** - 检测异常登录（如异地登录）
 - **Notification Service** - 发送登录通知（可选）
 
 ### 安全注意
+
 - 包含 IP 地址和 User Agent 用于安全分析
 - 不包含密码或 Token
 
 ### 使用场景
+
 ```go
 // 登录成功后
 eventBus.Publish(ctx, LoginSucceededEvent{
@@ -89,9 +98,11 @@ eventBus.Publish(ctx, LoginSucceededEvent{
 ## 3. LoginFailed (登录失败事件)
 
 ### 触发时机
+
 用户登录失败（邮箱或密码错误）
 
 ### Payload
+
 ```go
 type LoginFailedEvent struct {
     Email      string    `json:"email"`
@@ -104,14 +115,17 @@ type LoginFailedEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Security Service** - 检测暴力破解攻击
 - **Rate Limiter** - 限制失败次数
 
 ### 安全注意
+
 - 不泄露是邮箱还是密码错误
 - 记录 IP 用于封禁
 
 ### 使用场景
+
 ```go
 // 登录失败后
 eventBus.Publish(ctx, LoginFailedEvent{
@@ -129,9 +143,11 @@ eventBus.Publish(ctx, LoginFailedEvent{
 ## 4. TokenGenerated (Token 生成事件)
 
 ### 触发时机
+
 生成新的 Access Token 和 Refresh Token
 
 ### Payload
+
 ```go
 type TokenGeneratedEvent struct {
     UserID    string    `json:"user_id"`
@@ -143,12 +159,15 @@ type TokenGeneratedEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Audit Service** - 记录 Token 生成日志
 
 ### 安全注意
+
 - ⚠️ **不要**包含 Token 内容（敏感信息）
 
 ### 使用场景
+
 ```go
 // Token 生成后
 eventBus.Publish(ctx, TokenGeneratedEvent{
@@ -165,9 +184,11 @@ eventBus.Publish(ctx, TokenGeneratedEvent{
 ## 5. TokenRefreshed (Token 刷新事件)
 
 ### 触发时机
+
 使用 Refresh Token 刷新 Access Token
 
 ### Payload
+
 ```go
 type TokenRefreshedEvent struct {
     UserID        string    `json:"user_id"`
@@ -179,10 +200,12 @@ type TokenRefreshedEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Audit Service** - 记录 Token 刷新日志
 - **Security Service** - 检测异常刷新行为
 
 ### 使用场景
+
 ```go
 // Token 刷新后
 eventBus.Publish(ctx, TokenRefreshedEvent{
@@ -197,9 +220,11 @@ eventBus.Publish(ctx, TokenRefreshedEvent{
 ## 6. TokenRevoked (Token 撤销事件)
 
 ### 触发时机
+
 Token 被撤销（登出、密码修改、管理员操作）
 
 ### Payload
+
 ```go
 type TokenRevokedEvent struct {
     UserID      string    `json:"user_id"`
@@ -212,9 +237,11 @@ type TokenRevokedEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Token Blacklist Service** - 将 Token 加入黑名单
 
 ### 使用场景
+
 ```go
 // 用户登出时
 eventBus.Publish(ctx, TokenRevokedEvent{
@@ -232,9 +259,11 @@ eventBus.Publish(ctx, TokenRevokedEvent{
 ## 7. UserLogout (用户登出事件)
 
 ### 触发时机
+
 用户主动登出系统
 
 ### Payload
+
 ```go
 type UserLogoutEvent struct {
     UserID    string    `json:"user_id"`
@@ -244,10 +273,12 @@ type UserLogoutEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Analytics Service** - 统计会话时长
 - **Token Service** - 撤销 Token
 
 ### 使用场景
+
 ```go
 // 用户登出后
 eventBus.Publish(ctx, UserLogoutEvent{
@@ -262,9 +293,11 @@ eventBus.Publish(ctx, UserLogoutEvent{
 ## 8. PasswordResetRequested (密码重置请求事件)
 
 ### 触发时机
+
 用户请求重置密码（忘记密码）
 
 ### Payload
+
 ```go
 type PasswordResetRequestedEvent struct {
     UserID    string    `json:"user_id"`
@@ -276,9 +309,11 @@ type PasswordResetRequestedEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Email Service** - 发送密码重置邮件
 
 ### 安全注意
+
 - 重置链接有效期：1 小时
 - 记录 IP 地址防止暴力攻击
 
@@ -287,9 +322,11 @@ type PasswordResetRequestedEvent struct {
 ## 9. AuthenticationMethodChanged (认证方式变更事件)
 
 ### 触发时机
+
 用户修改认证方式（如启用 MFA）
 
 ### Payload
+
 ```go
 type AuthenticationMethodChangedEvent struct {
     UserID       string    `json:"user_id"`
@@ -301,6 +338,7 @@ type AuthenticationMethodChangedEvent struct {
 ```
 
 ### 订阅者（潜在）
+
 - **Email Service** - 发送通知邮件
 - **Audit Service** - 记录安全变更
 
@@ -309,6 +347,7 @@ type AuthenticationMethodChangedEvent struct {
 ## 事件监控
 
 ### 指标
+
 - 注册数量（按天）
 - 登录成功率
 - 登录失败次数（按 IP、按邮箱）
@@ -316,6 +355,7 @@ type AuthenticationMethodChangedEvent struct {
 - 异常登录检测
 
 ### 日志
+
 ```go
 logger.Info("Event published",
     zap.String("event_type", "LoginSucceeded"),
@@ -333,4 +373,3 @@ logger.Info("Event published",
 - [业务规则](./rules.md)
 - [README](./README.md)
 - [Event Bus 实现](../shared/events/bus.go)
-

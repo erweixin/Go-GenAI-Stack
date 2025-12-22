@@ -92,4 +92,3 @@ describe('GetUserProfile Handler', () => {
     expect(response.statusCode).toBe(401);
   });
 });
-

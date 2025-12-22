@@ -49,4 +49,3 @@ export const dbQueryCounter = new Counter({
 
 // 导出 Registry（用于 /metrics 端点）
 export { register };
-

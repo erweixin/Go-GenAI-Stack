@@ -33,7 +33,7 @@ export class TaskService {
 
   async createTask(ctx: RequestContext, input: CreateTaskInput) {
     const task = await this.taskRepo.create(ctx, task);
-    
+
     // 发布事件
     await this.eventBus.publish(
       ctx,
@@ -45,7 +45,7 @@ export class TaskService {
         createdAt: task.createdAt,
       })
     );
-    
+
     return { task };
   }
 }
@@ -130,7 +130,7 @@ eventBus.subscribe('TaskCreated', async (ctx, event) => {
 // domains/user/service/user_query_service.ts
 export class UserQueryService {
   constructor(private userRepo: UserRepository) {}
-  
+
   async getUser(userId: string): Promise<User | null> {
     return await this.userRepo.getById(ctx, userId);
   }
@@ -143,18 +143,18 @@ export class TaskService {
     private eventBus: EventBus,
     private userQueryService: UserQueryService // ✅ 查询接口
   ) {}
-  
+
   async createTask(ctx: RequestContext, input: CreateTaskInput) {
     // 同步验证用户是否存在
     const user = await this.userQueryService.getUser(ctx, input.userId);
     if (!user) {
       throw createError('USER_NOT_FOUND', 'User not found');
     }
-    
+
     // 创建任务并发布事件
     const task = await this.taskRepo.create(ctx, task);
     await this.eventBus.publish(ctx, new TaskCreatedEvent({ ... }));
-    
+
     return { task };
   }
 }
@@ -173,7 +173,7 @@ export class TaskService {
     private taskRepo: TaskRepository,
     private userService: UserService // ❌ 跨领域依赖
   ) {}
-  
+
   async createTask(ctx: RequestContext, input: CreateTaskInput) {
     const user = await this.userService.getUserProfile(ctx, { userId: input.userId }); // ❌ 直接调用
     // ...
@@ -190,7 +190,7 @@ export class TaskService {
     private taskRepo: TaskRepository,
     private userQueryService: UserQueryService // ✅ 查询接口
   ) {}
-  
+
   async createTask(ctx: RequestContext, input: CreateTaskInput) {
     const user = await this.userQueryService.getUser(ctx, input.userId); // ✅ 只读查询
     // ...
@@ -211,12 +211,12 @@ await eventBus.publish(ctx, new TaskCreatedEvent({ ... }));
 // domains/shared/events/event_bus.ts
 export class InMemoryEventBus implements EventBus {
   private handlers = new Map<string, Array<EventHandler>>();
-  
+
   async publish(ctx: unknown, event: Event): Promise<void> {
     const handlers = this.handlers.get(event.type) || [];
     await Promise.allSettled(handlers.map(h => h(ctx, event)));
   }
-  
+
   subscribe(eventType: string, handler: EventHandler): void {
     // 注册处理器
   }
@@ -231,9 +231,9 @@ export class RedisEventBus implements EventBus {
   async publish(ctx: unknown, event: Event): Promise<void> {
     await redis.publish(`event:${event.type}`, JSON.stringify(event));
   }
-  
+
   subscribe(eventType: string, handler: EventHandler): void {
-    redis.subscribe(`event:${eventType}`, (message) => {
+    redis.subscribe(`event:${eventType}`, message => {
       const event = JSON.parse(message) as Event;
       handler(ctx, event);
     });
@@ -281,4 +281,3 @@ export class RedisEventBus implements EventBus {
 - [Go 后端事件总线实现](../../../backend/domains/shared/events/bus.go)
 - [Task 领域事件定义](../../task/events.md)
 - [User 领域事件定义](../../user/events.md)
-

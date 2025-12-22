@@ -31,6 +31,7 @@
 参考 `usecases.yaml` 查看所有用例的声明式定义。
 
 主要用例：
+
 1. **Register** - 用户注册
 2. **Login** - 用户登录
 3. **RefreshToken** - 刷新访问令牌
@@ -41,17 +42,20 @@
 ### JWTService（JWT 服务）
 
 **职责**：
+
 - 生成 Access Token 和 Refresh Token
 - 验证 Token 有效性
 - 解析 Token 中的 Claims
 
 **Token 类型**：
+
 - **Access Token**：短期有效（1 小时），用于 API 认证
 - **Refresh Token**：长期有效（7 天），用于刷新 Access Token
 
 ### AuthService（认证服务）
 
 **职责**：
+
 - 实现注册和登录业务逻辑
 - 调用 User Domain 创建和验证用户
 - 生成和管理 Token
@@ -61,6 +65,7 @@
 ### Access Token
 
 **Claims**：
+
 ```json
 {
   "user_id": "uuid",
@@ -78,6 +83,7 @@
 ### Refresh Token
 
 **Claims**：
+
 ```json
 {
   "user_id": "uuid",
@@ -132,10 +138,12 @@ Client → API → Auth Middleware → Verify JWT → Extract UserID → Handler
 ## 依赖关系
 
 ### 下游依赖
+
 - **User Domain**：需要访问 UserRepository 创建和验证用户
   - 注意：Auth 领域可以访问 UserRepository，因为这是 Auth 的核心职责
 
 ### 上游依赖
+
 - 无
 
 ### 领域间通信
@@ -150,6 +158,7 @@ Client → API → Auth Middleware → Verify JWT → Extract UserID → Handler
 - ❌ **禁止**：不直接调用其他领域的 Service（如 UserService）
 
 **示例**：
+
 ```typescript
 // ✅ 正确：发布事件通知其他领域
 await this.eventBus.publish(ctx, new UserRegisteredEvent({ ... }));
@@ -186,6 +195,7 @@ const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
 ```
 
 **依赖关系**：
+
 - Auth Domain **依赖** User Domain 的 Repository（这是 Auth 的核心职责）
 - Auth 通过事件总线发布事件，通知其他领域
 - Auth 不直接调用 UserService
@@ -197,6 +207,7 @@ const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
 **Endpoint**: `POST /api/auth/register`
 
 **Request**:
+
 ```json
 {
   "email": "user@example.com",
@@ -207,6 +218,7 @@ const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "user_id": "uuid",
@@ -222,6 +234,7 @@ const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
 **Endpoint**: `POST /api/auth/login`
 
 **Request**:
+
 ```json
 {
   "email": "user@example.com",
@@ -230,6 +243,7 @@ const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "user_id": "uuid",
@@ -245,6 +259,7 @@ const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
 **Endpoint**: `POST /api/auth/refresh`
 
 **Request**:
+
 ```json
 {
   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -252,6 +267,7 @@ const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
 ```
 
 **Response** (200 OK):
+
 ```json
 {
   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -335,4 +351,3 @@ type JWTConfig struct {
 - [业务规则](./rules.md)
 - [领域事件](./events.md)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
-

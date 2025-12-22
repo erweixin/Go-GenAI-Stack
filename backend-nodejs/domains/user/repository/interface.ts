@@ -50,4 +50,3 @@ export interface UserRepository {
    */
   existsByUsername(ctx: RequestContext, username: string): Promise<boolean>;
 }
-

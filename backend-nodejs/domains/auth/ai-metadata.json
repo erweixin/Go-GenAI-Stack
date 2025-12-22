@@ -37,21 +37,12 @@
     {
       "name": "JWTService",
       "description": "JWT Token 生成和验证服务",
-      "methods": [
-        "GenerateAccessToken",
-        "GenerateRefreshToken",
-        "VerifyToken",
-        "ExtractClaims"
-      ]
+      "methods": ["GenerateAccessToken", "GenerateRefreshToken", "VerifyToken", "ExtractClaims"]
     },
     {
       "name": "AuthService",
       "description": "认证业务逻辑服务",
-      "methods": [
-        "Register",
-        "Login",
-        "RefreshToken"
-      ]
+      "methods": ["Register", "Login", "RefreshToken"]
     }
   ],
   "use_cases": [
@@ -120,30 +111,14 @@
     "refresh_token_expiry": "7d",
     "issuer": "go-genai-stack",
     "claims": {
-      "access_token": [
-        "user_id",
-        "email",
-        "type",
-        "iss",
-        "exp",
-        "iat"
-      ],
-      "refresh_token": [
-        "user_id",
-        "type",
-        "iss",
-        "exp",
-        "iat"
-      ]
+      "access_token": ["user_id", "email", "type", "iss", "exp", "iat"],
+      "refresh_token": ["user_id", "type", "iss", "exp", "iat"]
     }
   },
   "security": {
     "password_hashing": "bcrypt (cost: 10)",
     "token_signing": "HS256 with JWT_SECRET",
-    "sensitive_fields": [
-      "jwt_secret",
-      "password"
-    ],
+    "sensitive_fields": ["jwt_secret", "password"],
     "error_messages": "统一返回「邮箱或密码错误」，不泄露具体原因"
   },
   "business_rules": {
@@ -240,4 +215,3 @@
     "../../infrastructure/middleware/auth.go"
   ]
 }
-

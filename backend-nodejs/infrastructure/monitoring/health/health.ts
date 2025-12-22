@@ -60,10 +60,7 @@ export async function checkHealth(
   db: Kysely<Database>,
   redis: RedisClientType | null = null
 ): Promise<HealthStatus> {
-  const [databaseOk, redisOk] = await Promise.all([
-    checkDatabase(db),
-    checkRedis(redis),
-  ]);
+  const [databaseOk, redisOk] = await Promise.all([checkDatabase(db), checkRedis(redis)]);
 
   const allOk = databaseOk && redisOk;
 
@@ -78,4 +75,3 @@ export async function checkHealth(
     timestamp: new Date().toISOString(),
   };
 }
-

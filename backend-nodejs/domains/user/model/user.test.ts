@@ -78,7 +78,7 @@ describe('User Model', () => {
       const oldHash = user.passwordHash;
       const oldUpdatedAt = user.updatedAt;
 
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+      await new Promise<void>(resolve => setTimeout(resolve, 10));
 
       await user.updatePassword('new-password-123');
 
@@ -107,7 +107,7 @@ describe('User Model', () => {
       const user = await User.create('test@example.com', 'password123');
       const oldUpdatedAt = user.updatedAt;
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       user.updateProfile('newusername');
 
@@ -262,7 +262,7 @@ describe('User Model', () => {
       const oldLastLoginAt = user.lastLoginAt;
       const oldUpdatedAt = user.updatedAt;
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       user.recordLogin();
 
@@ -325,4 +325,3 @@ describe('User Model', () => {
     });
   });
 });
-

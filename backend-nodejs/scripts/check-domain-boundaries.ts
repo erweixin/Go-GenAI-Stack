@@ -1,15 +1,15 @@
 #!/usr/bin/env tsx
 /**
  * Domain Boundary Checker
- * 
+ *
  * 检查 domain 之间的引用是否符合"分布式友好但不分布式"原则
- * 
+ *
  * 允许的引用：
  * 1. ✅ QueryService（只读查询接口）
  * 2. ✅ Repository Interface（如 Auth 依赖 User Repository）
  * 3. ✅ Events（事件定义）
  * 4. ✅ Shared（共享代码）
- * 
+ *
  * 禁止的引用：
  * 1. ❌ Service（业务逻辑层）
  * 2. ❌ Model（领域模型，除了特殊情况）
@@ -35,19 +35,14 @@ const violations: Violation[] = [];
 
 // 获取所有 domain 目录
 function getDomains(): string[] {
-  return readdirSync(domainsRoot)
-    .filter((item) => {
-      const path = join(domainsRoot, item);
-      return statSync(path).isDirectory() && item !== 'shared';
-    });
+  return readdirSync(domainsRoot).filter(item => {
+    const path = join(domainsRoot, item);
+    return statSync(path).isDirectory() && item !== 'shared';
+  });
 }
 
 // 检查 import 是否违反规则
-function checkImport(
-  filePath: string,
-  importPath: string,
-  lineNumber: number
-): void {
+function checkImport(filePath: string, importPath: string, lineNumber: number): void {
   // 跳过测试文件和 shared
   if (filePath.includes('/tests/') || filePath.includes('/__tests__/')) {
     return;
@@ -83,16 +78,12 @@ function checkImport(
   }
 
   // ❌ 禁止：Model（除了 Auth 依赖 User）
-  if (
-    relativePath.includes('/model/') &&
-    !(fileDomain === 'auth' && importDomain === 'user')
-  ) {
+  if (relativePath.includes('/model/') && !(fileDomain === 'auth' && importDomain === 'user')) {
     violations.push({
       file: relative(domainsRoot, filePath),
       line: lineNumber,
       importPath,
-      reason:
-        '❌ 禁止直接引用其他 domain 的 Model。请通过 Repository 或 QueryService 访问。',
+      reason: '❌ 禁止直接引用其他 domain 的 Model。请通过 Repository 或 QueryService 访问。',
     });
   }
 
@@ -107,8 +98,7 @@ function checkImport(
       file: relative(domainsRoot, filePath),
       line: lineNumber,
       importPath,
-      reason:
-        '❌ 禁止直接引用其他 domain 的 Repository 实现。请使用 Repository Interface。',
+      reason: '❌ 禁止直接引用其他 domain 的 Repository 实现。请使用 Repository Interface。',
     });
   }
 }
@@ -120,10 +110,7 @@ function extractDomain(filePath: string): string | null {
 }
 
 // 从 import 路径提取 domain 名称
-function extractDomainFromImport(
-  filePath: string,
-  importPath: string
-): string | null {
+function extractDomainFromImport(filePath: string, importPath: string): string | null {
   // 处理相对路径
   if (importPath.startsWith('../../') || importPath.startsWith('../')) {
     const resolved = resolveImportPath(filePath, importPath);
@@ -157,8 +144,7 @@ function checkFile(filePath: string): void {
 
   lines.forEach((line, index) => {
     // 匹配 import 语句
-    const importMatch =
-      /^import\s+(?:.*\s+from\s+)?['"]([^'"]+)['"]/.exec(line);
+    const importMatch = /^import\s+(?:.*\s+from\s+)?['"]([^'"]+)['"]/.exec(line);
     if (importMatch) {
       checkImport(filePath, importMatch[1], index + 1);
     }
@@ -204,7 +190,7 @@ function main(): void {
     process.exit(0);
   } else {
     console.log(`❌ 发现 ${violations.length} 个违规引用：\n`);
-    violations.forEach((v) => {
+    violations.forEach(v => {
       console.log(`📄 ${v.file}:${v.line}`);
       console.log(`   import: ${v.importPath}`);
       console.log(`   ${v.reason}\n`);
@@ -220,4 +206,3 @@ function main(): void {
 }
 
 main();
-

@@ -22,7 +22,7 @@ import {
 
 /**
  * 注册 Auth 路由
- * 
+ *
  * @param app Fastify 实例
  * @param deps Handler 依赖
  * @param redis Redis 客户端（可选，用于限流）
@@ -77,4 +77,3 @@ export function registerAuthRoutes(
     }
   );
 }
-

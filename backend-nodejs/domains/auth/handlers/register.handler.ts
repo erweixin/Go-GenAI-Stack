@@ -6,10 +6,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { RegisterRequest } from '../http/dto/auth.js';
-import {
-  toRegisterInput,
-  toRegisterResponse,
-} from './converters.js';
+import { toRegisterInput, toRegisterResponse } from './converters.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
 /**
@@ -34,4 +31,3 @@ export async function registerHandler(
   // 3. 转换为 HTTP 响应
   reply.code(201).send(toRegisterResponse(output));
 }
-

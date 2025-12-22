@@ -5,7 +5,11 @@
 
 import 'dotenv/config';
 import { loadConfig } from '../../infrastructure/config/config.js';
-import { initGlobalLogger, getGlobalLogger, flush } from '../../infrastructure/monitoring/logger/logger.js';
+import {
+  initGlobalLogger,
+  getGlobalLogger,
+  flush,
+} from '../../infrastructure/monitoring/logger/logger.js';
 import { createDatabaseConnection } from '../../infrastructure/persistence/postgres/connection.js';
 import {
   createRedisConnection,
@@ -101,11 +105,16 @@ async function main() {
 
   // 8. 注册领域路由
   console.log('📚 Registering domain routes...');
-  await registerDomainRoutes(fastify, {
-    task: container.taskHandlerDeps,
-    user: container.userHandlerDeps,
-    auth: container.authHandlerDeps,
-  }, container.authMiddleware, redis);
+  await registerDomainRoutes(
+    fastify,
+    {
+      task: container.taskHandlerDeps,
+      user: container.userHandlerDeps,
+      auth: container.authHandlerDeps,
+    },
+    container.authMiddleware,
+    redis
+  );
 
   // 9. 启动服务器
   const address = `http://${config.server.host}:${config.server.port}`;
@@ -151,8 +160,7 @@ async function main() {
 }
 
 // 启动应用
-main().catch((error) => {
+main().catch(error => {
   console.error('❌ Fatal error:', error);
   process.exit(1);
 });
-

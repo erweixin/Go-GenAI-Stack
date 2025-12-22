@@ -5,7 +5,11 @@
 
 import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
-import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
+import {
+  serializerCompiler,
+  validatorCompiler,
+  type ZodTypeProvider,
+} from 'fastify-type-provider-zod';
 import type { Logger as PinoLogger } from 'pino';
 import type { Config } from '../config/config.js';
 import type { Kysely } from 'kysely';
@@ -21,7 +25,7 @@ import { register } from '../monitoring/metrics/metrics.js';
 /**
  * 创建 Fastify 服务器
  * 注册 Zod type provider 以支持直接使用 Zod schema
- * 
+ *
  * @param config 应用配置
  * @param pinoLogger 可选的 Pino logger 实例（如果提供，将使用统一的 logger）
  */
@@ -47,7 +51,9 @@ export function createServer(config: Config, pinoLogger?: PinoLogger): FastifyIn
 
   // 使用类型断言解决 Fastify 5.x 的类型兼容性问题
   // 当使用 loggerInstance 时，类型系统无法正确推断，需要显式断言
-  const fastify = Fastify(fastifyOptions as Parameters<typeof Fastify>[0]).withTypeProvider<ZodTypeProvider>();
+  const fastify = Fastify(
+    fastifyOptions as Parameters<typeof Fastify>[0]
+  ).withTypeProvider<ZodTypeProvider>();
 
   // 注册自定义 validator compiler
   // 跳过 params 验证（因为 fastify-type-provider-zod 对 params 的支持有限）
@@ -60,7 +66,7 @@ export function createServer(config: Config, pinoLogger?: PinoLogger): FastifyIn
     // 对于 body 和 querystring，使用 Zod validator
     return validatorCompiler(opts as Parameters<typeof validatorCompiler>[0]);
   });
-  
+
   // 注册 Zod serializer
   fastify.setSerializerCompiler(serializerCompiler);
 
@@ -81,7 +87,7 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
 
   // Metrics 中间件（记录请求开始时间）
   fastify.addHook('onRequest', metricsMiddleware);
-  
+
   // Metrics 响应 Hook（记录请求指标）
   fastify.addHook('onResponse', metricsResponseHook);
 
@@ -95,11 +101,14 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
 
   // Error handling (统一错误处理)
   fastify.setErrorHandler((error: Error, request: FastifyRequest, reply: FastifyReply) => {
-    request.log.error({
-      err: error,
-      url: request.url,
-      method: request.method,
-    }, 'Request error');
+    request.log.error(
+      {
+        err: error,
+        url: request.url,
+        method: request.method,
+      },
+      'Request error'
+    );
 
     // 处理领域错误
     if (isDomainError(error)) {
@@ -207,4 +216,3 @@ export async function registerDomainRoutes(
     );
   }
 }
-

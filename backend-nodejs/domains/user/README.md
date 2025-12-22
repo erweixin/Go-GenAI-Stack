@@ -30,6 +30,7 @@
 参考 `usecases.yaml` 查看所有用例的声明式定义。
 
 主要用例：
+
 1. **GetUserProfile** - 获取用户资料
 2. **UpdateUserProfile** - 更新用户资料
 3. **ChangePassword** - 修改密码
@@ -39,6 +40,7 @@
 ### User（用户）- 聚合根
 
 **字段**：
+
 - UserID - 用户 ID (UUID)
 - Email - 邮箱（唯一）
 - Username - 用户名（唯一，可选）
@@ -52,6 +54,7 @@
 - LastLoginAt - 最后登录时间
 
 **业务方法**：
+
 - `NewUser(email, password)` - 创建新用户
 - `VerifyPassword(password)` - 验证密码
 - `UpdatePassword(newPassword)` - 更新密码
@@ -69,6 +72,7 @@
 参考 `events.md` 查看所有领域事件。
 
 主要事件：
+
 - `UserCreated` - 用户注册时
 - `UserUpdated` - 用户资料更新时
 - `PasswordChanged` - 密码修改时
@@ -80,6 +84,7 @@
 参考 `rules.md` 查看所有业务规则和约束。
 
 核心规则：
+
 - 邮箱必须唯一且格式有效
 - 密码最少 8 字符
 - 用户名 3-30 字符，仅字母数字
@@ -88,9 +93,11 @@
 ## 依赖关系
 
 ### 下游依赖
+
 - 无
 
 ### 上游依赖
+
 - **Auth Domain**：用户注册时创建用户记录
 
 ### 领域间通信
@@ -109,6 +116,7 @@
 - ❌ **禁止**：不直接调用其他领域的 Service
 
 **示例**：
+
 ```typescript
 // ✅ 正确：发布事件通知其他领域
 await this.eventBus.publish(ctx, new UserUpdatedEvent({ ... }));
@@ -185,17 +193,21 @@ CREATE TABLE users (
 ## 扩展点
 
 ### 1. 社交账号绑定（未实现）
+
 - 绑定 Google、GitHub、微信等账号
 - 支持多个社交账号登录
 
 ### 2. 邮箱验证（未实现）
+
 - 发送验证邮件
 - 验证码验证
 
 ### 3. 用户偏好设置（未实现）
+
 - 主题、语言等个性化设置
 
 ### 4. 多因素认证（未实现）
+
 - TOTP (Time-based One-Time Password)
 - SMS 验证码
 
@@ -206,4 +218,3 @@ CREATE TABLE users (
 - [业务规则](./rules.md)
 - [领域事件](./events.md)
 - [数据库 Schema](../../database/schema.sql)
-

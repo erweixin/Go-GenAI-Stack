@@ -8,4 +8,3 @@ import type { TaskService } from '../service/task_service.js';
 export interface HandlerDependencies {
   taskService: TaskService;
 }
-

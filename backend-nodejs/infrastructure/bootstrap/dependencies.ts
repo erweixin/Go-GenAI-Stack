@@ -1,12 +1,12 @@
 /**
  * 依赖注入容器
  * 统一管理所有领域依赖，遵循 DDD 三层架构
- * 
+ *
  * 依赖注入顺序（从内到外）：
  * 1. Repository Layer（基础设施层）：数据访问
  * 2. Domain Service Layer（领域层）：业务逻辑
  * 3. Handler Dependencies（Handler 层）：HTTP 适配
- * 
+ *
  * 遵循依赖注入原则：外层依赖内层，内层不依赖外层
  */
 
@@ -58,7 +58,7 @@ export interface AppContainer {
 
 /**
  * 初始化应用依赖（DDD 三层架构）
- * 
+ *
  * @param config 应用配置
  * @param db 数据库连接（Kysely）
  * @param _redis Redis 连接（可选，保留用于未来扩展）
@@ -72,7 +72,7 @@ export function initDependencies(
   // ============================================
   // Infrastructure Layer（基础设施层）
   // ============================================
-  
+
   // 事件总线（用于领域间通信）
   const eventBus = createEventBus();
 
@@ -145,4 +145,3 @@ export function initDependencies(
     taskHandlerDeps,
   };
 }
-

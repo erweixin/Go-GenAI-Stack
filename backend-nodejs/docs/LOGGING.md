@@ -49,8 +49,9 @@ LOGGING_COMPRESS=true                   # 是否压缩旧日志文件
 #### 日志格式
 
 - `json`: JSON 格式,适合生产环境和日志聚合系统
+
   ```json
-  {"level":"INFO","time":"2024-01-01T12:00:00.000Z","msg":"Server started","port":8080}
+  { "level": "INFO", "time": "2024-01-01T12:00:00.000Z", "msg": "Server started", "port": 8080 }
   ```
 
 - `pretty`: 人类可读格式,适合开发环境
@@ -69,6 +70,7 @@ LOGGING_COMPRESS=true                   # 是否压缩旧日志文件
 - **自动压缩**: 如果 `LOGGING_COMPRESS=true`,旧日志文件会被压缩为 `.gz` 格式
 
 **示例**:
+
 ```
 logs/
 ├── app.log              # 当前日志文件
@@ -91,14 +93,14 @@ const logger = getGlobalLogger();
 if (logger) {
   // Info 级别
   logger.info('User logged in', { userId: '123', email: 'user@example.com' });
-  
+
   // Warn 级别
   logger.warn('Cache miss', { key: 'user:123' });
-  
+
   // Error 级别
-  logger.error('Database query failed', { 
+  logger.error('Database query failed', {
     query: 'SELECT * FROM users',
-    error: err.message 
+    error: err.message,
   });
 }
 ```
@@ -141,20 +143,20 @@ export async function createTaskHandler(
   reply: FastifyReply
 ) {
   const logger = getGlobalLogger();
-  
+
   try {
-    logger?.info('Creating task', { 
+    logger?.info('Creating task', {
       title: request.body.title,
-      requestId: request.id 
+      requestId: request.id,
     });
-    
+
     const output = await taskService.createTask(db, input);
-    
-    logger?.info('Task created successfully', { 
+
+    logger?.info('Task created successfully', {
       taskId: output.task.id,
-      requestId: request.id 
+      requestId: request.id,
     });
-    
+
     return reply.code(200).send(output);
   } catch (err) {
     // handleDomainError 会自动记录错误日志
@@ -279,7 +281,7 @@ filebeat.inputs:
     json.add_error_key: true
 
 output.elasticsearch:
-  hosts: ["localhost:9200"]
+  hosts: ['localhost:9200']
 ```
 
 ---
@@ -326,6 +328,7 @@ logger.debug('Variable value', { value });
 **问题**: 配置了文件输出,但日志文件未创建
 
 **解决方案**:
+
 1. 检查日志目录权限
 2. 检查 `LOGGING_OUTPUT_PATH` 配置
 3. 查看控制台错误信息
@@ -341,6 +344,7 @@ chmod 755 /var/log/app
 **问题**: 日志文件持续增长,未轮转
 
 **解决方案**:
+
 1. 检查 `LOGGING_MAX_SIZE` 配置
 2. 确保 `rotating-file-stream` 已安装
 3. 查看日志轮转错误信息

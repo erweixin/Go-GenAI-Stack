@@ -36,7 +36,7 @@ export interface Event {
 
 /**
  * 事件处理器函数类型
- * 
+ *
  * 处理器应该快速返回，耗时操作应该异步执行
  */
 export type EventHandler = (ctx: unknown, event: Event) => Promise<void> | void;
@@ -68,4 +68,3 @@ export class BaseEvent implements Event {
     return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   }
 }
-

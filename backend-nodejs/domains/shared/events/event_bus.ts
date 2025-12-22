@@ -1,7 +1,7 @@
 /**
  * 事件总线
  * 提供事件发布/订阅机制，支持领域间解耦通信
- * 
+ *
  * 当前实现：内存事件总线（InMemoryEventBus）
  * 未来扩展：可以替换为 Redis Pub/Sub、Kafka 等
  */
@@ -15,7 +15,7 @@ import { getGlobalLogger } from '../../../infrastructure/monitoring/logger/logge
 export interface EventBus {
   /**
    * 发布事件
-   * 
+   *
    * @param ctx 请求上下文
    * @param event 事件对象
    */
@@ -23,7 +23,7 @@ export interface EventBus {
 
   /**
    * 订阅事件类型
-   * 
+   *
    * @param eventType 事件类型（如 "TaskCreated"）
    * @param handler 事件处理器
    */
@@ -31,7 +31,7 @@ export interface EventBus {
 
   /**
    * 取消订阅
-   * 
+   *
    * @param eventType 事件类型
    * @param handler 事件处理器（可选，如果不提供则取消该类型的所有订阅）
    */
@@ -45,27 +45,31 @@ export interface EventBus {
 
 /**
  * 内存事件总线实现
- * 
+ *
  * 适用于开发环境和单体应用
  * 生产环境建议使用 Kafka 等消息队列
  */
 export class InMemoryEventBus implements EventBus {
   private handlers = new Map<string, Array<EventHandler>>();
-  
+
   /**
    * 记录日志
    * 优先使用全局结构化日志，如果未初始化则降级到 console
    */
-  private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, fields?: Record<string, unknown>): void {
+  private log(
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
+    fields?: Record<string, unknown>
+  ): void {
     const globalLogger = getGlobalLogger();
-    
+
     if (globalLogger) {
       // 使用结构化日志，添加上下文字段
       const logFields = {
         component: 'EventBus',
         ...fields,
       };
-      
+
       switch (level) {
         case 'debug':
           globalLogger.debug(`[EventBus] ${message}`, logFields);
@@ -82,14 +86,15 @@ export class InMemoryEventBus implements EventBus {
       }
     } else {
       // 降级到 console（logger 未初始化时）
-      const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
+      const logFn =
+        level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
       logFn(`[EventBus] ${message}`, fields || {});
     }
   }
 
   /**
    * 发布事件
-   * 
+   *
    * 同步调用所有订阅者的处理器
    * 如果任何处理器返回错误，会记录日志但不中断其他处理器
    */
@@ -133,7 +138,7 @@ export class InMemoryEventBus implements EventBus {
     );
 
     // 检查是否有失败的处理器
-    const failures = results.filter((r) => r.status === 'rejected');
+    const failures = results.filter(r => r.status === 'rejected');
     if (failures.length > 0) {
       this.log('warn', `Some event handlers failed: ${event.type}`, {
         eventType: event.type,
@@ -146,7 +151,7 @@ export class InMemoryEventBus implements EventBus {
 
   /**
    * 调用单个处理器
-   * 
+   *
    * 包含 panic 恢复机制
    */
   private async callHandler(
@@ -157,7 +162,7 @@ export class InMemoryEventBus implements EventBus {
   ): Promise<void> {
     try {
       const result = handler(ctx, event);
-      
+
       // 如果返回 Promise，等待完成
       if (result instanceof Promise) {
         await result;
@@ -176,10 +181,10 @@ export class InMemoryEventBus implements EventBus {
 
   /**
    * 订阅事件类型
-   * 
+   *
    * @param eventType 事件类型（如 "TaskCreated"）
    * @param handler 事件处理器
-   * 
+   *
    * @example
    * ```typescript
    * eventBus.subscribe('TaskCreated', async (ctx, event) => {
@@ -211,7 +216,7 @@ export class InMemoryEventBus implements EventBus {
 
   /**
    * 取消订阅
-   * 
+   *
    * 注意：由于 JavaScript 的函数比较限制，如果提供了 handler，
    * 会移除第一个匹配的处理器；如果不提供 handler，会移除该类型的所有订阅
    */
@@ -242,7 +247,7 @@ export class InMemoryEventBus implements EventBus {
 
   /**
    * 关闭事件总线
-   * 
+   *
    * 清除所有订阅
    */
   async close(): Promise<void> {
@@ -257,4 +262,3 @@ export class InMemoryEventBus implements EventBus {
 export function createEventBus(): EventBus {
   return new InMemoryEventBus();
 }
-

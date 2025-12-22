@@ -1,7 +1,7 @@
 /**
  * Handler 工具函数
  * 提供统一的错误处理、上下文提取等辅助功能
- * 
+ *
  * 功能：
  *   - 统一错误处理（HandleDomainError）
  *   - 错误码到 HTTP 状态码的自动映射
@@ -17,23 +17,23 @@ import type { Logger } from '../../infrastructure/monitoring/logger/logger.js';
  * HTTP 错误响应格式
  */
 export interface ErrorResponse {
-  error: string;              // 错误码
-  message: string;            // 错误消息
-  details?: string;          // 详细信息（可选）
-  requestId?: string;        // 请求 ID（用于追踪）
+  error: string; // 错误码
+  message: string; // 错误消息
+  details?: string; // 详细信息（可选）
+  requestId?: string; // 请求 ID（用于追踪）
 }
 
 /**
  * 统一处理领域错误，转换为 HTTP 响应
- * 
+ *
  * 支持两种错误格式：
  * 1. DomainError - 结构化错误（推荐）
  * 2. "ERROR_CODE: message" - 字符串格式错误（兼容现有代码）
- * 
+ *
  * @param reply Fastify Reply 对象
  * @param err 错误对象
  * @param logger 可选的 Logger 实例（用于记录错误日志）
- * 
+ *
  * @example
  * ```typescript
  * const output = await service.createTask(ctx, input);
@@ -43,11 +43,7 @@ export interface ErrorResponse {
  * }
  * ```
  */
-export function handleDomainError(
-  reply: FastifyReply,
-  err: unknown,
-  logger?: Logger
-): void {
+export function handleDomainError(reply: FastifyReply, err: unknown, logger?: Logger): void {
   if (!err) {
     return;
   }
@@ -129,13 +125,13 @@ export function handleDomainError(
 
 /**
  * 从上下文中提取用户 ID
- * 
+ *
  * 从 JWT 中间件注入的上下文中获取 user_id
- * 
+ *
  * @param request Fastify Request 对象
  * @returns 用户 ID
  * @throws {DomainError} 如果用户未认证，抛出 UNAUTHORIZED 错误
- * 
+ *
  * @example
  * ```typescript
  * const userId = getUserIDFromRequest(request);
@@ -145,7 +141,7 @@ export function getUserIDFromRequest(request: FastifyRequest): string {
   // 从认证中间件注入的 request.userId 中获取
   // 认证中间件将用户 ID 存储在 request.userId（见 infrastructure/middleware/auth.ts）
   const userId = (request as FastifyRequest & { userId?: string }).userId;
-  
+
   if (!userId) {
     throw createError('UNAUTHORIZED', 'User not authenticated');
   }
@@ -160,14 +156,14 @@ export function getUserIDFromRequest(request: FastifyRequest): string {
 
 /**
  * 获取必需的路径参数
- * 
+ *
  * 如果参数不存在或为空，返回错误
- * 
+ *
  * @param request Fastify Request 对象
  * @param paramName 参数名称
  * @returns 参数值
  * @throws {DomainError} 如果参数不存在或为空，抛出 INVALID_INPUT 错误
- * 
+ *
  * @example
  * ```typescript
  * const taskId = getRequiredPathParam(request, 'id');
@@ -189,7 +185,7 @@ export function getRequiredPathParam(
 
 /**
  * 获取必需的查询参数
- * 
+ *
  * @param request Fastify Request 对象
  * @param paramName 参数名称
  * @returns 参数值
@@ -211,7 +207,7 @@ export function getRequiredQueryParam(
 
 /**
  * 获取可选的查询参数（带默认值）
- * 
+ *
  * @param request Fastify Request 对象
  * @param paramName 参数名称
  * @param defaultValue 默认值
@@ -248,7 +244,7 @@ export function getOptionalQueryParam<T>(
 
 /**
  * 从错误消息中提取错误码和消息
- * 
+ *
  * 支持格式：
  * - "ERROR_CODE: message" → { code: "ERROR_CODE", message: "message" }
  * - "wrapper: ERROR_CODE: message" → { code: "ERROR_CODE", message: "message" }（递归提取）
@@ -257,17 +253,18 @@ export function getOptionalQueryParam<T>(
 function extractErrorFromString(errMsg: string): { code: string; message: string } {
   // 递归查找所有的冒号分隔的部分，找到第一个符合错误码格式的
   const parts = errMsg.split(':');
-  
+
   for (const part of parts) {
     const code = part.trim();
     // 验证是否是大写下划线格式（错误码规范）
     if (isUpperSnakeCase(code) && code.length > 3) {
       // 找到错误码后，提取消息（最后一个冒号后的内容）
       const messageIndex = errMsg.lastIndexOf(':');
-      const message = messageIndex > 0 && messageIndex < errMsg.length - 1
-        ? errMsg.substring(messageIndex + 1).trim()
-        : errMsg;
-      
+      const message =
+        messageIndex > 0 && messageIndex < errMsg.length - 1
+          ? errMsg.substring(messageIndex + 1).trim()
+          : errMsg;
+
       return { code, message };
     }
   }
@@ -281,7 +278,7 @@ function extractErrorFromString(errMsg: string): { code: string; message: string
 
 /**
  * 根据错误码确定 HTTP 状态码
- * 
+ *
  * 这个映射基于常见的错误码命名规范
  */
 function getHTTPStatusCode(code: string): number {
@@ -377,4 +374,3 @@ function isUpperSnakeCase(s: string): boolean {
 
   return true;
 }
-

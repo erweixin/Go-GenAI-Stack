@@ -267,7 +267,9 @@ describe('AuthService', () => {
         refreshToken: 'invalid-token',
       };
 
-      await expect(authService.refreshToken({}, input)).rejects.toThrow('Refresh Token 无效或已过期');
+      await expect(authService.refreshToken({}, input)).rejects.toThrow(
+        'Refresh Token 无效或已过期'
+      );
     });
 
     it('应该拒绝 Access Token 作为 Refresh Token', async () => {
@@ -280,7 +282,9 @@ describe('AuthService', () => {
         refreshToken: accessToken,
       };
 
-      await expect(authService.refreshToken({}, input)).rejects.toThrow('Refresh Token 无效或已过期');
+      await expect(authService.refreshToken({}, input)).rejects.toThrow(
+        'Refresh Token 无效或已过期'
+      );
     });
 
     it('应该拒绝不存在的用户', async () => {
@@ -309,4 +313,3 @@ describe('AuthService', () => {
     });
   });
 });
-

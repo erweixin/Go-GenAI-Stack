@@ -10,14 +10,14 @@
 
 领域事件是领域内发生的重要业务事实。本领域发布以下事件：
 
-| 事件名称 | 触发时机 | 消费者 | 优先级 |
-|---------|---------|-------|--------|
-| TaskCreated | 任务创建成功后 | Analytics, Notification | 🟢 Normal |
-| TaskUpdated | 任务更新成功后 | Analytics | 🟡 Low |
-| TaskCompleted | 任务完成后 | Analytics, Achievement | 🔵 High |
-| TaskDeleted | 任务删除后 | Analytics | 🟢 Normal |
-| TaskStatusChanged | 任务状态变更后 | Notification | 🟢 Normal |
-| TaskPriorityChanged | 优先级变更后 | Notification | 🟡 Low |
+| 事件名称            | 触发时机       | 消费者                  | 优先级    |
+| ------------------- | -------------- | ----------------------- | --------- |
+| TaskCreated         | 任务创建成功后 | Analytics, Notification | 🟢 Normal |
+| TaskUpdated         | 任务更新成功后 | Analytics               | 🟡 Low    |
+| TaskCompleted       | 任务完成后     | Analytics, Achievement  | 🔵 High   |
+| TaskDeleted         | 任务删除后     | Analytics               | 🟢 Normal |
+| TaskStatusChanged   | 任务状态变更后 | Notification            | 🟢 Normal |
+| TaskPriorityChanged | 优先级变更后   | Notification            | 🟡 Low    |
 
 ---
 
@@ -32,6 +32,7 @@
 **发布位置**：`CreateTaskHandler` → `repository.Create()` 之后
 
 **事件数据**：
+
 ```go
 type TaskCreatedEvent struct {
     EventID     string    `json:"event_id"`      // 事件 ID (UUID)
@@ -46,6 +47,7 @@ type TaskCreatedEvent struct {
 ```
 
 **消费者**：
+
 1. **Analytics Service**（分析服务）
    - 记录任务创建指标
    - 统计每日任务数
@@ -54,10 +56,12 @@ type TaskCreatedEvent struct {
    - 发送任务创建通知
 
 **幂等性**：
+
 - 使用 EventID 保证幂等性
 - 消费者应该记录已处理的 EventID
 
 **示例代码**：
+
 ```go
 // 发布事件
 event := &events.TaskCreatedEvent{
@@ -72,6 +76,7 @@ eventBus.Publish(ctx, "task.created", event)
 ```
 
 **重试策略**：
+
 - 最多重试 3 次
 - 指数退避（1s, 2s, 4s）
 - 失败后记录到死信队列
@@ -87,6 +92,7 @@ eventBus.Publish(ctx, "task.created", event)
 **发布位置**：`UpdateTaskHandler` → `repository.Update()` 之后
 
 **事件数据**：
+
 ```go
 type TaskUpdatedEvent struct {
     EventID     string            `json:"event_id"`
@@ -98,25 +104,28 @@ type TaskUpdatedEvent struct {
 ```
 
 **UpdatedFields 示例**：
+
 ```json
 {
-    "title": {
-        "old": "完成报告",
-        "new": "完成季度报告"
-    },
-    "priority": {
-        "old": "medium",
-        "new": "high"
-    }
+  "title": {
+    "old": "完成报告",
+    "new": "完成季度报告"
+  },
+  "priority": {
+    "old": "medium",
+    "new": "high"
+  }
 }
 ```
 
 **消费者**：
+
 1. **Analytics Service**
    - 记录任务更新频率
    - 分析常修改的字段
 
 **优化建议**：
+
 - 低优先级事件，可以批量处理
 - 可以按需订阅（只订阅特定字段的变更）
 
@@ -131,6 +140,7 @@ type TaskUpdatedEvent struct {
 **发布位置**：`CompleteTaskHandler` → `repository.Update()` 之后
 
 **事件数据**：
+
 ```go
 type TaskCompletedEvent struct {
     EventID     string    `json:"event_id"`
@@ -144,16 +154,19 @@ type TaskCompletedEvent struct {
 ```
 
 **Duration 计算**：
+
 ```go
 duration := task.CompletedAt.Sub(task.CreatedAt).Seconds()
 ```
 
 **IsOnTime 判断**：
+
 ```go
 isOnTime := task.DueDate == nil || task.CompletedAt.Before(task.DueDate)
 ```
 
 **消费者**：
+
 1. **Analytics Service**
    - 统计完成率
    - 分析任务完成时间分布
@@ -168,6 +181,7 @@ isOnTime := task.DueDate == nil || task.CompletedAt.Before(task.DueDate)
    - 如果逾期完成，发送提醒
 
 **业务价值**：
+
 - ✅ 高价值事件，重要的业务里程碑
 - ✅ 可用于计算 KPI（如任务完成率）
 
@@ -182,6 +196,7 @@ isOnTime := task.DueDate == nil || task.CompletedAt.Before(task.DueDate)
 **发布位置**：`DeleteTaskHandler` → `repository.Delete()` 之后
 
 **事件数据**：
+
 ```go
 type TaskDeletedEvent struct {
     EventID   string    `json:"event_id"`
@@ -195,6 +210,7 @@ type TaskDeletedEvent struct {
 ```
 
 **消费者**：
+
 1. **Analytics Service**
    - 记录删除统计
    - 分析删除原因
@@ -203,6 +219,7 @@ type TaskDeletedEvent struct {
    - 清理相关的附件、评论等
 
 **软删除 vs 硬删除**：
+
 - **软删除**：设置 DeletedAt 字段，不发布事件
 - **硬删除**：物理删除记录，发布事件
 
@@ -217,6 +234,7 @@ type TaskDeletedEvent struct {
 **发布位置**：状态变更的 handler 中
 
 **事件数据**：
+
 ```go
 type TaskStatusChangedEvent struct {
     EventID   string    `json:"event_id"`
@@ -228,6 +246,7 @@ type TaskStatusChangedEvent struct {
 ```
 
 **状态转换**：
+
 ```
 pending → in_progress  (StartTask)
 pending → completed    (CompleteTask)
@@ -235,11 +254,13 @@ in_progress → completed (CompleteTask)
 ```
 
 **消费者**：
+
 1. **Notification Service**
    - 状态变更通知
    - 团队成员可见性
 
 **关系**：
+
 - TaskStatusChanged 是更通用的事件
 - TaskCompleted 是专门针对完成状态的事件
 - 两者可以同时发布
@@ -255,6 +276,7 @@ in_progress → completed (CompleteTask)
 **发布位置**：`UpdateTaskHandler` → priority 字段变更时
 
 **事件数据**：
+
 ```go
 type TaskPriorityChangedEvent struct {
     EventID     string    `json:"event_id"`
@@ -267,10 +289,12 @@ type TaskPriorityChangedEvent struct {
 ```
 
 **消费者**：
+
 1. **Notification Service**
    - 优先级提升通知（如 low → high）
 
 **触发条件**：
+
 - 仅当优先级实际变化时发布
 - 从 medium → medium 不发布事件
 
@@ -281,10 +305,12 @@ type TaskPriorityChangedEvent struct {
 ### 实现方式
 
 **当前**：
+
 - 使用内存事件总线（`domains/shared/events/bus.go`）
 - 同步发布和消费
 
 **扩展点**：
+
 - 可以切换到 Redis Pub/Sub
 - 可以切换到 Kafka
 - 可以切换到 RabbitMQ
@@ -295,7 +321,7 @@ type TaskPriorityChangedEvent struct {
 // 在 handler 中发布事件
 func (s *HandlerService) CreateTaskHandler(ctx context.Context, c *app.RequestContext) {
     // ... 创建任务逻辑
-    
+
     // 发布事件
     event := &events.TaskCreatedEvent{
         EventID:   uuid.New().String(),
@@ -304,10 +330,10 @@ func (s *HandlerService) CreateTaskHandler(ctx context.Context, c *app.RequestCo
         Priority:  string(task.Priority),
         CreatedAt: task.CreatedAt,
     }
-    
+
     // Extension point: 发布到事件总线
     // eventBus.Publish(ctx, "task.created", event)
-    
+
     // 当前：记录日志
     log.Printf("Event: task.created, TaskID: %s", task.ID)
 }
@@ -323,7 +349,7 @@ func (s *AnalyticsService) HandleTaskCreated(ctx context.Context, event *events.
     s.metricsCollector.Gauge("tasks.created.by_priority", 1, map[string]string{
         "priority": event.Priority,
     })
-    
+
     return nil
 }
 ```
@@ -337,17 +363,19 @@ func (s *AnalyticsService) HandleTaskCreated(ctx context.Context, event *events.
 **问题**：事件结构变更如何兼容？
 
 **解决方案**：
+
 1. **版本号**：在事件中添加 `version` 字段
 2. **向后兼容**：只添加字段，不删除字段
 3. **多版本并存**：同时支持 v1 和 v2
 
 **示例**：
+
 ```go
 type TaskCreatedEvent struct {
     Version   string  `json:"version"`  // "v1", "v2"
     EventID   string  `json:"event_id"`
     // ... 其他字段
-    
+
     // v2 新增字段
     Category  *string `json:"category,omitempty"`  // 使用指针表示可选
 }
@@ -358,11 +386,13 @@ type TaskCreatedEvent struct {
 ## 事件存储（未实现）
 
 **Event Sourcing**：
+
 - 将所有事件存储到事件库
 - 可以重放事件重建状态
 - 提供完整的审计日志
 
 **表结构**：
+
 ```sql
 CREATE TABLE domain_events (
     event_id      UUID PRIMARY KEY,
@@ -382,6 +412,7 @@ CREATE TABLE domain_events (
 ### 事件指标
 
 应该监控的指标：
+
 - 事件发布速率（events/sec）
 - 事件处理延迟（ms）
 - 事件失败率（%）
@@ -412,15 +443,15 @@ CREATE TABLE domain_events (
 func TestTaskCreatedEvent_Published(t *testing.T) {
     // 创建 mock 事件总线
     eventBus := NewMockEventBus()
-    
+
     // 创建任务
     handler := NewHandlerService(repo, eventBus)
     handler.CreateTaskHandler(ctx, req)
-    
+
     // 验证事件被发布
     events := eventBus.GetPublishedEvents("task.created")
     assert.Equal(t, 1, len(events))
-    
+
     // 验证事件数据
     event := events[0].(*TaskCreatedEvent)
     assert.Equal(t, "Test Task", event.Title)
@@ -452,10 +483,10 @@ func TestTaskCreatedEvent_Published(t *testing.T) {
 ---
 
 **维护说明**：
+
 - 添加新事件时，更新本文档
 - 事件结构变更应该版本化
 - 定期审查事件消费者
 - 监控事件处理性能
 
 **最后更新**：2025-11-23
-

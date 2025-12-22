@@ -49,6 +49,7 @@ curl http://localhost:8081/health
 ```
 
 **预期响应**：
+
 ```json
 {
   "status": "healthy",
@@ -69,6 +70,7 @@ curl http://localhost:8081/
 ```
 
 **预期响应**：
+
 ```json
 {
   "service": "go-genai-stack-nodejs",
@@ -119,6 +121,7 @@ backend-nodejs/
 ```
 
 **解决方案**：
+
 1. 确保 PostgreSQL 正在运行：`docker-compose ps`
 2. 检查环境变量配置是否正确
 3. 确保数据库 Schema 已应用（参考 Go 后端的数据库设置）
@@ -130,6 +133,6 @@ Error: listen EADDRINUSE: address already in use :::8081
 ```
 
 **解决方案**：
+
 1. 修改 `.env` 文件中的 `PORT` 变量
 2. 或关闭占用 8081 端口的其他服务
-

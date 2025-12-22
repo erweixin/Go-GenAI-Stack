@@ -160,4 +160,3 @@ describe('Login Handler', () => {
     expect(body.email).toBe(TEST_USER_EMAIL.toLowerCase());
   });
 });
-

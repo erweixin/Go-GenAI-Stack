@@ -5,10 +5,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
-import {
-  toGetUserProfileInput,
-  toGetUserProfileResponse,
-} from './converters.js';
+import { toGetUserProfileInput, toGetUserProfileResponse } from './converters.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
@@ -37,4 +34,3 @@ export async function getUserProfileHandler(
   // 4. 转换为 HTTP 响应
   reply.code(200).send(toGetUserProfileResponse(output.user));
 }
-

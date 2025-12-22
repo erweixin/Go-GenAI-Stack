@@ -6,10 +6,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { CreateTaskRequest } from '../http/dto/task.js';
-import {
-  toCreateTaskInput,
-  toCreateTaskResponse,
-} from './converters.js';
+import { toCreateTaskInput, toCreateTaskResponse } from './converters.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 

@@ -38,11 +38,11 @@ export interface RateLimitOptions {
 
 /**
  * 创建限流中间件
- * 
+ *
  * @param redis Redis 客户端（如果为 null，则跳过限流）
  * @param options 限流配置
  * @returns 限流中间件函数
- * 
+ *
  * @example
  * ```typescript
  * const loginRateLimit = createRateLimitMiddleware(redis, {
@@ -74,11 +74,13 @@ export function createRateLimitMiddleware(
     }
 
     // 生成限流 key
-    const keyGenerator = options.keyGenerator || ((req) => {
-      // 默认：IP + 路径
-      const route = (req as any).routerPath || req.url.split('?')[0];
-      return `ratelimit:${req.ip}:${route}`;
-    });
+    const keyGenerator =
+      options.keyGenerator ||
+      (req => {
+        // 默认：IP + 路径
+        const route = (req as any).routerPath || req.url.split('?')[0];
+        return `ratelimit:${req.ip}:${route}`;
+      });
 
     const key = keyGenerator(request);
 
@@ -111,7 +113,7 @@ export function createLoginRateLimitMiddleware(redis: RedisClientType | null) {
   return createRateLimitMiddleware(redis, {
     windowMs: 60 * 1000, // 1 分钟
     max: 5, // 最多 5 次
-    keyGenerator: (req) => `ratelimit:login:${req.ip}`,
+    keyGenerator: req => `ratelimit:login:${req.ip}`,
   });
 }
 
@@ -123,7 +125,7 @@ export function createRegisterRateLimitMiddleware(redis: RedisClientType | null)
   return createRateLimitMiddleware(redis, {
     windowMs: 60 * 60 * 1000, // 1 小时
     max: 3, // 最多 3 次
-    keyGenerator: (req) => `ratelimit:register:${req.ip}`,
+    keyGenerator: req => `ratelimit:register:${req.ip}`,
   });
 }
 
@@ -135,7 +137,6 @@ export function createApiRateLimitMiddleware(redis: RedisClientType | null) {
   return createRateLimitMiddleware(redis, {
     windowMs: 60 * 1000, // 1 分钟
     max: 100, // 最多 100 次
-    keyGenerator: (req) => `ratelimit:api:${req.ip}`,
+    keyGenerator: req => `ratelimit:api:${req.ip}`,
   });
 }
-

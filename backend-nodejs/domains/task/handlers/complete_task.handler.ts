@@ -4,10 +4,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
-import {
-  toCompleteTaskInput,
-  toCompleteTaskResponse,
-} from './converters.js';
+import { toCompleteTaskInput, toCompleteTaskResponse } from './converters.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
@@ -30,4 +27,3 @@ export async function completeTaskHandler(
 
   reply.code(200).send(toCompleteTaskResponse(output.task));
 }
-

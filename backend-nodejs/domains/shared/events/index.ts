@@ -6,4 +6,3 @@ export type { Event, EventHandler } from './types.js';
 export { BaseEvent } from './types.js';
 export type { EventBus } from './event_bus.js';
 export { InMemoryEventBus, createEventBus } from './event_bus.js';
-

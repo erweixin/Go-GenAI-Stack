@@ -5,10 +5,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { UpdateUserProfileRequest } from '../http/dto/user.js';
-import {
-  toUpdateUserProfileInput,
-  toUpdateUserProfileResponse,
-} from './converters.js';
+import { toUpdateUserProfileInput, toUpdateUserProfileResponse } from './converters.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
@@ -30,4 +27,3 @@ export async function updateUserProfileHandler(
 
   reply.code(200).send(toUpdateUserProfileResponse(output.user));
 }
-

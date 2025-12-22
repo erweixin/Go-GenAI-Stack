@@ -59,4 +59,3 @@ export interface TaskRepository {
    */
   exists(ctx: RequestContext, taskId: string): Promise<boolean>;
 }
-

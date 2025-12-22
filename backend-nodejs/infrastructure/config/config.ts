@@ -13,22 +13,22 @@ function parseTimeToSeconds(timeStr: string | undefined): number {
   if (!timeStr) {
     return 0;
   }
-  
+
   // 如果是纯数字，直接返回
   const numOnly = /^\d+$/.test(timeStr);
   if (numOnly) {
     return parseInt(timeStr, 10);
   }
-  
+
   // 解析带单位的时间字符串
   const match = timeStr.match(/^(\d+)([smhd])$/i);
   if (!match) {
     throw new Error(`Invalid time format: ${timeStr}. Expected format: 15m, 1h, 7d, or 3600`);
   }
-  
+
   const value = parseInt(match[1], 10);
   const unit = match[2].toLowerCase();
-  
+
   switch (unit) {
     case 's':
       return value;
@@ -70,28 +70,28 @@ const ConfigSchema = z.object({
     db: z.coerce.number().int().nonnegative().default(0),
   }),
   jwt: z.object({
-    secret: z.string().min(1, 'JWT secret is required').refine(
-      (val) => val.length >= 32 || process.env.NODE_ENV === 'test',
-      { message: 'JWT secret must be at least 32 characters (except in test mode)' }
-    ),
-    accessTokenExpiry: z.preprocess(
-      (val) => {
+    secret: z
+      .string()
+      .min(1, 'JWT secret is required')
+      .refine(val => val.length >= 32 || process.env.NODE_ENV === 'test', {
+        message: 'JWT secret must be at least 32 characters (except in test mode)',
+      }),
+    accessTokenExpiry: z
+      .preprocess(val => {
         if (typeof val === 'string') {
           return parseTimeToSeconds(val);
         }
         return typeof val === 'number' ? val : parseTimeToSeconds(String(val));
-      },
-      z.number().int().positive()
-    ).default(3600), // 1 小时（默认）
-    refreshTokenExpiry: z.preprocess(
-      (val) => {
+      }, z.number().int().positive())
+      .default(3600), // 1 小时（默认）
+    refreshTokenExpiry: z
+      .preprocess(val => {
         if (typeof val === 'string') {
           return parseTimeToSeconds(val);
         }
         return typeof val === 'number' ? val : parseTimeToSeconds(String(val));
-      },
-      z.number().int().positive()
-    ).default(604800), // 7 天（默认）
+      }, z.number().int().positive())
+      .default(604800), // 7 天（默认）
     issuer: z.string().default('go-genai-stack'),
   }),
   logging: z.object({
@@ -115,7 +115,7 @@ export type Config = z.infer<typeof ConfigSchema>;
 /**
  * 加载配置
  * 从环境变量读取配置，使用 Zod 进行验证
- * 
+ *
  * @throws {Error} 配置验证失败时抛出错误
  */
 export function loadConfig(): Config {
@@ -166,7 +166,7 @@ export function loadConfig(): Config {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Configuration validation failed:');
-      error.issues.forEach((issue) => {
+      error.issues.forEach(issue => {
         const path = issue.path.join('.');
         console.error(`   ${path}: ${issue.message}`);
       });
@@ -176,4 +176,3 @@ export function loadConfig(): Config {
     throw error;
   }
 }
-

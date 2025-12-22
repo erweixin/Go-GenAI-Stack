@@ -24,6 +24,7 @@
 **条件**：创建或更新任务时
 
 **约束**：
+
 - 标题（Title）必须非空
 - 标题长度 >= 1
 - 标题长度 <= 200
@@ -35,6 +36,7 @@
 **错误消息**：`"任务标题不能为空"`
 
 **示例**：
+
 ```go
 // ❌ 错误
 task := &Task{
@@ -56,6 +58,7 @@ task := &Task{
 **条件**：创建或更新任务时
 
 **约束**：
+
 - 描述（Description）长度 <= 5000 字符
 - 描述可以为空
 
@@ -72,6 +75,7 @@ task := &Task{
 **条件**：创建或更新任务时
 
 **约束**：
+
 - Priority 必须是 `low`, `medium`, `high` 之一
 - 如果未提供，默认为 `medium`
 
@@ -90,6 +94,7 @@ task := &Task{
 **条件**：创建或更新任务时
 
 **约束**：
+
 - 如果提供了 DueDate，必须 >= CreatedAt
 - DueDate 可以为空（表示无截止日期）
 
@@ -100,6 +105,7 @@ task := &Task{
 **错误消息**：`"截止日期不能早于创建日期"`
 
 **示例**：
+
 ```go
 // ❌ 错误
 task := &Task{
@@ -123,6 +129,7 @@ task := &Task{
 **条件**：添加标签时
 
 **约束**：
+
 - 标签名称必须非空
 - 标签名称长度 >= 1
 - 标签名称长度 <= 50
@@ -142,6 +149,7 @@ task := &Task{
 **条件**：调用 CompleteTask 时
 
 **约束**：
+
 - 只有状态为 `Pending` 或 `InProgress` 的任务可以完成
 - 状态为 `Completed` 的任务不能再次完成
 
@@ -152,6 +160,7 @@ task := &Task{
 **错误消息**：`"任务已完成，不能再次完成"`
 
 **状态转换图**：
+
 ```
 Pending ──────┐
               ├──> Completed
@@ -161,6 +170,7 @@ Completed ──X──> Completed (不允许)
 ```
 
 **示例**：
+
 ```go
 // ❌ 错误
 task := &Task{Status: StatusCompleted}
@@ -180,21 +190,23 @@ task.Complete()  // 成功
 **条件**：任务状态变更为 Completed 时
 
 **约束**：
+
 - 必须记录 CompletedAt 时间戳
 - CompletedAt 不能早于 CreatedAt
 - CompletedAt 应该是当前时间
 
 **实现**：
+
 ```go
 func (t *Task) Complete() error {
     if t.Status == StatusCompleted {
         return ErrTaskAlreadyCompleted
     }
-    
+
     t.Status = StatusCompleted
     t.CompletedAt = time.Now()  // 记录完成时间
     t.UpdatedAt = time.Now()
-    
+
     return nil
 }
 ```
@@ -208,6 +220,7 @@ func (t *Task) Complete() error {
 **条件**：更新任务状态时
 
 **允许的状态转换**：
+
 ```
 Pending → InProgress  ✅
 Pending → Completed   ✅
@@ -215,6 +228,7 @@ InProgress → Completed ✅
 ```
 
 **不允许的状态转换**：
+
 ```
 Completed → Pending      ❌
 Completed → InProgress   ❌
@@ -236,6 +250,7 @@ InProgress → Pending     ❌ (可选：是否允许暂停)
 **条件**：创建任务时
 
 **约束**：
+
 - TaskID 在系统中必须唯一
 - 使用 UUID 或雪花算法生成 ID
 
@@ -244,6 +259,7 @@ InProgress → Pending     ❌ (可选：是否允许暂停)
 **HTTP 状态码**：409 Conflict
 
 **实现**：
+
 ```go
 func NewTask(title string) *Task {
     return &Task{
@@ -265,6 +281,7 @@ func NewTask(title string) *Task {
 **条件**：添加标签时
 
 **约束**：
+
 - 一个任务内，标签名称必须唯一
 - 不同任务可以有相同的标签
 
@@ -273,6 +290,7 @@ func NewTask(title string) *Task {
 **HTTP 状态码**：400 Bad Request
 
 **示例**：
+
 ```go
 // ❌ 错误
 task.Tags = []Tag{
@@ -296,6 +314,7 @@ task.Tags = []Tag{
 **条件**：添加标签时
 
 **约束**：
+
 - 每个任务最多 10 个标签
 - 防止标签滥用
 
@@ -314,11 +333,13 @@ task.Tags = []Tag{
 **条件**：删除任务时
 
 **约束**：
+
 - 删除任务时，应该清理相关的标签关联
 - 如果实现了子任务，应该清理子任务
 - 如果实现了评论，应该清理评论
 
 **实现方式**：
+
 - 数据库外键级联删除
 - 或应用层显式删除
 
@@ -331,11 +352,13 @@ task.Tags = []Tag{
 **条件**：任何更新操作
 
 **约束**：
+
 - 任何字段更新都必须更新 UpdatedAt
 - UpdatedAt 应该是当前时间
 - UpdatedAt >= CreatedAt
 
 **实现**：
+
 ```go
 func (t *Task) Update(title, description string) {
     t.Title = title
@@ -353,6 +376,7 @@ func (t *Task) Update(title, description string) {
 **条件**：查询、更新、删除不存在的任务时
 
 **约束**：
+
 - 返回 404 Not Found
 - 错误消息明确说明任务不存在
 
@@ -373,6 +397,7 @@ func (t *Task) Update(title, description string) {
 **条件**：ListTasks 操作
 
 **约束**：
+
 - 必须提供 `page` 和 `limit` 参数
 - page >= 1
 - limit >= 1 且 limit <= 100
@@ -391,6 +416,7 @@ func (t *Task) Update(title, description string) {
 **条件**：ListTasks 操作时使用筛选
 
 **支持的筛选字段**：
+
 - `status` - 必须是有效的 TaskStatus
 - `priority` - 必须是有效的 Priority
 - `tag` - 标签名称
@@ -414,6 +440,7 @@ func (t *Task) Update(title, description string) {
 **条件**：所有操作
 
 **约束**：
+
 - 用户只能查看、修改、删除自己创建的任务
 - 管理员可以访问所有任务
 
@@ -430,6 +457,7 @@ func (t *Task) Update(title, description string) {
 **条件**：访问共享任务时
 
 **约束**：
+
 - 只读权限：可以查看，不能修改
 - 编辑权限：可以修改，不能删除
 - 所有者权限：可以进行所有操作
@@ -440,30 +468,31 @@ func (t *Task) Update(title, description string) {
 
 每个业务规则都应该有对应的测试用例：
 
-| 规则编号 | 测试用例 | 覆盖 |
-|---------|---------|------|
-| R1.1 | TestCreateTask_EmptyTitle | ✅ |
-| R1.1 | TestUpdateTask_EmptyTitle | ✅ |
-| R1.4 | TestCreateTask_InvalidDueDate | ✅ |
-| R2.1 | TestCompleteTask_AlreadyCompleted | ✅ |
-| R2.2 | TestCompleteTask_RecordCompletedAt | ✅ |
-| R3.2 | TestAddTag_Duplicate | ✅ |
-| R3.3 | TestAddTag_TooMany | ✅ |
-| R4.3 | TestGetTask_NotFound | ✅ |
+| 规则编号 | 测试用例                           | 覆盖 |
+| -------- | ---------------------------------- | ---- |
+| R1.1     | TestCreateTask_EmptyTitle          | ✅   |
+| R1.1     | TestUpdateTask_EmptyTitle          | ✅   |
+| R1.4     | TestCreateTask_InvalidDueDate      | ✅   |
+| R2.1     | TestCompleteTask_AlreadyCompleted  | ✅   |
+| R2.2     | TestCompleteTask_RecordCompletedAt | ✅   |
+| R3.2     | TestAddTag_Duplicate               | ✅   |
+| R3.3     | TestAddTag_TooMany                 | ✅   |
+| R4.3     | TestGetTask_NotFound               | ✅   |
 
 ---
 
 ## 规则变更日志
 
 ### 2025-11-23
+
 - 初始版本
 - 定义了所有核心业务规则
 
 ---
 
 **维护说明**：
+
 - 添加新规则时，分配唯一的规则编号
 - 规则应该可测试、可验证
 - 规则变更应该记录在变更日志中
 - 定期审查规则的合理性
-

@@ -47,7 +47,7 @@ export interface TestHelper {
 
 /**
  * 创建测试辅助工具
- * 
+ *
  * 注意：这里使用真实的数据库连接（测试数据库）
  * 在生产测试中，可以使用内存数据库或 Docker 测试容器
  */
@@ -98,7 +98,7 @@ export function createTestHelper(
  * 设置认证上下文（模拟 JWT 中间件）
  */
 export function setAuthContext(app: FastifyInstance, userId: string): void {
-  app.addHook('onRequest', async (request) => {
+  app.addHook('onRequest', async request => {
     // 模拟 JWT 中间件注入 user_id
     (request as any).userId = userId;
   });
@@ -143,12 +143,7 @@ export async function ensureTestUser(db: Kysely<Database>): Promise<void> {
  * 创建标准测试任务
  */
 export function createTestTask(): Task {
-  const task = Task.create(
-    TEST_USER_ID,
-    TEST_TASK_TITLE,
-    TEST_TASK_DESCRIPTION,
-    TEST_PRIORITY
-  );
+  const task = Task.create(TEST_USER_ID, TEST_TASK_TITLE, TEST_TASK_DESCRIPTION, TEST_PRIORITY);
   return task;
 }
 
@@ -194,4 +189,3 @@ export function createTestTaskWithCustomFields(
 ): Task {
   return Task.create(TEST_USER_ID, title, description, priority);
 }
-

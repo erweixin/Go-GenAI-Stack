@@ -131,4 +131,3 @@ export async function ensureTestUser(db: Kysely<Database>): Promise<void> {
       .execute();
   }
 }
-

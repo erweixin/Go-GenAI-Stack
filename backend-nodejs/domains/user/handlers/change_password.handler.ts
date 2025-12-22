@@ -5,10 +5,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { ChangePasswordRequest } from '../http/dto/user.js';
-import {
-  toChangePasswordInput,
-  toChangePasswordResponse,
-} from './converters.js';
+import { toChangePasswordInput, toChangePasswordResponse } from './converters.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
@@ -30,4 +27,3 @@ export async function changePasswordHandler(
 
   reply.code(200).send(toChangePasswordResponse(output.success, output.message));
 }
-

@@ -101,6 +101,7 @@ error('Error message', { error: err });
 - **Compress**: 是否压缩旧日志（.gz）
 
 **注意**：`pino/file` 本身不直接支持轮转，需要：
+
 1. 使用外部工具（如 `logrotate`）
 2. 或安装 `pino-rotate` 包（需要额外配置）
 
@@ -167,4 +168,3 @@ const fastify = Fastify({
 
 - [Pino 官方文档](https://getpino.io/)
 - [Go 后端 Logger 实现](../backend/infrastructure/monitoring/logger/logger.go)
-

@@ -81,4 +81,3 @@ export class TaskDeletedEvent extends BaseEvent {
     super('TaskDeleted', 'task', payload);
   }
 }
-

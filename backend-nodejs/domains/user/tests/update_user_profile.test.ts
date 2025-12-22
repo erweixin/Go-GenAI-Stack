@@ -212,4 +212,3 @@ describe('UpdateUserProfile Handler', () => {
     expect(response.statusCode).toBe(401);
   });
 });
-

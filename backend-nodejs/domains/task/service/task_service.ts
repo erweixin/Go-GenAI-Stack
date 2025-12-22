@@ -85,7 +85,7 @@ export interface ListTasksOutput {
 
 /**
  * TaskService 任务领域服务
- * 
+ *
  * 注意：使用 UserQueryService 进行同步查询（验证用户是否存在）
  * 不直接调用 UserService，遵循"分布式友好但不分布式"原则
  */
@@ -149,7 +149,7 @@ export class TaskService {
         title: task.title,
         priority: task.priority,
         dueDate: task.dueDate?.toISOString(),
-        tags: task.tags.map((t) => t.name),
+        tags: task.tags.map(t => t.name),
         createdAt: task.createdAt,
       })
     );
@@ -199,7 +199,7 @@ export class TaskService {
     // 更新标签
     if (input.tags !== undefined) {
       // 清空现有标签
-      task.tags.forEach((tag) => task.removeTag(tag.name));
+      task.tags.forEach(tag => task.removeTag(tag.name));
       // 添加新标签
       for (const tagName of input.tags) {
         task.addTag({
@@ -352,4 +352,3 @@ export class TaskService {
     };
   }
 }
-

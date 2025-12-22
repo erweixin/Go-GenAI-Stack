@@ -4,7 +4,7 @@
   "lastUpdated": "2025-11-23",
   "status": "stable",
   "description": "任务管理领域 - 展示 Vibe-Coding-Friendly DDD 架构的示例实现",
-  
+
   "purpose": {
     "primary": "作为 Starter 的示例领域，展示如何实现一个完整的 DDD 领域",
     "secondary": [
@@ -14,14 +14,14 @@
       "提供可映射的参考实现"
     ]
   },
-  
+
   "complexity": {
     "overall": "low",
     "business_logic": "simple",
     "technical": "moderate",
     "data_model": "simple"
   },
-  
+
   "coverage": {
     "usecases": 6,
     "models": 4,
@@ -30,7 +30,7 @@
     "events": 6,
     "rules": 15
   },
-  
+
   "keywords": [
     "todo",
     "task",
@@ -42,7 +42,7 @@
     "repository-pattern",
     "domain-events"
   ],
-  
+
   "vector_tags": [
     "task_management",
     "todo_list",
@@ -52,14 +52,10 @@
     "hertz_framework",
     "postgres_database"
   ],
-  
+
   "ai_hints": {
     "understanding": {
-      "entry_points": [
-        "README.md - 领域概览",
-        "usecases.yaml - 用例声明",
-        "glossary.md - 术语表"
-      ],
+      "entry_points": ["README.md - 领域概览", "usecases.yaml - 用例声明", "glossary.md - 术语表"],
       "key_concepts": [
         "Task - 任务聚合根",
         "TaskStatus - 任务状态（Pending/InProgress/Completed）",
@@ -67,7 +63,7 @@
       ],
       "data_flow": "HTTP Request → Handler → Model → Repository → Database"
     },
-    
+
     "code_generation": {
       "templates": {
         "handler": "参考 CreateTaskHandler 的实现模式",
@@ -82,7 +78,7 @@
         "事件发布（Extension point）"
       ]
     },
-    
+
     "extension_points": [
       {
         "name": "Event Publishing",
@@ -100,7 +96,7 @@
         "description": "可添加 Redis 缓存层"
       }
     ],
-    
+
     "mapping": {
       "description": "如何将 Task 映射到其他业务实体",
       "steps": [
@@ -118,7 +114,7 @@
       ]
     }
   },
-  
+
   "testing": {
     "unit_tests": true,
     "integration_tests": true,
@@ -126,7 +122,7 @@
     "coverage_target": "80%",
     "test_location": "tests/"
   },
-  
+
   "documentation": {
     "required_files": [
       "README.md",
@@ -139,16 +135,13 @@
     "completeness": "100%",
     "quality": "high"
   },
-  
+
   "dependencies": {
     "domains": [],
-    "infrastructure": [
-      "database (PostgreSQL)",
-      "cache (Redis, optional)"
-    ],
+    "infrastructure": ["database (PostgreSQL)", "cache (Redis, optional)"],
     "external_services": []
   },
-  
+
   "api_endpoints": {
     "base_path": "/api/tasks",
     "count": 6,
@@ -156,18 +149,14 @@
     "authentication": "none (可扩展)",
     "rate_limiting": "可选"
   },
-  
+
   "database": {
     "tables": ["tasks"],
     "schema_location": "database/schema.sql",
     "migrations": true,
-    "indexes": [
-      "idx_tasks_status",
-      "idx_tasks_priority",
-      "idx_tasks_due_date"
-    ]
+    "indexes": ["idx_tasks_status", "idx_tasks_priority", "idx_tasks_due_date"]
   },
-  
+
   "events": {
     "published": [
       "TaskCreated",
@@ -180,14 +169,14 @@
     "consumed": [],
     "event_bus": "InMemory (可扩展到 Kafka/Redis)"
   },
-  
+
   "performance": {
     "expected_load": "low to medium",
     "response_time_target": "< 100ms",
     "throughput_target": "1000 req/s",
     "scalability": "horizontal"
   },
-  
+
   "security": {
     "authentication": "not_implemented",
     "authorization": "not_implemented",
@@ -195,7 +184,7 @@
     "input_validation": "implemented",
     "sql_injection_prevention": "implemented (parameterized queries)"
   },
-  
+
   "best_practices": [
     "使用 usecases.yaml 声明用例",
     "Repository 模式隔离数据访问",
@@ -205,7 +194,7 @@
     "错误码标准化",
     "测试覆盖完整"
   ],
-  
+
   "anti_patterns": [
     "不要在 model 中访问 database",
     "不要在 handler 中写业务逻辑（应在 model 或 service）",
@@ -213,19 +202,17 @@
     "不要跨领域直接调用（使用事件或应用层）",
     "不要在 DTO 中包含业务逻辑"
   ],
-  
+
   "related_resources": {
     "documentation": [
       "docs/backend-code-organization.md",
       "docs/vibe-coding-ddd-structure.md",
       "docs/Vibe-Coding-Friendly.md"
     ],
-    "examples": [
-      "本领域本身就是示例"
-    ],
+    "examples": ["本领域本身就是示例"],
     "tutorials": []
   },
-  
+
   "changelog": [
     {
       "version": "1.0.0",
@@ -238,7 +225,7 @@
       ]
     }
   ],
-  
+
   "future_enhancements": [
     "用户认证和授权",
     "任务分享和协作",
@@ -249,10 +236,7 @@
     "任务模板",
     "任务依赖关系"
   ],
-  
-  "license": "MIT",
-  "maintainers": [
-    "Go-GenAI-Stack Team"
-  ]
-}
 
+  "license": "MIT",
+  "maintainers": ["Go-GenAI-Stack Team"]
+}

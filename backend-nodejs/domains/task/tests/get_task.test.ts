@@ -121,4 +121,3 @@ describe('GetTask Handler', () => {
     expect(body.error).toContain('TASK_NOT_FOUND');
   });
 });
-

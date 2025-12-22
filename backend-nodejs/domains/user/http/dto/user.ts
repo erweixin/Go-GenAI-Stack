@@ -27,7 +27,12 @@ export interface GetUserProfileResponse {
 // ========================================
 
 export const UpdateUserProfileRequestSchema = z.object({
-  username: z.string().min(3, '用户名至少 3 个字符').max(30, '用户名最多 30 个字符').regex(/^[a-zA-Z0-9_]+$/, '用户名只能包含字母、数字和下划线').optional(),
+  username: z
+    .string()
+    .min(3, '用户名至少 3 个字符')
+    .max(30, '用户名最多 30 个字符')
+    .regex(/^[a-zA-Z0-9_]+$/, '用户名只能包含字母、数字和下划线')
+    .optional(),
   full_name: z.string().max(100, '全名最多 100 个字符').optional(),
   avatar_url: z.string().url('头像 URL 格式无效').optional(),
 });
@@ -57,4 +62,3 @@ export interface ChangePasswordResponse {
   success: boolean;
   message: string;
 }
-

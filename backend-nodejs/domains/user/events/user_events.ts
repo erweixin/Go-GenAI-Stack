@@ -59,4 +59,3 @@ export class PasswordChangedEvent extends BaseEvent {
     super('PasswordChanged', 'user', payload);
   }
 }
-

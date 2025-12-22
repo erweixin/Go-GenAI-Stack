@@ -1,7 +1,7 @@
 # Go-GenAI-Stack Backend (Node.js)
 
 > 🎯 **项目定位**：这是 Go-GenAI-Stack 的 **Node.js/TypeScript 实现版本**，采用 **Vibe-Coding-Friendly DDD** 架构。
-> 
+>
 > 与 Go 后端共享相同的架构理念和数据库 Schema，使用 **Fastify + Kysely + TypeScript** 技术栈实现。
 
 ---
@@ -54,6 +54,7 @@ curl http://localhost:8081/health
 ```
 
 **预期输出**：
+
 ```json
 {
   "status": "healthy",
@@ -70,31 +71,31 @@ curl http://localhost:8081/health
 
 ### 核心框架
 
-| 模块 | 选型 | 说明 |
-|------|------|------|
-| **Web 框架** | [Fastify](https://www.fastify.io/) 5.x | 高性能、低开销，原生支持 HTTP/2、SSE |
-| **数据库** | [Kysely](https://kysely.dev/) | 类型安全的 SQL 查询构建器（符合项目"不使用 ORM"的理念） |
-| **语言** | TypeScript 5.0+ | 类型安全，与前端共享类型定义 |
-| **运行时** | Node.js 22.0+ | 现代 Node.js 运行时 |
+| 模块         | 选型                                   | 说明                                                    |
+| ------------ | -------------------------------------- | ------------------------------------------------------- |
+| **Web 框架** | [Fastify](https://www.fastify.io/) 5.x | 高性能、低开销，原生支持 HTTP/2、SSE                    |
+| **数据库**   | [Kysely](https://kysely.dev/)          | 类型安全的 SQL 查询构建器（符合项目"不使用 ORM"的理念） |
+| **语言**     | TypeScript 5.0+                        | 类型安全，与前端共享类型定义                            |
+| **运行时**   | Node.js 22.0+                          | 现代 Node.js 运行时                                     |
 
 ### 基础设施
 
-| 模块 | 选型 | 说明 |
-|------|------|------|
-| **缓存/状态** | Redis 7+ | BullMQ Backend、分析结果缓存、Agent 运行状态 |
-| **主数据库** | PostgreSQL 16+ | 与 Go 后端共享同一数据库 Schema |
-| **队列** | [BullMQ](https://bullmq.io/) | 异步任务调度、Agent 并发执行（可选） |
-| **Agent 框架** | [LangChain.js](https://js.langchain.com/) | LLM 编排框架（可选，用于 AI 功能） |
+| 模块           | 选型                                      | 说明                                         |
+| -------------- | ----------------------------------------- | -------------------------------------------- |
+| **缓存/状态**  | Redis 7+                                  | BullMQ Backend、分析结果缓存、Agent 运行状态 |
+| **主数据库**   | PostgreSQL 16+                            | 与 Go 后端共享同一数据库 Schema              |
+| **队列**       | [BullMQ](https://bullmq.io/)              | 异步任务调度、Agent 并发执行（可选）         |
+| **Agent 框架** | [LangChain.js](https://js.langchain.com/) | LLM 编排框架（可选，用于 AI 功能）           |
 
 ### 开发工具
 
-| 工具 | 用途 |
-|------|------|
-| **TypeScript** | 类型检查 |
-| **ESLint** | 代码检查 |
-| **Prettier** | 代码格式化 |
-| **Vitest** | 单元测试 |
-| **tsx** | TypeScript 执行器（开发模式） |
+| 工具           | 用途                          |
+| -------------- | ----------------------------- |
+| **TypeScript** | 类型检查                      |
+| **ESLint**     | 代码检查                      |
+| **Prettier**   | 代码格式化                    |
+| **Vitest**     | 单元测试                      |
+| **tsx**        | TypeScript 执行器（开发模式） |
 
 ### 为什么选择这些技术？
 
@@ -113,13 +114,10 @@ curl http://localhost:8081/health
 - **性能**：无 ORM 开销，直接操作数据库
 
 **示例**：
+
 ```typescript
 // Kysely 查询（类型安全）
-const task = await db
-  .selectFrom('tasks')
-  .selectAll()
-  .where('id', '=', taskId)
-  .executeTakeFirst();
+const task = await db.selectFrom('tasks').selectAll().where('id', '=', taskId).executeTakeFirst();
 
 // 生成的 SQL 清晰可见
 // SELECT * FROM tasks WHERE id = $1
@@ -264,12 +262,14 @@ backend-nodejs/
 **✅ 允许的模式**：
 
 1. **事件发布（异步，推荐）**：
+
    ```typescript
    // 发布事件，让其他领域订阅
    await eventBus.publish(ctx, new TaskCreatedEvent({ ... }));
    ```
 
 2. **查询接口（同步，只读）**：
+
    ```typescript
    // 使用 Query Service 进行同步查询
    const userExists = await userQueryService.userExists(ctx, userId);
@@ -284,6 +284,7 @@ backend-nodejs/
 **❌ 禁止的模式**：
 
 1. **Service 层直接调用其他领域的 Service**：
+
    ```typescript
    // ❌ 错误：跨领域直接调用
    export class TaskService {
@@ -294,7 +295,7 @@ backend-nodejs/
 2. **跨领域事务**：
    ```typescript
    // ❌ 错误：跨领域事务
-   await db.transaction().execute(async (trx) => {
+   await db.transaction().execute(async trx => {
      await taskRepo.create(trx, task);
      await userRepo.update(trx, user); // ❌
    });
@@ -303,16 +304,19 @@ backend-nodejs/
 #### 实现细节
 
 **事件总线**：
+
 - 当前使用 `InMemoryEventBus`（内存事件总线）
 - 未来可以替换为分布式事件总线（如 RabbitMQ、Kafka）
 - 领域代码无需修改
 
 **查询接口**：
+
 - 每个领域可以提供 Query Service 供其他领域使用
 - 只提供只读查询，不提供写操作
 - 例如：`UserQueryService` 供 Task 领域查询用户信息
 
 **数据库**：
+
 - 当前所有领域共享同一个数据库实例（推荐）
 - 表名清晰，Schema 中有领域注释标识
 - 未来可以拆分为独立数据库，只需修改连接配置
@@ -320,6 +324,7 @@ backend-nodejs/
 #### 未来演进路径
 
 **当前**：单体应用，所有领域在同一个进程
+
 ```
 ┌─────────────────────────────────┐
 │   Node.js Process               │
@@ -339,6 +344,7 @@ backend-nodejs/
 ```
 
 **未来**：微服务架构，领域独立部署
+
 ```
 ┌──────────┐  ┌──────────┐
 │  Task    │  │  User   │
@@ -388,10 +394,7 @@ export async function createTaskHandler(
 
 // Service 层（厚）：业务逻辑 ⭐
 export class TaskService {
-  async createTask(
-    db: Database,
-    input: CreateTaskInput
-  ): Promise<CreateTaskOutput> {
+  async createTask(db: Database, input: CreateTaskInput): Promise<CreateTaskOutput> {
     // 1. 验证业务规则
     if (!input.title || input.title.trim().length === 0) {
       throw new Error('TASK_TITLE_EMPTY: task title cannot be empty');
@@ -462,7 +465,7 @@ const task = await db
   .selectFrom('tasks')
   .selectAll()
   .where('id', '=', taskId)
-  .where('status', '=', 'pending')  // TypeScript 会检查 'pending' 是否有效
+  .where('status', '=', 'pending') // TypeScript 会检查 'pending' 是否有效
   .executeTakeFirst();
 ```
 
@@ -475,9 +478,10 @@ const task = await db
 与 Go 后端流程一致：
 
 1. **在 `usecases.yaml` 中定义用例**
+
    ```yaml
    ArchiveTask:
-     description: "归档已完成的任务"
+     description: '归档已完成的任务'
      http:
        method: POST
        path: /api/tasks/:id/archive
@@ -492,6 +496,7 @@ const task = await db
    ```
 
 2. **在 `http/dto/` 中定义 DTO**
+
    ```typescript
    export interface ArchiveTaskRequest {
      task_id: string;
@@ -499,6 +504,7 @@ const task = await db
    ```
 
 3. **在 `service/` 中实现业务逻辑**
+
    ```typescript
    async archiveTask(db: Database, input: ArchiveTaskInput): Promise<void> {
      // 业务逻辑
@@ -506,6 +512,7 @@ const task = await db
    ```
 
 4. **在 `handlers/` 中实现 Handler**
+
    ```typescript
    export async function archiveTaskHandler(
      request: FastifyRequest<{ Params: { id: string } }>,
@@ -526,11 +533,7 @@ const task = await db
 
 ```typescript
 // 查询单条记录
-const task = await db
-  .selectFrom('tasks')
-  .selectAll()
-  .where('id', '=', taskId)
-  .executeTakeFirst();
+const task = await db.selectFrom('tasks').selectAll().where('id', '=', taskId).executeTakeFirst();
 
 // 查询多条记录（带分页）
 const tasks = await db
@@ -565,10 +568,7 @@ await db
   .execute();
 
 // 删除记录
-await db
-  .deleteFrom('tasks')
-  .where('id', '=', taskId)
-  .execute();
+await db.deleteFrom('tasks').where('id', '=', taskId).execute();
 ```
 
 #### 事务处理
@@ -632,6 +632,7 @@ LOGGING_COMPRESS=true                   # 是否压缩旧日志文件（.gz）
 ```
 
 **日志轮转功能**:
+
 - ✅ 自动按大小轮转日志文件
 - ✅ 自动压缩旧日志文件
 - ✅ 自动清理过期日志
@@ -723,30 +724,32 @@ done
 
 ### 共享资源
 
-| 资源 | 说明 |
-|------|------|
-| **数据库 Schema** | 共享 `backend/database/schema.sql` |
-| **数据库实例** | 共享同一 PostgreSQL 实例 |
-| **领域定义** | 共享 `domains/*/usecases.yaml`、`README.md` 等显式知识文件 |
-| **API 规范** | 共享相同的 HTTP API 端点（可选择性实现） |
+| 资源              | 说明                                                       |
+| ----------------- | ---------------------------------------------------------- |
+| **数据库 Schema** | 共享 `backend/database/schema.sql`                         |
+| **数据库实例**    | 共享同一 PostgreSQL 实例                                   |
+| **领域定义**      | 共享 `domains/*/usecases.yaml`、`README.md` 等显式知识文件 |
+| **API 规范**      | 共享相同的 HTTP API 端点（可选择性实现）                   |
 
 ### 技术栈对比
 
-| 模块 | Go 后端 | Node.js 后端 |
-|------|---------|--------------|
-| **Web 框架** | Hertz | Fastify |
-| **数据库** | database/sql | Kysely |
-| **语言** | Go | TypeScript |
-| **类型系统** | 编译时检查 | 编译时检查（TypeScript） |
+| 模块         | Go 后端      | Node.js 后端             |
+| ------------ | ------------ | ------------------------ |
+| **Web 框架** | Hertz        | Fastify                  |
+| **数据库**   | database/sql | Kysely                   |
+| **语言**     | Go           | TypeScript               |
+| **类型系统** | 编译时检查   | 编译时检查（TypeScript） |
 
 ### 使用场景
 
 **何时使用 Go 后端？**
+
 - 需要极致性能的场景
 - 需要与 Go 生态深度集成
 - 团队熟悉 Go 语言
 
 **何时使用 Node.js 后端？**
+
 - 需要与前端共享类型定义
 - 需要快速集成 LangChain.js 等 Node.js 生态工具
 - 团队熟悉 TypeScript/Node.js
@@ -767,6 +770,7 @@ pnpm dev
 ```
 
 **注意事项**：
+
 - 两个后端共享数据库，需要确保数据一致性
 - API 端点可以不同（如 Go: `/api/v1/tasks`，Node.js: `/api/v2/tasks`）
 - 建议使用 API Gateway 统一路由
@@ -778,22 +782,26 @@ pnpm dev
 ### Fastify（Web 框架）
 
 **选型原因**：
+
 - ✅ **高性能**：比 Express 快 2-3 倍，适合 API + Streaming
 - ✅ **原生支持**：HTTP/2、SSE（Server-Sent Events）
 - ✅ **TypeScript 友好**：完整的类型定义
 - ✅ **插件体系**：清晰的插件架构，易于扩展
 
 **典型职责**：
+
 - 用户 API（查询分析结果）
 - Streaming 分析输出（SSE）
 
 **注意事项**：
+
 - Fastify 只做**薄控制层**，不要在其中跑 Agent
 - Streaming 要与 Redis / Queue 解耦
 
 ### Kysely（数据库查询构建器）
 
 **选型原因**：
+
 - ✅ **类型安全**：编译时类型检查，避免 SQL 错误
 - ✅ **符合项目理念**：不使用 ORM，直接构建 SQL（类似 Go 后端的 `database/sql`）
 - ✅ **透明性**：SQL 清晰可见，AI 易于理解
@@ -801,25 +809,28 @@ pnpm dev
 
 **与 Go 后端对比**：
 
-| Go 后端 | Node.js 后端 |
-|---------|--------------|
+| Go 后端                   | Node.js 后端                   |
+| ------------------------- | ------------------------------ |
 | `database/sql` + 原生 SQL | `Kysely` + 类型安全 SQL 构建器 |
-| 手写 SQL 字符串 | 链式 API 构建 SQL |
-| 运行时检查 | 编译时类型检查 |
+| 手写 SQL 字符串           | 链式 API 构建 SQL              |
+| 运行时检查                | 编译时类型检查                 |
 
 ### LangChain.js（Agent 框架，可选）
 
 **选型原因**：
+
 - ✅ 与现有 TS 技术栈完全一致
 - ✅ 工具（Tool）、Memory、Agent 抽象成熟
 - ✅ 社区与文档丰富，MVP 成本最低
 
 **使用策略**：
+
 - 初期使用 **Runnable + Tool Agent**
 - 不提前引入 LangGraph
 - Agent 本身保持**无状态**
 
 **注意事项**：
+
 - Agent 状态不要放内存
 - 所有中间状态要么进 Redis，要么可丢
 - Prompt / Tool 版本要显式标记
@@ -827,16 +838,19 @@ pnpm dev
 ### BullMQ（队列，可选）
 
 **选型原因**：
+
 - ✅ Node.js 生态最成熟的队列方案
 - ✅ 与 Fastify / LangChain 配合自然
 - ✅ 支持 Retry、Backoff、并发控制
 
 **使用场景**：
+
 - 股票分析任务调度
 - 定时分析（cron-like）
 - Agent 并发执行
 
 **注意事项**：
+
 - Job 数据只放**引用 ID**，不要放大对象
 - 必须实现幂等（symbol + period + version）
 - Worker 与 API 进程分离
@@ -846,12 +860,14 @@ pnpm dev
 **角色定位**：Redis **不是数据库，而是系统组件**。
 
 **用途**：
+
 - BullMQ Backend
 - 分析结果缓存（TTL）
 - Agent 运行状态
 - Streaming 消息中转
 
 **注意事项**：
+
 - 所有 Redis 数据都要允许丢失
 - Key 命名要命名空间化
 - 设置合理 TTL
@@ -872,14 +888,14 @@ pnpm dev
 
 ### 核心选型总结
 
-| 模块 | 选型 | 状态 |
-|------|------|------|
-| Web | Fastify | ✅ 已选型 |
-| Agent | LangChain.js | 🔜 可选 |
-| Queue | BullMQ | 🔜 可选 |
-| Cache / State | Redis | ✅ 已选型 |
-| 主数据库 | PostgreSQL | ✅ 已选型（与 Go 后端共享） |
-| 数据库查询 | Kysely | ✅ 已选型 |
+| 模块          | 选型         | 状态                        |
+| ------------- | ------------ | --------------------------- |
+| Web           | Fastify      | ✅ 已选型                   |
+| Agent         | LangChain.js | 🔜 可选                     |
+| Queue         | BullMQ       | 🔜 可选                     |
+| Cache / State | Redis        | ✅ 已选型                   |
+| 主数据库      | PostgreSQL   | ✅ 已选型（与 Go 后端共享） |
+| 数据库查询    | Kysely       | ✅ 已选型                   |
 
 ---
 
@@ -896,9 +912,12 @@ pnpm dev
 ## 📚 相关文档
 
 ### 架构文档
+
 - [架构概览](../docs/Core/architecture-overview.md)
 - [Vibe-Coding-Friendly 理念](../docs/Core/vibe-coding-friendly.md)
+
 ### 开发指南
+
 - [Go 后端 README](../backend/README.md) - 参考 Go 后端的实现
 - [数据库管理](../docs/Guides/database.md) - 共享数据库 Schema
 
@@ -907,4 +926,3 @@ pnpm dev
 **Happy Coding!** 🚀
 
 有任何问题欢迎提 Issue 或查看文档。
-

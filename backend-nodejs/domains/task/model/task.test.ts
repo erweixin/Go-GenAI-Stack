@@ -80,7 +80,7 @@ describe('Task Model', () => {
       const oldUpdatedAt = task.updatedAt;
 
       // 等待一小段时间以确保时间戳不同
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       task.update('Updated Title', 'Updated Description', 'high');
 
@@ -139,7 +139,7 @@ describe('Task Model', () => {
       const task = Task.create('user-123', 'Test', 'Desc', 'medium');
       const oldUpdatedAt = task.updatedAt;
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       task.complete();
 
@@ -174,7 +174,7 @@ describe('Task Model', () => {
       const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 明天
       const oldUpdatedAt = task.updatedAt;
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       task.setDueDate(futureDate);
 
@@ -198,7 +198,7 @@ describe('Task Model', () => {
       const task = Task.create('user-123', 'Test', 'Desc', 'medium');
       const oldUpdatedAt = task.updatedAt;
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       task.addTag({ name: 'test', color: '#ff0000' });
 
@@ -261,7 +261,7 @@ describe('Task Model', () => {
       task.addTag({ name: 'test3', color: '#0000ff' });
 
       const oldUpdatedAt = task.updatedAt;
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       task.removeTag('test2');
 
@@ -323,4 +323,3 @@ describe('Task Model', () => {
     });
   });
 });
-

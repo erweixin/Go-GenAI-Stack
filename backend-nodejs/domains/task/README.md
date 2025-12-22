@@ -30,6 +30,7 @@
 参考 `usecases.yaml` 查看所有用例的声明式定义。
 
 主要用例：
+
 1. **CreateTask** - 创建任务
 2. **UpdateTask** - 更新任务
 3. **CompleteTask** - 完成任务
@@ -40,6 +41,7 @@
 ## 聚合根和实体
 
 ### Task（任务）- 聚合根
+
 - **字段**：
   - TaskID - 任务 ID
   - Title - 标题
@@ -53,16 +55,19 @@
   - CompletedAt - 完成时间
 
 ### TaskStatus（任务状态）- 值对象
+
 - Pending（待办）
 - InProgress（进行中）
 - Completed（已完成）
 
 ### Priority（优先级）- 值对象
+
 - Low（低）
 - Medium（中）
 - High（高）
 
 ### Tag（标签）- 值对象
+
 - Name - 标签名称
 - Color - 颜色
 
@@ -99,6 +104,7 @@
 - ❌ **禁止**：不直接调用其他领域的 Service
 
 **示例**：
+
 ```typescript
 // ✅ 正确：使用查询接口验证用户
 const userExists = await this.userQueryService.userExists(ctx, userId);
@@ -175,15 +181,15 @@ curl -X POST http://localhost:8080/api/tasks/task-123/complete
 
 ### 如何将 Task 映射到你的业务实体？
 
-| Task 概念 | 映射示例 |
-|-----------|---------|
-| `Task` | `Product`, `Order`, `Article`, `Customer` |
+| Task 概念                    | 映射示例                                  |
+| ---------------------------- | ----------------------------------------- |
+| `Task`                       | `Product`, `Order`, `Article`, `Customer` |
 | `Status` (Pending/Completed) | `OrderStatus` (Created/Shipped/Delivered) |
-| `Priority` (Low/High) | `ProductCategory`, `CustomerTier` |
-| `Tags` | `ProductTags`, `CustomerSegments` |
-| `CreateTask` | `CreateProduct`, `CreateOrder` |
-| `UpdateTask` | `UpdateProduct`, `UpdateOrder` |
-| `CompleteTask` | `ShipOrder`, `PublishArticle` |
+| `Priority` (Low/High)        | `ProductCategory`, `CustomerTier`         |
+| `Tags`                       | `ProductTags`, `CustomerSegments`         |
+| `CreateTask`                 | `CreateProduct`, `CreateOrder`            |
+| `UpdateTask`                 | `UpdateProduct`, `UpdateOrder`            |
+| `CompleteTask`               | `ShipOrder`, `PublishArticle`             |
 
 ### 步骤
 
@@ -197,4 +203,3 @@ curl -X POST http://localhost:8080/api/tasks/task-123/complete
 ---
 
 **注意**：这是一个**示例领域**，用于展示架构模式。实际项目中，请根据你的业务需求创建自己的领域。
-

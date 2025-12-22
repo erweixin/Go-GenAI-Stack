@@ -18,11 +18,11 @@ export type TransactionFunction<T> = (trx: Transaction<Database>) => Promise<T>;
 /**
  * 在事务中执行函数
  * 自动处理事务的开始、提交和回滚
- * 
+ *
  * @param db 数据库连接
  * @param fn 在事务中执行的函数
  * @returns 函数执行结果
- * 
+ *
  * @example
  * ```typescript
  * await withTransaction(db, async (trx) => {
@@ -36,7 +36,7 @@ export async function withTransaction<T>(
   db: Kysely<Database>,
   fn: TransactionFunction<T>
 ): Promise<T> {
-  return await db.transaction().execute(async (trx) => {
+  return await db.transaction().execute(async trx => {
     return await fn(trx);
   });
 }
@@ -44,11 +44,11 @@ export async function withTransaction<T>(
 /**
  * 在只读事务中执行函数
  * 适用于需要一致性读取但不修改数据的场景
- * 
+ *
  * @param db 数据库连接
  * @param fn 在事务中执行的函数
  * @returns 函数执行结果
- * 
+ *
  * @example
  * ```typescript
  * await withReadOnlyTransaction(db, async (trx) => {
@@ -63,8 +63,7 @@ export async function withReadOnlyTransaction<T>(
 ): Promise<T> {
   // Kysely 的事务默认是读写的，只读事务需要在数据库层面配置
   // 这里使用普通事务，但可以通过注释说明这是只读操作
-  return await db.transaction().execute(async (trx) => {
+  return await db.transaction().execute(async trx => {
     return await fn(trx);
   });
 }
-

@@ -55,7 +55,7 @@ export interface RefreshTokenOutput {
 
 /**
  * AuthService 认证服务
- * 
+ *
  * 注意：AuthService 可以访问 UserRepository，因为：
  * - Auth 领域需要创建和验证用户（这是 Auth 的核心职责）
  * - 但应该通过事件总线与其他领域通信，而不是直接调用其他领域的 Service
@@ -248,4 +248,3 @@ export class AuthService {
     };
   }
 }
-

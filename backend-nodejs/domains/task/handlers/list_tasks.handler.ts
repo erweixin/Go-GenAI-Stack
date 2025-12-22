@@ -5,10 +5,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { ListTasksQuery } from '../http/dto/task.js';
-import {
-  toListTasksInput,
-  toListTasksResponse,
-} from './converters.js';
+import { toListTasksInput, toListTasksResponse } from './converters.js';
 import { requireUserId } from '../../../infrastructure/middleware/auth.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
@@ -28,14 +25,15 @@ export async function listTasksHandler(
   const ctx = createContextFromRequest({ userId, ...req });
   const output = await deps.taskService.listTasks(ctx, input);
 
-  reply.code(200).send(
-    toListTasksResponse(
-      output.tasks,
-      output.totalCount,
-      output.page,
-      output.limit,
-      output.hasMore
-    )
-  );
+  reply
+    .code(200)
+    .send(
+      toListTasksResponse(
+        output.tasks,
+        output.totalCount,
+        output.page,
+        output.limit,
+        output.hasMore
+      )
+    );
 }
-

@@ -41,7 +41,7 @@ export async function createTaskHandler(req: FastifyRequest, reply: FastifyReply
   // 从认证中间件注入的上下文中提取用户 ID
   // 如果用户未认证，自动抛出 UNAUTHORIZED 错误
   const userId = getUserIDFromRequest(req);
-  
+
   // 使用 userId...
 }
 ```
@@ -58,7 +58,7 @@ export async function updateTaskHandler(
   // 获取必需的路径参数
   // 如果参数不存在或为空，自动抛出 VALIDATION_ERROR 错误
   const taskId = getRequiredPathParam(req, 'id');
-  
+
   // 使用 taskId...
 }
 ```
@@ -66,9 +66,9 @@ export async function updateTaskHandler(
 ### 4. 获取查询参数
 
 ```typescript
-import { 
-  getRequiredQueryParam, 
-  getOptionalQueryParam 
+import {
+  getRequiredQueryParam,
+  getOptionalQueryParam,
 } from '../../infrastructure/handler_utils/helpers.js';
 
 export async function listTasksHandler(
@@ -77,7 +77,7 @@ export async function listTasksHandler(
 ) {
   // 必需的查询参数
   const page = getRequiredQueryParam(req, 'page');
-  
+
   // 可选的查询参数（带默认值）
   const limit = getOptionalQueryParam(req, 'limit', 10);
   const offset = getOptionalQueryParam(req, 'offset', 0);
@@ -91,15 +91,18 @@ export async function listTasksHandler(
 统一处理领域错误，转换为 HTTP 响应。
 
 **支持的错误格式**：
+
 1. `DomainError` - 结构化错误（推荐）
 2. `"ERROR_CODE: message"` - 字符串格式错误（兼容现有代码）
 
 **自动功能**：
+
 - 提取错误码和消息
 - 映射错误码到 HTTP 状态码
 - 返回统一的错误响应格式
 
 **示例**：
+
 ```typescript
 // DomainError
 throw createError('TASK_NOT_FOUND', 'Task with id 123 not found');
@@ -115,10 +118,12 @@ throw new Error('TASK_NOT_FOUND: Task with id 123 not found');
 从请求中提取用户 ID。
 
 **行为**：
+
 - 从认证中间件注入的 `request.userId` 中获取
 - 如果用户未认证，抛出 `UNAUTHORIZED` 错误
 
 **示例**：
+
 ```typescript
 const userId = getUserIDFromRequest(request);
 // 如果未认证，自动抛出：
@@ -130,10 +135,12 @@ const userId = getUserIDFromRequest(request);
 获取必需的路径参数。
 
 **行为**：
+
 - 从 `request.params` 中获取参数
 - 如果参数不存在或为空，抛出 `VALIDATION_ERROR` 错误
 
 **示例**：
+
 ```typescript
 const taskId = getRequiredPathParam(request, 'id');
 // 如果参数为空，自动抛出：
@@ -145,6 +152,7 @@ const taskId = getRequiredPathParam(request, 'id');
 获取必需的查询参数。
 
 **行为**：
+
 - 从 `request.query` 中获取参数
 - 如果参数不存在或为空，抛出 `VALIDATION_ERROR` 错误
 
@@ -153,11 +161,13 @@ const taskId = getRequiredPathParam(request, 'id');
 获取可选的查询参数（带默认值）。
 
 **行为**：
+
 - 从 `request.query` 中获取参数
 - 如果参数不存在或为空，返回默认值
 - 自动进行类型转换（number、boolean）
 
 **示例**：
+
 ```typescript
 const limit = getOptionalQueryParam(request, 'limit', 10); // number
 const enabled = getOptionalQueryParam(request, 'enabled', false); // boolean
@@ -167,17 +177,17 @@ const enabled = getOptionalQueryParam(request, 'enabled', false); // boolean
 
 工具函数自动将错误码映射到 HTTP 状态码：
 
-| 错误码模式 | HTTP 状态码 |
-|-----------|------------|
-| `INVALID_*`, `EMPTY`, `TOO_LONG`, `VALIDATION_ERROR` | 400 |
-| `UNAUTHORIZED`, `INVALID_CREDENTIALS`, `INVALID_TOKEN` | 401 |
-| `FORBIDDEN`, `ACCESS`, `USER_BANNED` | 403 |
-| `*_NOT_FOUND`, `NOT_FOUND` | 404 |
-| `*_EXISTS`, `CONFLICT` | 409 |
-| `RATE_LIMIT`, `TOO_FREQUENT` | 429 |
-| `*_FAILED`, `INTERNAL_ERROR`, `DATABASE_ERROR` | 500 |
-| `EXTERNAL_*` | 502 |
-| `UNAVAILABLE` | 503 |
+| 错误码模式                                             | HTTP 状态码 |
+| ------------------------------------------------------ | ----------- |
+| `INVALID_*`, `EMPTY`, `TOO_LONG`, `VALIDATION_ERROR`   | 400         |
+| `UNAUTHORIZED`, `INVALID_CREDENTIALS`, `INVALID_TOKEN` | 401         |
+| `FORBIDDEN`, `ACCESS`, `USER_BANNED`                   | 403         |
+| `*_NOT_FOUND`, `NOT_FOUND`                             | 404         |
+| `*_EXISTS`, `CONFLICT`                                 | 409         |
+| `RATE_LIMIT`, `TOO_FREQUENT`                           | 429         |
+| `*_FAILED`, `INTERNAL_ERROR`, `DATABASE_ERROR`         | 500         |
+| `EXTERNAL_*`                                           | 502         |
+| `UNAVAILABLE`                                          | 503         |
 
 ## 最佳实践
 
@@ -190,4 +200,3 @@ const enabled = getOptionalQueryParam(request, 'enabled', false); // boolean
 
 - [Go 后端 Handler Utils 实现](../backend/infrastructure/handler_utils/helpers.go)
 - [错误定义](../../shared/errors/errors.ts)
-

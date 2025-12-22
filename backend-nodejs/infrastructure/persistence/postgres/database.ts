@@ -1,7 +1,7 @@
 /**
  * 数据库类型定义
  * 根据 backend/database/schema.sql 定义的类型
- * 
+ *
  * 注意：这是手动定义的类型，未来可以使用工具从 Schema 自动生成
  */
 
@@ -37,4 +37,3 @@ export interface Database {
     tag_color: string | null;
   };
 }
-

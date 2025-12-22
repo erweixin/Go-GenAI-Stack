@@ -16,7 +16,7 @@ export class TaskRepositoryImpl implements TaskRepository {
 
   async create(_ctx: RequestContext, task: Task): Promise<void> {
     // 在事务中执行：插入任务和保存标签
-    await withTransaction(this.db, async (trx) => {
+    await withTransaction(this.db, async trx => {
       // 插入任务
       await trx
         .insertInto('tasks')
@@ -60,7 +60,7 @@ export class TaskRepositoryImpl implements TaskRepository {
 
   async update(_ctx: RequestContext, task: Task): Promise<void> {
     // 在事务中执行：更新任务和标签
-    await withTransaction(this.db, async (trx) => {
+    await withTransaction(this.db, async trx => {
       const result = await trx
         .updateTable('tasks')
         .set({
@@ -88,10 +88,7 @@ export class TaskRepositoryImpl implements TaskRepository {
   }
 
   async delete(_ctx: RequestContext, taskId: string): Promise<void> {
-    const result = await this.db
-      .deleteFrom('tasks')
-      .where('id', '=', taskId)
-      .execute();
+    const result = await this.db.deleteFrom('tasks').where('id', '=', taskId).execute();
 
     if (result.length === 0) {
       throw createError('TASK_NOT_FOUND', '任务不存在');
@@ -100,10 +97,7 @@ export class TaskRepositoryImpl implements TaskRepository {
     // 标签会通过外键级联删除
   }
 
-  async list(
-    _ctx: RequestContext,
-    filter: TaskFilter
-  ): Promise<{ tasks: Task[]; total: number }> {
+  async list(_ctx: RequestContext, filter: TaskFilter): Promise<{ tasks: Task[]; total: number }> {
     // 构建查询
     let query = this.db.selectFrom('tasks');
 
@@ -119,11 +113,8 @@ export class TaskRepositoryImpl implements TaskRepository {
     }
     if (filter.keyword) {
       const keyword = `%${filter.keyword}%`;
-      query = query.where((eb) =>
-        eb.or([
-          eb('title', 'like', keyword),
-          eb('description', 'like', keyword),
-        ])
+      query = query.where(eb =>
+        eb.or([eb('title', 'like', keyword), eb('description', 'like', keyword)])
       );
     }
     if (filter.dueDateFrom) {
@@ -142,9 +133,7 @@ export class TaskRepositoryImpl implements TaskRepository {
     }
 
     // 查询总数
-    const totalResult = await query
-      .select((eb) => eb.fn.count('id').as('total'))
-      .executeTakeFirst();
+    const totalResult = await query.select(eb => eb.fn.count('id').as('total')).executeTakeFirst();
     const total = Number(totalResult?.total || 0);
 
     // 排序
@@ -164,7 +153,7 @@ export class TaskRepositoryImpl implements TaskRepository {
     const taskRows = await query.selectAll().execute();
 
     // 批量加载所有标签（修复 N+1 查询问题）
-    const taskIds = taskRows.map((row) => row.id);
+    const taskIds = taskRows.map(row => row.id);
     const allTags = await this.loadTagsBatch(taskIds);
 
     // 构建标签映射
@@ -180,7 +169,7 @@ export class TaskRepositoryImpl implements TaskRepository {
     }
 
     // 转换为领域模型
-    const tasks = taskRows.map((row) => {
+    const tasks = taskRows.map(row => {
       const tags = tagsMap.get(row.id) || [];
       return this.toDomainModel(row, tags);
     });
@@ -191,7 +180,7 @@ export class TaskRepositoryImpl implements TaskRepository {
   async exists(_ctx: RequestContext, taskId: string): Promise<boolean> {
     const result = await this.db
       .selectFrom('tasks')
-      .select((eb) => eb.fn.count('id').as('count'))
+      .select(eb => eb.fn.count('id').as('count'))
       .where('id', '=', taskId)
       .executeTakeFirst();
 
@@ -215,7 +204,7 @@ export class TaskRepositoryImpl implements TaskRepository {
     }
 
     // 批量插入标签（使用 INSERT ... ON CONFLICT DO NOTHING 避免重复）
-    const tagValues = tags.map((tag) => ({
+    const tagValues = tags.map(tag => ({
       task_id: taskId,
       tag_name: tag.name,
       tag_color: tag.color || '#808080',
@@ -224,10 +213,7 @@ export class TaskRepositoryImpl implements TaskRepository {
     await trx
       .insertInto('task_tags')
       .values(tagValues)
-      .onConflict((oc) => oc
-        .columns(['task_id', 'tag_name'])
-        .doNothing()
-      )
+      .onConflict(oc => oc.columns(['task_id', 'tag_name']).doNothing())
       .execute();
   }
 
@@ -235,12 +221,8 @@ export class TaskRepositoryImpl implements TaskRepository {
    * 删除标签（在事务中）
    */
   private async deleteTagsInTransaction(trx: Transaction<Database>, taskId: string): Promise<void> {
-    await trx
-      .deleteFrom('task_tags')
-      .where('task_id', '=', taskId)
-      .execute();
+    await trx.deleteFrom('task_tags').where('task_id', '=', taskId).execute();
   }
-
 
   /**
    * 批量加载标签（修复 N+1 查询问题）
@@ -269,7 +251,7 @@ export class TaskRepositoryImpl implements TaskRepository {
       .where('task_id', '=', taskId)
       .execute();
 
-    return tagRows.map((row) => ({
+    return tagRows.map(row => ({
       name: row.tag_name,
       color: row.tag_color || '#808080',
     }));
@@ -297,4 +279,3 @@ export class TaskRepositoryImpl implements TaskRepository {
     );
   }
 }
-

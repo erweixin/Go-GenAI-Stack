@@ -180,7 +180,7 @@ export class Task {
       throw createError('VALIDATION_ERROR', '标签过多，最多 10 个');
     }
     // 检查重复
-    if (this.tags.some((t) => t.name === tag.name)) {
+    if (this.tags.some(t => t.name === tag.name)) {
       throw createError('VALIDATION_ERROR', '标签重复');
     }
     this.tags.push(tag);
@@ -191,7 +191,7 @@ export class Task {
    * 移除标签
    */
   removeTag(tagName: string): void {
-    this.tags = this.tags.filter((t) => t.name !== tagName);
+    this.tags = this.tags.filter(t => t.name !== tagName);
     this.updatedAt = new Date();
   }
 }
@@ -201,9 +201,6 @@ export class Task {
  */
 function isValidPriority(priority: Priority): boolean {
   return (
-    priority === Priorities.Low ||
-    priority === Priorities.Medium ||
-    priority === Priorities.High
+    priority === Priorities.Low || priority === Priorities.Medium || priority === Priorities.High
   );
 }
-

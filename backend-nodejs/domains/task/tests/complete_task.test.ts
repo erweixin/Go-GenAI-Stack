@@ -142,4 +142,3 @@ describe('CompleteTask Handler', () => {
     expect(body.error).toContain('TASK_NOT_FOUND');
   });
 });
-

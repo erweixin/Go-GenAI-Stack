@@ -57,4 +57,3 @@ export function createContextFromRequest(req: {
     traceId: req.traceId,
   };
 }
-

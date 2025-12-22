@@ -81,4 +81,3 @@ export function toRefreshTokenResponse(output: RefreshTokenOutput): RefreshToken
     expires_in: output.expiresIn,
   };
 }
-

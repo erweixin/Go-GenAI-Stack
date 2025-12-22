@@ -5,10 +5,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { HandlerDependencies } from './dependencies.js';
 import type { LoginRequest } from '../http/dto/auth.js';
-import {
-  toLoginInput,
-  toLoginResponse,
-} from './converters.js';
+import { toLoginInput, toLoginResponse } from './converters.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
 /**
@@ -27,4 +24,3 @@ export async function loginHandler(
 
   reply.code(200).send(toLoginResponse(output));
 }
-

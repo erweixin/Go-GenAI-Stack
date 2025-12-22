@@ -168,4 +168,3 @@ describe('Register Handler', () => {
     await cleanupTestUser(testHelper.db, email);
   });
 });
-

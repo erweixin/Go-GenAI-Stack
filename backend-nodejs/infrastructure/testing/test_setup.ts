@@ -20,7 +20,7 @@ let testDb: Kysely<Database> | null = null;
 export async function getTestDatabase(): Promise<Kysely<Database>> {
   if (!testDb) {
     const config = loadConfig();
-    
+
     // 使用测试数据库配置（从环境变量读取，默认使用主数据库）
     const testDbConfig = {
       host: process.env.TEST_DATABASE_HOST || config.database.host,
@@ -103,24 +103,15 @@ export async function cleanupTestData(db: Kysely<Database>): Promise<void> {
   // 删除测试任务
   await db
     .deleteFrom('task_tags')
-    .where('task_id', 'in', (eb) =>
-      eb
-        .selectFrom('tasks')
-        .select('id')
-        .where('user_id', '=', TEST_USER_ID)
+    .where('task_id', 'in', eb =>
+      eb.selectFrom('tasks').select('id').where('user_id', '=', TEST_USER_ID)
     )
     .execute();
 
-  await db
-    .deleteFrom('tasks')
-    .where('user_id', '=', TEST_USER_ID)
-    .execute();
+  await db.deleteFrom('tasks').where('user_id', '=', TEST_USER_ID).execute();
 
   // 删除测试用户
-  await db
-    .deleteFrom('users')
-    .where('id', '=', TEST_USER_ID)
-    .execute();
+  await db.deleteFrom('users').where('id', '=', TEST_USER_ID).execute();
 }
 
 /**
@@ -129,15 +120,12 @@ export async function cleanupTestData(db: Kysely<Database>): Promise<void> {
 export async function cleanupAllTestData(db: Kysely<Database>): Promise<void> {
   // 删除所有任务标签
   await db.deleteFrom('task_tags').execute();
-  
+
   // 删除所有任务
   await db.deleteFrom('tasks').execute();
-  
+
   // 删除所有用户（除了系统用户）
-  await db
-    .deleteFrom('users')
-    .where('id', '!=', '00000000-0000-0000-0000-000000000000')
-    .execute();
+  await db.deleteFrom('users').where('id', '!=', '00000000-0000-0000-0000-000000000000').execute();
 }
 
 /**
@@ -154,4 +142,3 @@ export async function resetTestDatabase(db: Kysely<Database>): Promise<void> {
   await db.deleteFrom('tasks').execute();
   await db.deleteFrom('users').execute();
 }
-

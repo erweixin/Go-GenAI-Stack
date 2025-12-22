@@ -6,10 +6,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { HandlerDependencies } from '../handlers/dependencies.js';
 import type { UpdateUserProfileRequest, ChangePasswordRequest } from './dto/user.js';
-import {
-  UpdateUserProfileRequestSchema,
-  ChangePasswordRequestSchema,
-} from './dto/user.js';
+import { UpdateUserProfileRequestSchema, ChangePasswordRequestSchema } from './dto/user.js';
 import { getUserProfileHandler } from '../handlers/get_user_profile.handler.js';
 import { updateUserProfileHandler } from '../handlers/update_user_profile.handler.js';
 import { changePasswordHandler } from '../handlers/change_password.handler.js';
@@ -24,13 +21,9 @@ export function registerUserRoutes(
   authMiddleware: ReturnType<typeof createAuthMiddleware>
 ): void {
   // GET /api/users/me - 获取当前用户资料（需要认证）
-  app.get(
-    '/api/users/me',
-    { preHandler: authMiddleware },
-    async (req, reply) => {
-      await getUserProfileHandler(deps, req, reply);
-    }
-  );
+  app.get('/api/users/me', { preHandler: authMiddleware }, async (req, reply) => {
+    await getUserProfileHandler(deps, req, reply);
+  });
 
   // PUT /api/users/me - 更新用户资料（需要认证）
   app.put<{ Body: UpdateUserProfileRequest }>(
@@ -60,4 +53,3 @@ export function registerUserRoutes(
     }
   );
 }
-

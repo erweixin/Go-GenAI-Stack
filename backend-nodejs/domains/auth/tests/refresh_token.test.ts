@@ -120,9 +120,7 @@ describe('RefreshToken Handler', () => {
     if (!dbAvailable) return;
 
     const nonExistentUserId = '00000000-0000-0000-0000-000000000999';
-    const { token: refreshToken } = testHelper.jwtService.generateRefreshToken(
-      nonExistentUserId
-    );
+    const { token: refreshToken } = testHelper.jwtService.generateRefreshToken(nonExistentUserId);
 
     const response = await app.inject({
       method: 'POST',
@@ -168,4 +166,3 @@ describe('RefreshToken Handler', () => {
     }
   });
 });
-

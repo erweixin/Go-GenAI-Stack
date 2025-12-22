@@ -58,13 +58,7 @@
         "UpdatedAt",
         "LastLoginAt"
       ],
-      "business_methods": [
-        "NewUser",
-        "VerifyPassword",
-        "UpdatePassword",
-        "Activate",
-        "Deactivate"
-      ]
+      "business_methods": ["NewUser", "VerifyPassword", "UpdatePassword", "Activate", "Deactivate"]
     }
   ],
   "value_objects": [
@@ -143,24 +137,14 @@
       {
         "name": "users",
         "primary_key": "id (UUID)",
-        "unique_indexes": [
-          "email",
-          "username"
-        ],
-        "indexes": [
-          "status",
-          "created_at",
-          "email_verified"
-        ]
+        "unique_indexes": ["email", "username"],
+        "indexes": ["status", "created_at", "email_verified"]
       }
     ]
   },
   "security": {
     "password_hashing": "bcrypt (cost: 10)",
-    "sensitive_fields": [
-      "password_hash",
-      "email"
-    ],
+    "sensitive_fields": ["password_hash", "email"],
     "access_control": "用户只能访问/修改自己的资料"
   },
   "business_rules": {
@@ -258,4 +242,3 @@
     "../../database/schema.sql"
   ]
 }
-
