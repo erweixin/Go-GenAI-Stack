@@ -108,11 +108,7 @@ export class UserService {
     }
 
     // Step 4: 更新用户字段
-    try {
-      user.updateProfile(input.username, input.fullName, input.avatarURL);
-    } catch (error) {
-      throw error; // 直接抛出 Model 层的错误
-    }
+    user.updateProfile(input.username, input.fullName, input.avatarURL);
 
     // Step 5: 保存用户
     await this.userRepo.update(ctx, user);
@@ -156,11 +152,7 @@ export class UserService {
     }
 
     // Step 4 & 5: 更新密码（包含哈希）
-    try {
-      await user.updatePassword(input.newPassword);
-    } catch (error) {
-      throw error; // 直接抛出 Model 层的错误
-    }
+    await user.updatePassword(input.newPassword);
 
     // 保存到数据库
     await this.userRepo.update(ctx, user);

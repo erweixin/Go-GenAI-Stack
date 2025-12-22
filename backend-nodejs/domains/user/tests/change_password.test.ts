@@ -11,7 +11,6 @@ import { registerUserRoutes } from '../http/router.js';
 import { createAuthMiddleware } from '../../../infrastructure/middleware/auth.js';
 import { JWTService } from '../../auth/service/jwt_service.js';
 import { UserRepositoryImpl } from '../repository/user_repo.js';
-import { User } from '../model/user.js';
 
 describe('ChangePassword Handler', () => {
   let app: FastifyInstance;

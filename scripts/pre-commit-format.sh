@@ -22,6 +22,7 @@ fi
 
 HAS_GO_FILES=false
 HAS_FRONTEND_FILES=false
+HAS_BACKEND_NODEJS_FILES=false
 
 # 检查是否有 Go 文件
 for file in $STAGED_FILES; do
@@ -35,6 +36,14 @@ done
 for file in $STAGED_FILES; do
     if [[ "$file" == frontend/* ]] && [[ "$file" =~ \.(ts|tsx|js|jsx|json|css)$ ]]; then
         HAS_FRONTEND_FILES=true
+        break
+    fi
+done
+
+# 检查是否有 backend-nodejs 文件
+for file in $STAGED_FILES; do
+    if [[ "$file" == backend-nodejs/* ]] && [[ "$file" =~ \.(ts)$ ]]; then
+        HAS_BACKEND_NODEJS_FILES=true
         break
     fi
 done
@@ -121,7 +130,60 @@ if [ "$HAS_FRONTEND_FILES" = true ]; then
     echo ""
 fi
 
+# 检查 backend-nodejs ESLint
+if [ "$HAS_BACKEND_NODEJS_FILES" = true ]; then
+    echo "🔍 Checking backend-nodejs ESLint..."
+    
+    # 检查是否有 pnpm
+    if ! command -v pnpm >/dev/null 2>&1; then
+        echo "⚠️  pnpm not found, skipping ESLint check"
+        echo "   Install with: npm install -g pnpm"
+    else
+        cd "$ROOT_DIR/backend-nodejs"
+        
+        # 收集需要检查的 TypeScript 文件
+        TS_FILES=()
+        for file in $STAGED_FILES; do
+            if [[ "$file" == backend-nodejs/* ]] && [[ "$file" =~ \.(ts)$ ]]; then
+                REL_PATH="${file#backend-nodejs/}"
+                if [ -f "$ROOT_DIR/backend-nodejs/$REL_PATH" ]; then
+                    TS_FILES+=("$REL_PATH")
+                fi
+            fi
+        done
+        
+        if [ ${#TS_FILES[@]} -gt 0 ]; then
+            # 运行 ESLint 检查（只检查错误，警告不会阻止提交）
+            echo "  Checking ${#TS_FILES[@]} TypeScript file(s)..."
+            
+            # 运行 lint 并捕获输出和退出码
+            LINT_OUTPUT=$(pnpm lint 2>&1)
+            LINT_EXIT_CODE=$?
+            
+            # 检查是否有错误（非零退出码表示有错误）
+            if [ $LINT_EXIT_CODE -eq 0 ]; then
+                echo "✅ ESLint check passed (warnings are allowed)"
+            else
+                echo ""
+                echo "❌ ESLint check failed! Found errors that must be fixed."
+                echo ""
+                echo "$LINT_OUTPUT" | grep -E "(error|✖)" | head -20
+                echo ""
+                echo "   Please fix the errors before committing."
+                echo "   Run 'cd backend-nodejs && pnpm lint' to see all issues."
+                echo "   Or run 'cd backend-nodejs && pnpm lint:fix' to auto-fix some issues."
+                echo ""
+                cd "$ROOT_DIR"
+                exit 1
+            fi
+        fi
+        
+        cd "$ROOT_DIR"
+    fi
+    echo ""
+fi
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Code formatting complete!"
+echo "✅ Code formatting and linting complete!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 

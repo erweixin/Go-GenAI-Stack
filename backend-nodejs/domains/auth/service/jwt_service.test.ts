@@ -40,7 +40,7 @@ describe('JWTService', () => {
     });
 
     it('生成的 Token 应该在指定时间后过期', () => {
-      const { token, expiresAt } = jwtService.generateAccessToken(testUserId, testEmail);
+      const { expiresAt } = jwtService.generateAccessToken(testUserId, testEmail);
       const expectedExpiry = Date.now() + config.accessTokenExpiry * 1000;
 
       // 允许 1 秒的误差
@@ -69,7 +69,7 @@ describe('JWTService', () => {
     });
 
     it('生成的 Token 应该在指定时间后过期', () => {
-      const { token, expiresAt } = jwtService.generateRefreshToken(testUserId);
+      const { expiresAt } = jwtService.generateRefreshToken(testUserId);
       const expectedExpiry = Date.now() + config.refreshTokenExpiry * 1000;
 
       // 允许 1 秒的误差

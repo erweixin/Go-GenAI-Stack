@@ -4,7 +4,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { User, UserStatuses } from './user.js';
-import bcrypt from 'bcryptjs';
 
 describe('User Model', () => {
   describe('create', () => {

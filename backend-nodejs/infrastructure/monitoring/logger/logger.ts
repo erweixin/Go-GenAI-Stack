@@ -123,13 +123,15 @@ export class Logger {
  */
 function createOutputStream(config: LoggerConfig): NodeJS.WritableStream {
   switch (config.output) {
-    case 'stdout':
+    case 'stdout': {
       return process.stdout;
+    }
 
-    case 'stderr':
+    case 'stderr': {
       return process.stderr;
+    }
 
-    case 'file':
+    case 'file': {
       if (!config.outputPath) {
         throw new Error('outputPath is required when output=file');
       }
@@ -171,9 +173,11 @@ function createOutputStream(config: LoggerConfig): NodeJS.WritableStream {
       });
 
       return rotatingStream;
+    }
 
-    default:
+    default: {
       return process.stdout;
+    }
   }
 }
 
