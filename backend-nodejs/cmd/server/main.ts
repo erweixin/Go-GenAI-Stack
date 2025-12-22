@@ -5,6 +5,7 @@
 
 import 'dotenv/config';
 import { loadConfig } from '../../infrastructure/config/config.js';
+import { initGlobalLogger, flush } from '../../infrastructure/monitoring/logger/logger.js';
 import { createDatabaseConnection } from '../../infrastructure/persistence/postgres/connection.js';
 import {
   createRedisConnection,
@@ -33,6 +34,11 @@ async function main() {
   console.log(
     `   Database: ${config.database.user}@${config.database.host}:${config.database.port}/${config.database.database}`
   );
+
+  // 1.5. 初始化结构化日志
+  console.log('\n📝 Initializing structured logger...');
+  initGlobalLogger(config.logging);
+  console.log('✅ Logger initialized');
 
   // 2. 初始化数据库连接
   console.log('\n🗄️  Connecting to database...');
@@ -126,6 +132,8 @@ async function main() {
       if (redis) {
         await closeRedisConnection(redis);
       }
+      // 刷新日志缓冲区
+      await flush();
       console.log('✅ Server exited');
       process.exit(0);
     } catch (error) {

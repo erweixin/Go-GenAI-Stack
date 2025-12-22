@@ -9,7 +9,7 @@ import {
   toUpdateTaskInput,
   toUpdateTaskResponse,
 } from './converters.js';
-import { requireUserId } from '../../../infrastructure/middleware/auth.js';
+import { getUserIDFromRequest, getRequiredPathParam } from '../../../infrastructure/handler_utils/helpers.js';
 import { createContextFromRequest } from '../../../shared/types/context.js';
 
 /**
@@ -25,8 +25,9 @@ export async function updateTaskHandler(
   }>,
   reply: FastifyReply
 ): Promise<void> {
-  const userId = requireUserId(req);
-  const taskId = req.params.id;
+  // 使用工具函数提取用户 ID 和路径参数
+  const userId = getUserIDFromRequest(req);
+  const taskId = getRequiredPathParam(req, 'id');
 
   const input = toUpdateTaskInput(userId, taskId, req.body);
   const ctx = createContextFromRequest({ userId, ...req });

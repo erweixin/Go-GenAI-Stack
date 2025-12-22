@@ -94,6 +94,17 @@ const ConfigSchema = z.object({
     ).default(604800), // 7 天（默认）
     issuer: z.string().default('go-genai-stack'),
   }),
+  logging: z.object({
+    enabled: z.coerce.boolean().default(true),
+    level: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+    format: z.enum(['json', 'pretty']).default('json'),
+    output: z.enum(['stdout', 'stderr', 'file']).default('stdout'),
+    outputPath: z.string().optional(),
+    maxSize: z.coerce.number().int().positive().optional(), // MB
+    maxBackups: z.coerce.number().int().nonnegative().optional(),
+    maxAge: z.coerce.number().int().nonnegative().optional(), // days
+    compress: z.coerce.boolean().default(false),
+  }),
 });
 
 /**
@@ -137,6 +148,17 @@ export function loadConfig(): Config {
         accessTokenExpiry: process.env.JWT_ACCESS_TOKEN_EXPIRY,
         refreshTokenExpiry: process.env.JWT_REFRESH_TOKEN_EXPIRY,
         issuer: process.env.JWT_ISSUER,
+      },
+      logging: {
+        enabled: process.env.LOGGING_ENABLED,
+        level: process.env.LOGGING_LEVEL,
+        format: process.env.LOGGING_FORMAT,
+        output: process.env.LOGGING_OUTPUT,
+        outputPath: process.env.LOGGING_OUTPUT_PATH,
+        maxSize: process.env.LOGGING_MAX_SIZE,
+        maxBackups: process.env.LOGGING_MAX_BACKUPS,
+        maxAge: process.env.LOGGING_MAX_AGE,
+        compress: process.env.LOGGING_COMPRESS,
       },
     };
 
