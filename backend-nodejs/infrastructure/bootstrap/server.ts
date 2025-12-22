@@ -153,18 +153,30 @@ export function registerRoutes(
   db: Kysely<Database>,
   redis: RedisClientType | null = null
 ): void {
-  // 健康检查端点
-  fastify.get('/health', async (_request: unknown, reply) => {
-    const health = await checkHealth(db, redis);
-    const statusCode = health.status === 'healthy' ? 200 : 503;
-    return reply.code(statusCode).send(health);
-  });
+  // 健康检查端点（禁用请求日志，避免每 5 秒产生日志噪音）
+  fastify.get(
+    '/health',
+    {
+      logLevel: 'silent',
+    },
+    async (_request: unknown, reply) => {
+      const health = await checkHealth(db, redis);
+      const statusCode = health.status === 'healthy' ? 200 : 503;
+      return reply.code(statusCode).send(health);
+    }
+  );
 
-  // Prometheus Metrics 端点
-  fastify.get('/metrics', async (_request: unknown, reply) => {
-    reply.type('text/plain');
-    return register.metrics();
-  });
+  // Prometheus Metrics 端点（禁用请求日志，避免产生大量日志）
+  fastify.get(
+    '/metrics',
+    {
+      logLevel: 'silent',
+    },
+    async (_request: unknown, reply) => {
+      reply.type('text/plain');
+      return register.metrics();
+    }
+  );
 
   // 根路径
   fastify.get('/', async (_request: unknown, reply) => {
