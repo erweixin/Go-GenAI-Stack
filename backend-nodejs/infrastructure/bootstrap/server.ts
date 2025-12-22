@@ -26,26 +26,28 @@ import { register } from '../monitoring/metrics/metrics.js';
  * @param pinoLogger 可选的 Pino logger 实例（如果提供，将使用统一的 logger）
  */
 export function createServer(config: Config, pinoLogger?: PinoLogger): FastifyInstance {
-  // 如果提供了统一的 logger，使用它；否则使用默认配置
-  const loggerConfig = pinoLogger
-    ? pinoLogger
+  // 如果提供了统一的 logger 实例，使用 loggerInstance；否则使用 logger 配置对象
+  const fastifyOptions: { logger?: object; loggerInstance?: PinoLogger } = pinoLogger
+    ? { loggerInstance: pinoLogger }
     : {
-        level: config.server.env === 'production' ? 'info' : 'debug',
-        transport:
-          config.server.env === 'development'
-            ? {
-                target: 'pino-pretty',
-                options: {
-                  translateTime: 'HH:MM:ss Z',
-                  ignore: 'pid,hostname',
-                },
-              }
-            : undefined,
+        logger: {
+          level: config.server.env === 'production' ? 'info' : 'debug',
+          transport:
+            config.server.env === 'development'
+              ? {
+                  target: 'pino-pretty',
+                  options: {
+                    translateTime: 'HH:MM:ss Z',
+                    ignore: 'pid,hostname',
+                  },
+                }
+              : undefined,
+        },
       };
 
-  const fastify = Fastify({
-    logger: loggerConfig,
-  }).withTypeProvider<ZodTypeProvider>();
+  // 使用类型断言解决 Fastify 5.x 的类型兼容性问题
+  // 当使用 loggerInstance 时，类型系统无法正确推断，需要显式断言
+  const fastify = Fastify(fastifyOptions as Parameters<typeof Fastify>[0]).withTypeProvider<ZodTypeProvider>();
 
   // 注册自定义 validator compiler
   // 跳过 params 验证（因为 fastify-type-provider-zod 对 params 的支持有限）
@@ -62,7 +64,7 @@ export function createServer(config: Config, pinoLogger?: PinoLogger): FastifyIn
   // 注册 Zod serializer
   fastify.setSerializerCompiler(serializerCompiler);
 
-  return fastify;
+  return fastify as unknown as FastifyInstance;
 }
 
 /**
