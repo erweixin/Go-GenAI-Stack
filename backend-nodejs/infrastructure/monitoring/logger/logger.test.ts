@@ -558,5 +558,157 @@ describe('Logger 集成测试', () => {
       expect(existsSync(testLogFile)).toBe(true);
     }
   });
+
+  it('应该能够写入不同级别的日志到文件', async () => {
+    const config: LoggerConfig = {
+      enabled: true,
+      level: 'debug',
+      format: 'json',
+      output: 'file',
+      outputPath: testLogFile,
+    };
+    
+    const logger = createLogger(config);
+    
+    // 写入不同级别的日志
+    logger!.debug('Debug message', { level: 'debug' });
+    logger!.info('Info message', { level: 'info' });
+    logger!.warn('Warning message', { level: 'warn' });
+    logger!.error('Error message', { level: 'error' });
+    
+    // 等待日志写入
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // 验证文件已创建
+    expect(existsSync(testLogFile)).toBe(true);
+    
+    // 验证文件内容包含所有级别的日志
+    const content = readFileSync(testLogFile, 'utf-8');
+    expect(content).toContain('Debug message');
+    expect(content).toContain('Info message');
+    expect(content).toContain('Warning message');
+    expect(content).toContain('Error message');
+  });
+
+  it('应该能够写入结构化字段到文件', async () => {
+    const config: LoggerConfig = {
+      enabled: true,
+      level: 'info',
+      format: 'json',
+      output: 'file',
+      outputPath: testLogFile,
+    };
+    
+    const logger = createLogger(config);
+    
+    const testFields = {
+      userId: 'user-123',
+      requestId: 'req-456',
+      action: 'test-action',
+      timestamp: new Date().toISOString(),
+    };
+    
+    logger!.info('Structured log message', testFields);
+    
+    // 等待日志写入
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 验证文件已创建
+    expect(existsSync(testLogFile)).toBe(true);
+    
+    // 验证文件内容包含结构化字段
+    const content = readFileSync(testLogFile, 'utf-8');
+    expect(content).toContain('Structured log message');
+    expect(content).toContain('user-123');
+    expect(content).toContain('req-456');
+    expect(content).toContain('test-action');
+    
+    // 验证 JSON 格式正确（可以解析）
+    const lines = content.trim().split('\n').filter(line => line.trim());
+    expect(lines.length).toBeGreaterThan(0);
+    
+    // 验证每行都是有效的 JSON
+    for (const line of lines) {
+      expect(() => JSON.parse(line)).not.toThrow();
+      const parsed = JSON.parse(line);
+      expect(parsed).toHaveProperty('msg');
+      expect(parsed).toHaveProperty('level');
+      expect(parsed).toHaveProperty('time');
+    }
+  });
+
+  it('应该能够写入多条日志到文件', async () => {
+    const config: LoggerConfig = {
+      enabled: true,
+      level: 'info',
+      format: 'json',
+      output: 'file',
+      outputPath: testLogFile,
+    };
+    
+    const logger = createLogger(config);
+    
+    // 写入多条日志
+    const logCount = 10;
+    for (let i = 0; i < logCount; i++) {
+      logger!.info(`Log message ${i}`, { index: i, timestamp: Date.now() });
+    }
+    
+    // 等待日志写入
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // 验证文件已创建
+    expect(existsSync(testLogFile)).toBe(true);
+    
+    // 验证文件内容包含所有日志
+    const content = readFileSync(testLogFile, 'utf-8');
+    for (let i = 0; i < logCount; i++) {
+      expect(content).toContain(`Log message ${i}`);
+    }
+    
+    // 验证文件行数（每行一条日志）
+    const lines = content.trim().split('\n').filter(line => line.trim());
+    expect(lines.length).toBeGreaterThanOrEqual(logCount);
+  });
+
+  it('应该能够使用 child logger 写入带上下文的日志到文件', async () => {
+    const config: LoggerConfig = {
+      enabled: true,
+      level: 'info',
+      format: 'json',
+      output: 'file',
+      outputPath: testLogFile,
+    };
+    
+    const logger = createLogger(config);
+    const childLogger = logger!.child({
+      component: 'TestComponent',
+      traceId: 'trace-123',
+    });
+    
+    childLogger.info('Child logger message', { action: 'test' });
+    
+    // 等待日志写入
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 验证文件已创建
+    expect(existsSync(testLogFile)).toBe(true);
+    
+    // 验证文件内容包含上下文字段
+    const content = readFileSync(testLogFile, 'utf-8');
+    expect(content).toContain('Child logger message');
+    expect(content).toContain('TestComponent');
+    expect(content).toContain('trace-123');
+    expect(content).toContain('test');
+    
+    // 验证 JSON 包含所有字段
+    const lines = content.trim().split('\n').filter(line => line.trim());
+    expect(lines.length).toBeGreaterThan(0);
+    
+    const parsed = JSON.parse(lines[lines.length - 1]);
+    expect(parsed).toHaveProperty('component', 'TestComponent');
+    expect(parsed).toHaveProperty('traceId', 'trace-123');
+    expect(parsed).toHaveProperty('action', 'test');
+  });
 });
 

@@ -6,6 +6,7 @@
 import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
+import type { Logger as PinoLogger } from 'pino';
 import type { Config } from '../config/config.js';
 import type { Kysely } from 'kysely';
 import type { Database } from '../persistence/postgres/database.js';
@@ -20,22 +21,30 @@ import { register } from '../monitoring/metrics/metrics.js';
 /**
  * 创建 Fastify 服务器
  * 注册 Zod type provider 以支持直接使用 Zod schema
+ * 
+ * @param config 应用配置
+ * @param pinoLogger 可选的 Pino logger 实例（如果提供，将使用统一的 logger）
  */
-export function createServer(config: Config): FastifyInstance {
+export function createServer(config: Config, pinoLogger?: PinoLogger): FastifyInstance {
+  // 如果提供了统一的 logger，使用它；否则使用默认配置
+  const loggerConfig = pinoLogger
+    ? pinoLogger
+    : {
+        level: config.server.env === 'production' ? 'info' : 'debug',
+        transport:
+          config.server.env === 'development'
+            ? {
+                target: 'pino-pretty',
+                options: {
+                  translateTime: 'HH:MM:ss Z',
+                  ignore: 'pid,hostname',
+                },
+              }
+            : undefined,
+      };
+
   const fastify = Fastify({
-    logger: {
-      level: config.server.env === 'production' ? 'info' : 'debug',
-      transport:
-        config.server.env === 'development'
-          ? {
-              target: 'pino-pretty',
-              options: {
-                translateTime: 'HH:MM:ss Z',
-                ignore: 'pid,hostname',
-              },
-            }
-          : undefined,
-    },
+    logger: loggerConfig,
   }).withTypeProvider<ZodTypeProvider>();
 
   // 注册自定义 validator compiler

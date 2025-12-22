@@ -5,7 +5,7 @@
 
 import 'dotenv/config';
 import { loadConfig } from '../../infrastructure/config/config.js';
-import { initGlobalLogger, flush } from '../../infrastructure/monitoring/logger/logger.js';
+import { initGlobalLogger, getGlobalLogger, flush } from '../../infrastructure/monitoring/logger/logger.js';
 import { createDatabaseConnection } from '../../infrastructure/persistence/postgres/connection.js';
 import {
   createRedisConnection,
@@ -80,9 +80,11 @@ async function main() {
     redis = null;
   }
 
-  // 4. 创建 Fastify 服务器
+  // 4. 创建 Fastify 服务器（使用统一的 logger）
   console.log('\n🚀 Creating HTTP server...');
-  const fastify = createServer(config);
+  const globalLogger = getGlobalLogger();
+  const pinoLogger = globalLogger?.getPino();
+  const fastify = createServer(config, pinoLogger);
 
   // 5. 注册中间件
   console.log('📦 Registering middleware...');
