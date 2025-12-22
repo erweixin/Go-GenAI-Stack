@@ -56,6 +56,9 @@ importers:
       redis:
         specifier: ^4.6.13
         version: 4.7.1
+      rotating-file-stream:
+        specifier: ^3.2.7
+        version: 3.2.7
       supertest:
         specifier: ^7.1.4
         version: 7.1.4
@@ -1681,6 +1684,10 @@ packages:
     resolution: {integrity: sha512-iTNAbFSlRpcHeeWu73ywU/8KuU/LZmNCSxp6fjQkJBD3ivUb8tpDrXhIxEzA05HlYMEwmtaUnb3RP+YNv162OQ==}
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
+
+  rotating-file-stream@3.2.7:
+    resolution: {integrity: sha512-SVquhBEVvRFY+nWLUc791Y0MIlyZrEClRZwZFLLRgJKldHyV1z4e2e/dp9LPqCS3AM//uq/c3PnOFgjqnm5P+A==}
+    engines: {node: '>=14.0'}
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
@@ -3519,6 +3526,8 @@ snapshots:
       '@rollup/rollup-win32-x64-gnu': 4.53.5
       '@rollup/rollup-win32-x64-msvc': 4.53.5
       fsevents: 2.3.3
+
+  rotating-file-stream@3.2.7: {}
 
   run-parallel@1.2.0:
     dependencies:

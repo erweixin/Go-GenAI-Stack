@@ -12,7 +12,9 @@
  */
 
 import pino, { type Logger as PinoLogger } from 'pino';
-import { createWriteStream } from 'fs';
+import { mkdirSync } from 'fs';
+import { dirname } from 'path';
+import { createStream } from 'rotating-file-stream';
 
 /**
  * 日志配置接口
@@ -86,8 +88,26 @@ export class Logger {
    * 刷新缓冲区（应用退出前调用）
    */
   async flush(): Promise<void> {
-    // Pino 会自动刷新，但可以显式调用
-    // 注意：Pino 是异步的，但 flush 不是必需的
+    // Pino 的 flush 方法在某些版本中可能不存在
+    // 使用 sync() 作为替代,它会刷新所有缓冲区
+    if (typeof (this.logger as any).flush === 'function') {
+      return new Promise<void>((resolve, reject) => {
+        (this.logger as any).flush((err: Error | null) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+    } else {
+      // 降级到 sync() 方法
+      try {
+        await Promise.resolve((this.logger as any).sync?.());
+      } catch (err) {
+        // sync 方法可能也不存在,忽略错误
+      }
+    }
   }
 
   /**
@@ -114,10 +134,43 @@ function createOutputStream(config: LoggerConfig): NodeJS.WritableStream {
         throw new Error('outputPath is required when output=file');
       }
 
-      // 使用 pino/file 的文件流（支持日志轮转需要额外配置）
-      // 注意：pino/file 本身不直接支持轮转，需要配合外部工具（如 logrotate）
-      // 或者使用 pino-rotate 包（需要单独安装）
-      return createWriteStream(config.outputPath);
+      // 确保日志目录存在
+      const logDir = dirname(config.outputPath);
+      try {
+        mkdirSync(logDir, { recursive: true });
+      } catch (error) {
+        // 目录可能已存在,忽略错误
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+          console.warn(`Failed to create log directory ${logDir}:`, error);
+        }
+      }
+
+      // 使用 rotating-file-stream 实现日志轮转
+      // 功能对等 Go 后端的 Lumberjack
+      const streamOptions: any = {
+        // 按大小轮转
+        size: config.maxSize ? `${config.maxSize}M` : '100M',
+        
+        // 保留的旧日志文件数量
+        maxFiles: config.maxBackups || 3,
+        
+        // 压缩旧日志文件
+        compress: config.compress ? 'gzip' : false,
+      };
+
+      // 只在 maxAge 有值时添加 interval (避免 undefined)
+      if (config.maxAge) {
+        streamOptions.interval = `${config.maxAge}d`;
+      }
+
+      const rotatingStream = createStream(config.outputPath, streamOptions);
+
+      // 错误处理
+      rotatingStream.on('error', (err) => {
+        console.error('Log rotation error:', err);
+      });
+
+      return rotatingStream;
 
     default:
       return process.stdout;

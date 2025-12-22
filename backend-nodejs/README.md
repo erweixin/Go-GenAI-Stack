@@ -617,15 +617,27 @@ REDIS_PASSWORD=
 JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=7d
 
-# 日志配置（结构化日志）
+# 日志配置（结构化日志 + 日志轮转）
 LOGGING_ENABLED=true
-LOGGING_LEVEL=info
-LOGGING_FORMAT=pretty          # 开发环境使用 pretty，生产环境使用 json
-LOGGING_OUTPUT=stdout          # 开发环境使用 stdout，生产环境使用 file
-LOGGING_OUTPUT_PATH=./logs/app.log  # 当 LOGGING_OUTPUT=file 时必需
+LOGGING_LEVEL=info                      # debug, info, warn, error
+LOGGING_FORMAT=pretty                   # 开发环境使用 pretty，生产环境使用 json
+LOGGING_OUTPUT=stdout                   # stdout, stderr, file
+
+# 文件输出配置（当 LOGGING_OUTPUT=file 时）
+LOGGING_OUTPUT_PATH=./logs/app.log      # 日志文件路径
+LOGGING_MAX_SIZE=100                    # 单个日志文件最大大小（MB）
+LOGGING_MAX_BACKUPS=3                   # 保留的旧日志文件数量
+LOGGING_MAX_AGE=7                       # 保留旧日志文件的最大天数
+LOGGING_COMPRESS=true                   # 是否压缩旧日志文件（.gz）
 ```
 
-**注意**：在 Docker 容器中运行时，建议使用卷挂载将日志文件保存到宿主机。详见 [Docker 日志配置指南](docs/DOCKER_LOGGING.md)。
+**日志轮转功能**:
+- ✅ 自动按大小轮转日志文件
+- ✅ 自动压缩旧日志文件
+- ✅ 自动清理过期日志
+- 📖 详见 [日志系统使用指南](docs/LOGGING.md)
+
+**注意**：在 Docker 容器中运行时，建议使用卷挂载将日志文件保存到宿主机。
 
 ### 测试
 

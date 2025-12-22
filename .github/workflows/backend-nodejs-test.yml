@@ -1,0 +1,184 @@
+name: Backend-NodeJS Tests
+
+on:
+  push:
+    branches: [ main, develop, master, feat-node]
+    paths:
+      - 'backend-nodejs/**'
+      - '.github/workflows/backend-nodejs-test.yml'
+  pull_request:
+    branches: [ main, develop, master ]
+    paths:
+      - 'backend-nodejs/**'
+      - '.github/workflows/backend-nodejs-test.yml'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: ['20.x', '22.x']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+        cache-dependency-path: backend-nodejs/pnpm-lock.yaml
+    
+    - name: Install dependencies
+      working-directory: backend-nodejs
+      run: |
+        echo "📦 Installing dependencies..."
+        pnpm install --frozen-lockfile
+        echo "✅ Dependencies installed"
+    
+    - name: Type check
+      working-directory: backend-nodejs
+      run: |
+        echo "🔍 Running type check..."
+        pnpm typecheck
+        echo "✅ Type check passed"
+    
+    - name: Build
+      working-directory: backend-nodejs
+      run: |
+        echo "🏗️  Building project..."
+        pnpm build
+        echo "✅ Build successful"
+        ls -lh dist/
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: ['20.x', '22.x']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+        cache-dependency-path: backend-nodejs/pnpm-lock.yaml
+    
+    - name: Install dependencies
+      working-directory: backend-nodejs
+      run: |
+        echo "📦 Installing dependencies..."
+        pnpm install --frozen-lockfile
+    
+    - name: Run tests
+      working-directory: backend-nodejs
+      run: |
+        echo "🧪 Running tests..."
+        pnpm test
+    
+    - name: Generate coverage
+      working-directory: backend-nodejs
+      run: |
+        echo "📊 Generating coverage report..."
+        pnpm test:coverage
+    
+    - name: Show coverage summary
+      working-directory: backend-nodejs
+      run: |
+        echo "📈 Coverage Summary:"
+        if [ -f coverage/coverage-summary.json ]; then
+          cat coverage/coverage-summary.json
+        else
+          echo "Coverage summary not found"
+        fi
+
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+        cache: 'pnpm'
+        cache-dependency-path: backend-nodejs/pnpm-lock.yaml
+    
+    - name: Install dependencies
+      working-directory: backend-nodejs
+      run: |
+        echo "📦 Installing dependencies..."
+        pnpm install --frozen-lockfile
+    
+    - name: Run ESLint
+      working-directory: backend-nodejs
+      run: |
+        echo "🔍 Running ESLint..."
+        pnpm lint
+        echo "✅ ESLint passed"
+    
+    - name: Check code formatting
+      working-directory: backend-nodejs
+      run: |
+        echo "💅 Checking code formatting..."
+        pnpm exec prettier --check "**/*.{ts,json,md}"
+        echo "✅ Code is properly formatted"
+    
+    - name: Check domain boundaries
+      working-directory: backend-nodejs
+      run: |
+        echo "🏗️  Checking domain boundaries..."
+        pnpm check:boundaries
+        echo "✅ Domain boundaries are correct"
+
+  summary:
+    name: All Checks
+    runs-on: ubuntu-latest
+    needs: [build, test, lint]
+    if: always()
+    
+    steps:
+    - name: Check results
+      run: |
+        echo "📊 Check Results:"
+        echo "  - Build: ${{ needs.build.result }}"
+        echo "  - Tests: ${{ needs.test.result }}"
+        echo "  - Lint: ${{ needs.lint.result }}"
+        echo ""
+        
+        if [[ "${{ needs.build.result }}" == "success" ]] && \
+           [[ "${{ needs.test.result }}" == "success" ]] && \
+           [[ "${{ needs.lint.result }}" == "success" ]]; then
+          echo "✅ All checks passed!"
+          exit 0
+        else
+          echo "❌ Some checks failed!"
+          exit 1
+        fi

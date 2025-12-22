@@ -3,10 +3,11 @@
  * 使用 Mock Repository 进行测试
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthService } from './auth_service.js';
 import { JWTService } from './jwt_service.js';
 import type { UserRepository } from '../../user/repository/interface.js';
+import type { EventBus } from '../../shared/events/event_bus.js';
 import { User } from '../../user/model/user.js';
 import type { RequestContext } from '../../../shared/types/context.js';
 
@@ -30,7 +31,7 @@ class MockUserRepository implements UserRepository {
 
   async getByEmail(_ctx: RequestContext, email: string): Promise<User | null> {
     const normalizedEmail = email.toLowerCase();
-    for (const user of this.users.values()) {
+    for (const user of Array.from(this.users.values())) {
       if (user.email.toLowerCase() === normalizedEmail) {
         return user;
       }
@@ -52,11 +53,40 @@ class MockUserRepository implements UserRepository {
   async existsByUsername(_ctx: RequestContext, username: string): Promise<boolean> {
     return this.usernames.has(username);
   }
+
+  async getByUsername(_ctx: RequestContext, username: string): Promise<User | null> {
+    for (const user of Array.from(this.users.values())) {
+      if (user.username === username) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  async delete(_ctx: RequestContext, userId: string): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      this.users.delete(userId);
+      this.emails.delete(user.email.toLowerCase());
+      if (user.username) {
+        this.usernames.delete(user.username);
+      }
+    }
+  }
 }
+
+// Mock EventBus
+const createMockEventBus = (): EventBus => ({
+  publish: vi.fn(),
+  subscribe: vi.fn(),
+  unsubscribe: vi.fn(),
+  close: vi.fn(),
+});
 
 describe('AuthService', () => {
   let userRepo: MockUserRepository;
   let jwtService: JWTService;
+  let eventBus: EventBus;
   let authService: AuthService;
 
   beforeEach(() => {
@@ -67,7 +97,8 @@ describe('AuthService', () => {
       refreshTokenExpiry: 604800,
       issuer: 'test-issuer',
     });
-    authService = new AuthService(userRepo, jwtService);
+    eventBus = createMockEventBus();
+    authService = new AuthService(userRepo, jwtService, eventBus);
   });
 
   describe('register', () => {

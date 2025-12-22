@@ -11,6 +11,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { isDomainError, createError } from '../../shared/errors/errors.js';
+import type { Logger } from '../../infrastructure/monitoring/logger/logger.js';
 
 /**
  * HTTP 错误响应格式
@@ -19,6 +20,7 @@ export interface ErrorResponse {
   error: string;              // 错误码
   message: string;            // 错误消息
   details?: string;          // 详细信息（可选）
+  requestId?: string;        // 请求 ID（用于追踪）
 }
 
 /**
@@ -30,26 +32,50 @@ export interface ErrorResponse {
  * 
  * @param reply Fastify Reply 对象
  * @param err 错误对象
+ * @param logger 可选的 Logger 实例（用于记录错误日志）
  * 
  * @example
  * ```typescript
  * const output = await service.createTask(ctx, input);
  * if (err) {
- *   handleDomainError(reply, err);
+ *   handleDomainError(reply, err, logger);
  *   return;
  * }
  * ```
  */
-export function handleDomainError(reply: FastifyReply, err: unknown): void {
+export function handleDomainError(
+  reply: FastifyReply,
+  err: unknown,
+  logger?: Logger
+): void {
   if (!err) {
     return;
   }
 
+  // 获取请求 ID（用于追踪）
+  const requestId = reply.request.id;
+
   // 1. 尝试解析为 DomainError
   if (isDomainError(err)) {
+    // 记录错误日志
+    if (logger) {
+      logger.error('Domain error occurred', {
+        code: err.code,
+        message: err.message,
+        statusCode: err.statusCode,
+        metadata: err.metadata,
+        requestId,
+        path: reply.request.url,
+        method: reply.request.method,
+        // 只在非 4xx 错误时记录堆栈（减少日志噪音）
+        stack: err.statusCode >= 500 ? err.stack : undefined,
+      });
+    }
+
     const response: ErrorResponse = {
       error: err.code,
       message: err.message,
+      requestId,
     };
     reply.code(err.statusCode).send(response);
     return;
@@ -61,18 +87,42 @@ export function handleDomainError(reply: FastifyReply, err: unknown): void {
     const { code, message } = extractErrorFromString(errMsg);
     const statusCode = getHTTPStatusCode(code);
 
+    // 记录错误日志
+    if (logger) {
+      logger.error('Error occurred', {
+        code,
+        message,
+        statusCode,
+        requestId,
+        path: reply.request.url,
+        method: reply.request.method,
+        stack: statusCode >= 500 ? err.stack : undefined,
+      });
+    }
+
     const response: ErrorResponse = {
       error: code,
       message: message,
+      requestId,
     };
     reply.code(statusCode).send(response);
     return;
   }
 
   // 3. 未知错误类型，返回 500
+  if (logger) {
+    logger.error('Unknown error occurred', {
+      error: String(err),
+      requestId,
+      path: reply.request.url,
+      method: reply.request.method,
+    });
+  }
+
   const response: ErrorResponse = {
     error: 'INTERNAL_SERVER_ERROR',
     message: 'Internal server error',
+    requestId,
   };
   reply.code(500).send(response);
 }

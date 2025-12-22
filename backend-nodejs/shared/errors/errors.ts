@@ -5,13 +5,14 @@
 
 /**
  * 领域错误类
- * 包含错误码、消息和 HTTP 状态码
+ * 包含错误码、消息、HTTP 状态码和可选的元数据
  */
 export class DomainError extends Error {
   constructor(
     public readonly code: string,
     message: string,
-    public readonly statusCode: number = 400
+    public readonly statusCode: number = 400,
+    public readonly metadata?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'DomainError';
@@ -19,6 +20,20 @@ export class DomainError extends Error {
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, DomainError);
     }
+  }
+
+  /**
+   * 序列化为日志友好格式
+   */
+  toJSON(): Record<string, unknown> {
+    return {
+      name: this.name,
+      code: this.code,
+      message: this.message,
+      statusCode: this.statusCode,
+      metadata: this.metadata,
+      stack: this.stack,
+    };
   }
 }
 
@@ -98,23 +113,26 @@ const DEFAULT_STATUS_CODES: Record<string, number> = {
  * @param code 错误码（ErrorCodes 中的键）
  * @param message 错误消息
  * @param statusCode 可选的 HTTP 状态码（如果不提供，使用默认值）
+ * @param metadata 可选的错误元数据（如 userId, resourceId 等）
  * @returns DomainError 实例
  * 
  * @example
  * ```typescript
  * throw createError('TASK_NOT_FOUND', 'Task with id 123 not found');
  * throw createError('UNAUTHORIZED', 'Invalid credentials', 401);
+ * throw createError('TASK_NOT_FOUND', 'Task not found', undefined, { taskId: '123' });
  * ```
  */
 export function createError(
   code: keyof typeof ErrorCodes,
   message: string,
-  statusCode?: number
+  statusCode?: number,
+  metadata?: Record<string, unknown>
 ): DomainError {
   const errorCode = ErrorCodes[code];
   const httpStatusCode = statusCode || DEFAULT_STATUS_CODES[errorCode] || 400;
 
-  return new DomainError(errorCode, message, httpStatusCode);
+  return new DomainError(errorCode, message, httpStatusCode, metadata);
 }
 
 /**
