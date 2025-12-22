@@ -7,6 +7,11 @@ import type { User } from '../model/user.js';
 import type { UserRepository } from '../repository/interface.js';
 import { createError } from '../../../shared/errors/errors.js';
 import type { RequestContext } from '../../../shared/types/context.js';
+import type { EventBus } from '../../shared/events/event_bus.js';
+import {
+  UserUpdatedEvent,
+  PasswordChangedEvent,
+} from '../events/user_events.js';
 
 export interface GetUserProfileInput {
   userId: string;
@@ -40,9 +45,30 @@ export interface ChangePasswordOutput {
 
 /**
  * UserService 用户领域服务
+ * 
+ * 示例：订阅 Task 领域的事件（如任务创建时更新用户统计）
+ * 这展示了如何通过事件总线实现领域间解耦通信
  */
 export class UserService {
-  constructor(private userRepo: UserRepository) {}
+  constructor(
+    private userRepo: UserRepository,
+    private eventBus: EventBus
+  ) {
+    // 订阅 TaskCreated 事件（示例：当任务创建时，可以更新用户的任务统计）
+    // 注意：这是一个示例，实际业务中可能需要根据需求决定是否订阅
+    this.eventBus.subscribe('TaskCreated', async (_ctx, _event) => {
+      try {
+        // 示例：可以在这里更新用户的任务统计、发送通知等
+        // 注意：这里只是示例，实际业务中可能需要更复杂的逻辑
+        // const payload = _event.payload as TaskCreatedPayload;
+        // await this.updateUserTaskStats(ctx, payload.userId);
+      } catch (error) {
+        // 事件处理失败不应该影响主流程，只记录错误
+        // 实际生产环境中应该使用结构化日志
+        console.error('Failed to handle TaskCreated event:', error);
+      }
+    });
+  }
 
   /**
    * 获取用户资料
@@ -91,8 +117,19 @@ export class UserService {
     // Step 5: 保存用户
     await this.userRepo.update(ctx, user);
 
-    // Step 6: 发布用户更新事件（扩展点）
-    // eventBus.publish(ctx, UserUpdatedEvent{...});
+    // Step 6: 发布用户更新事件
+    await this.eventBus.publish(
+      ctx,
+      new UserUpdatedEvent({
+        userId: user.id,
+        updatedFields: {
+          username: input.username !== undefined ? input.username : undefined,
+          fullName: input.fullName !== undefined ? input.fullName : undefined,
+          avatarURL: input.avatarURL !== undefined ? input.avatarURL : undefined,
+        },
+        updatedAt: user.updatedAt,
+      })
+    );
 
     return { user };
   }
@@ -128,8 +165,14 @@ export class UserService {
     // 保存到数据库
     await this.userRepo.update(ctx, user);
 
-    // Step 6: 撤销所有 Token（扩展点）
-    // 可以在 Auth Service 中实现，通过发布 PasswordChanged 事件通知
+    // Step 6: 发布密码修改事件（Auth 领域可以订阅此事件来撤销 Token）
+    await this.eventBus.publish(
+      ctx,
+      new PasswordChangedEvent({
+        userId: user.id,
+        changedAt: new Date(),
+      })
+    );
 
     return {
       success: true,

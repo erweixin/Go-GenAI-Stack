@@ -88,10 +88,41 @@
 ## 依赖关系
 
 ### 下游依赖
-- Auth Domain - 依赖 User Domain 进行用户验证
+- 无
 
 ### 上游依赖
-- 无
+- **Auth Domain**：用户注册时创建用户记录
+
+### 领域间通信
+
+**遵循"分布式友好但不分布式"原则**：
+
+- ✅ **事件发布**：User 领域在关键操作后发布事件
+  - `UserUpdatedEvent` - 用户资料更新
+  - `PasswordChangedEvent` - 密码修改
+- ✅ **查询接口**：提供 `UserQueryService` 供其他领域使用（只读）
+  - `getUser()` - 根据 ID 获取用户
+  - `getUserByEmail()` - 根据邮箱获取用户
+  - `userExists()` - 检查用户是否存在
+  - `emailExists()` - 检查邮箱是否已注册
+- ✅ **事件订阅**：可以订阅其他领域的事件（示例：订阅 `TaskCreated` 事件）
+- ❌ **禁止**：不直接调用其他领域的 Service
+
+**示例**：
+```typescript
+// ✅ 正确：发布事件通知其他领域
+await this.eventBus.publish(ctx, new UserUpdatedEvent({ ... }));
+
+// ✅ 正确：订阅其他领域的事件
+this.eventBus.subscribe('TaskCreated', async (ctx, event) => {
+  // 处理任务创建事件（如更新用户统计）
+});
+
+// ❌ 错误：直接调用其他领域的 Service
+const task = await this.taskService.getTask(ctx, { taskId }); // ❌
+```
+
+参考：[事件总线使用指南](../shared/events/README.md)
 
 ## 与 Auth Domain 的关系
 

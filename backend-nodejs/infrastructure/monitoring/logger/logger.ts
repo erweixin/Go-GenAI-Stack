@@ -12,8 +12,7 @@
  */
 
 import pino, { type Logger as PinoLogger } from 'pino';
-import { createWriteStream } from 'pino/file';
-import type { Config } from '../../config/config.js';
+import { createWriteStream } from 'fs';
 
 /**
  * 日志配置接口
@@ -146,7 +145,7 @@ export function createLogger(config: LoggerConfig): Logger | null {
     ? pino({
         level: config.level,
         formatters: {
-          level: (label) => {
+          level: (label: string) => {
             return { level: label.toUpperCase() };
           },
         },
@@ -164,7 +163,7 @@ export function createLogger(config: LoggerConfig): Logger | null {
         {
           level: config.level,
           formatters: {
-            level: (label) => {
+            level: (label: string) => {
               return { level: label.toUpperCase() };
             },
           },
@@ -192,12 +191,12 @@ export function initGlobalLogger(config: LoggerConfig): void {
   globalLogger = logger;
 
   if (logger) {
-    logger.info({ 
+    logger.info('Structured logger initialized', {
       level: config.level,
       format: config.format,
       output: config.output,
       outputPath: config.outputPath,
-    }, 'Structured logger initialized');
+    });
   }
 }
 

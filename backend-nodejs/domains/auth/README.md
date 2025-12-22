@@ -129,15 +129,50 @@ Client → API → Auth Middleware → Verify JWT → Extract UserID → Handler
 - 登出时将 Token 加入黑名单
 - Middleware 检查 Token 是否在黑名单中
 
+## 依赖关系
+
+### 下游依赖
+- **User Domain**：需要访问 UserRepository 创建和验证用户
+  - 注意：Auth 领域可以访问 UserRepository，因为这是 Auth 的核心职责
+
+### 上游依赖
+- 无
+
+### 领域间通信
+
+**遵循"分布式友好但不分布式"原则**：
+
+- ✅ **事件发布**：Auth 领域在关键操作后发布事件
+  - `UserRegisteredEvent` - 用户注册
+  - `LoginSucceededEvent` - 登录成功
+  - `LoginFailedEvent` - 登录失败
+- ✅ **Repository 访问**：Auth 领域可以访问 UserRepository（这是 Auth 的核心职责）
+- ❌ **禁止**：不直接调用其他领域的 Service（如 UserService）
+
+**示例**：
+```typescript
+// ✅ 正确：发布事件通知其他领域
+await this.eventBus.publish(ctx, new UserRegisteredEvent({ ... }));
+
+// ✅ 正确：访问 UserRepository（Auth 的核心职责）
+const user = await this.userRepo.getByEmail(ctx, email);
+
+// ❌ 错误：直接调用其他领域的 Service
+const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
+```
+
+参考：[事件总线使用指南](../shared/events/README.md)
+
 ## 与 User Domain 的关系
 
 ```
 ┌──────────────────────────────────────────────┐
 │  Auth Domain (认证领域)                       │
 │  ┌──────────────────────────────────────┐   │
-│  │ Register   → 调用 User.NewUser       │   │
-│  │ Login      → 调用 User.VerifyPassword│   │
+│  │ Register   → 调用 UserRepository     │   │
+│  │ Login      → 调用 UserRepository     │   │
 │  │ JWT Token Generation                 │   │
+│  │ 发布事件：UserRegisteredEvent        │   │
 │  └──────────────────────────────────────┘   │
 └──────────────────────────────────────────────┘
                    ↓ 依赖
@@ -151,9 +186,9 @@ Client → API → Auth Middleware → Verify JWT → Extract UserID → Handler
 ```
 
 **依赖关系**：
-- Auth Domain **依赖** User Domain
-- Auth 调用 User Domain 的 Repository 和 Model
-- Auth 不修改 User 的内部实现
+- Auth Domain **依赖** User Domain 的 Repository（这是 Auth 的核心职责）
+- Auth 通过事件总线发布事件，通知其他领域
+- Auth 不直接调用 UserService
 
 ## API 接口
 

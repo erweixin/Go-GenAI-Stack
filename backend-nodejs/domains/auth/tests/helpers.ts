@@ -11,6 +11,7 @@ import { UserRepositoryImpl } from '../../user/repository/user_repo.js';
 import { AuthService } from '../service/auth_service.js';
 import { JWTService } from '../service/jwt_service.js';
 import type { HandlerDependencies } from '../handlers/dependencies.js';
+import { createEventBus, type EventBus } from '../../shared/events/event_bus.js';
 import bcrypt from 'bcryptjs';
 import { TEST_USER_ID, TEST_USER_EMAIL, TEST_USER_PASSWORD } from '../../user/tests/helpers.js';
 
@@ -36,13 +37,17 @@ export interface TestHelper {
  */
 export function createTestHelper(
   db: Kysely<Database>,
-  jwtService: JWTService
+  jwtService: JWTService,
+  eventBus?: EventBus
 ): TestHelper {
   // 1. 创建 Repository
   const userRepo = new UserRepositoryImpl(db);
 
-  // 2. 创建 Auth Service
-  const authService = new AuthService(userRepo, jwtService);
+  // 2. 创建 EventBus（如果未提供，创建一个简单的 mock）
+  const mockEventBus: EventBus = eventBus || createEventBus();
+
+  // 3. 创建 Auth Service
+  const authService = new AuthService(userRepo, jwtService, mockEventBus);
 
   // 3. 创建 Handler Dependencies
   const handlerDeps: HandlerDependencies = {

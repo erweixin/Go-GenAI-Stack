@@ -12,6 +12,9 @@ import { TaskService } from '../service/task_service.js';
 import type { HandlerDependencies } from '../handlers/dependencies.js';
 import { Task } from '../model/task.js';
 import type { JWTService } from '../../auth/service/jwt_service.js';
+import type { EventBus } from '../../shared/events/event_bus.js';
+import { UserQueryService } from '../../user/service/user_query_service.js';
+import { UserRepositoryImpl } from '../../user/repository/user_repo.js';
 import bcrypt from 'bcryptjs';
 
 // ========== 测试常量 ==========
@@ -48,19 +51,35 @@ export interface TestHelper {
  * 注意：这里使用真实的数据库连接（测试数据库）
  * 在生产测试中，可以使用内存数据库或 Docker 测试容器
  */
-export function createTestHelper(db: Kysely<Database>, jwtService?: JWTService): TestHelper {
+export function createTestHelper(
+  db: Kysely<Database>,
+  jwtService?: JWTService,
+  eventBus?: EventBus
+): TestHelper {
   // 1. 创建 Repository
   const taskRepo = new TaskRepositoryImpl(db);
+  const userRepo = new UserRepositoryImpl(db);
 
-  // 2. 创建 Service
-  const taskService = new TaskService(taskRepo);
+  // 2. 创建 EventBus（如果未提供，创建一个简单的 mock）
+  const mockEventBus: EventBus = eventBus || {
+    publish: async () => {},
+    subscribe: () => {},
+    unsubscribe: () => {},
+    close: async () => {},
+  };
 
-  // 3. 创建 Handler Dependencies
+  // 3. 创建 UserQueryService（用于 TaskService 验证用户存在性）
+  const userQueryService = new UserQueryService(userRepo);
+
+  // 4. 创建 Service
+  const taskService = new TaskService(taskRepo, mockEventBus, userQueryService);
+
+  // 5. 创建 Handler Dependencies
   const handlerDeps: HandlerDependencies = {
     taskService,
   };
 
-  // 4. 创建 Fastify 应用
+  // 6. 创建 Fastify 应用
   const app = Fastify({
     logger: false, // 测试时禁用日志
   });

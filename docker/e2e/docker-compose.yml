@@ -132,6 +132,12 @@ services:
       E2E_TEST: "true"  # 标记为 E2E 测试环境，禁用 rate limiting
       SERVER_PORT: 8080
       SERVER_HOST: 0.0.0.0
+      
+      # 日志配置（E2E 测试环境使用 stdout，便于查看）
+      LOGGING_ENABLED: "true"
+      LOGGING_LEVEL: debug
+      LOGGING_FORMAT: pretty
+      LOGGING_OUTPUT: stdout
     ports:
       - "8082:8080"  # 映射到 8082 避免与开发环境冲突
     depends_on:
@@ -139,6 +145,9 @@ services:
         condition: service_healthy
       redis-e2e:
         condition: service_healthy
+    volumes:
+      # 日志目录挂载（可选，用于调试）
+      - backend-nodejs-e2e-logs:/app/logs
     networks:
       - e2e-network
     healthcheck:
@@ -156,6 +165,9 @@ volumes:
   redis-e2e-data:
     driver: local
     name: go-genai-stack-redis-e2e-data
+  backend-nodejs-e2e-logs:
+    driver: local
+    name: go-genai-stack-backend-nodejs-e2e-logs
 
 networks:
   e2e-network:

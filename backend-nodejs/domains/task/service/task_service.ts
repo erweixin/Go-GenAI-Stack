@@ -7,6 +7,14 @@ import { Task } from '../model/task.js';
 import type { TaskRepository, TaskFilter } from '../repository/interface.js';
 import { createError } from '../../../shared/errors/errors.js';
 import type { RequestContext } from '../../../shared/types/context.js';
+import type { EventBus } from '../../shared/events/event_bus.js';
+import {
+  TaskCreatedEvent,
+  TaskUpdatedEvent,
+  TaskCompletedEvent,
+  TaskDeletedEvent,
+} from '../events/task_events.js';
+import type { UserQueryService } from '../../user/service/user_query_service.js';
 
 export interface CreateTaskInput {
   userId: string;
@@ -77,9 +85,16 @@ export interface ListTasksOutput {
 
 /**
  * TaskService 任务领域服务
+ * 
+ * 注意：使用 UserQueryService 进行同步查询（验证用户是否存在）
+ * 不直接调用 UserService，遵循"分布式友好但不分布式"原则
  */
 export class TaskService {
-  constructor(private taskRepo: TaskRepository) {}
+  constructor(
+    private taskRepo: TaskRepository,
+    private eventBus: EventBus,
+    private userQueryService: UserQueryService
+  ) {}
 
   /**
    * 创建任务
@@ -91,6 +106,12 @@ export class TaskService {
     }
     if (!input.title || input.title.trim().length === 0) {
       throw createError('TASK_TITLE_EMPTY', '任务标题不能为空');
+    }
+
+    // Step 1.5: 验证用户是否存在（使用查询接口，而非直接调用 UserService）
+    const userExists = await this.userQueryService.userExists(ctx, input.userId);
+    if (!userExists) {
+      throw createError('USER_NOT_FOUND', '用户不存在');
     }
 
     // Step 2 & 3: CreateTaskEntity
@@ -119,8 +140,19 @@ export class TaskService {
     // Step 4: SaveTask
     await this.taskRepo.create(ctx, task);
 
-    // Step 5: PublishTaskCreatedEvent (Extension point)
-    // eventBus.publish(ctx, 'task.created', { ... });
+    // Step 5: PublishTaskCreatedEvent
+    await this.eventBus.publish(
+      ctx,
+      new TaskCreatedEvent({
+        taskId: task.id,
+        userId: task.userId,
+        title: task.title,
+        priority: task.priority,
+        dueDate: task.dueDate?.toISOString(),
+        tags: task.tags.map((t) => t.name),
+        createdAt: task.createdAt,
+      })
+    );
 
     return { task };
   }
@@ -180,7 +212,23 @@ export class TaskService {
     // Step 5: SaveTask
     await this.taskRepo.update(ctx, task);
 
-    // Step 6: PublishTaskUpdatedEvent (Extension point)
+    // Step 6: PublishTaskUpdatedEvent
+    await this.eventBus.publish(
+      ctx,
+      new TaskUpdatedEvent({
+        taskId: task.id,
+        userId: task.userId,
+        updatedFields: {
+          title: input.title !== undefined ? input.title : undefined,
+          description: input.description !== undefined ? input.description : undefined,
+          priority: input.priority !== undefined ? input.priority : undefined,
+          dueDate: input.dueDate !== undefined ? input.dueDate.toISOString() : undefined,
+          tags: input.tags !== undefined ? input.tags : undefined,
+        },
+        updatedAt: task.updatedAt,
+      })
+    );
+
     return { task };
   }
 
@@ -210,7 +258,16 @@ export class TaskService {
     // Step 7: SaveTask
     await this.taskRepo.update(ctx, task);
 
-    // Step 8: PublishTaskCompletedEvent (Extension point)
+    // Step 8: PublishTaskCompletedEvent
+    await this.eventBus.publish(
+      ctx,
+      new TaskCompletedEvent({
+        taskId: task.id,
+        userId: task.userId,
+        completedAt: task.completedAt!,
+      })
+    );
+
     return { task };
   }
 
@@ -237,7 +294,16 @@ export class TaskService {
     // Step 4: DeleteTaskRecord
     await this.taskRepo.delete(ctx, input.taskId);
 
-    // Step 5: PublishTaskDeletedEvent (Extension point)
+    // Step 5: PublishTaskDeletedEvent
+    await this.eventBus.publish(
+      ctx,
+      new TaskDeletedEvent({
+        taskId: input.taskId,
+        userId: input.userId,
+        deletedAt: new Date(),
+      })
+    );
+
     return {
       success: true,
       deletedAt: new Date(),

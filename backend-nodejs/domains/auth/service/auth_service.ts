@@ -5,9 +5,15 @@
 
 import type { UserRepository } from '../../user/repository/interface.js';
 import { User } from '../../user/model/user.js';
-import type { JWTService } from './jwt_service.js';
+import { JWTService } from './jwt_service.js';
 import { createError } from '../../../shared/errors/errors.js';
 import type { RequestContext } from '../../../shared/types/context.js';
+import type { EventBus } from '../../shared/events/event_bus.js';
+import {
+  UserRegisteredEvent,
+  LoginSucceededEvent,
+  LoginFailedEvent,
+} from '../events/auth_events.js';
 
 export interface RegisterInput {
   email: string;
@@ -49,11 +55,16 @@ export interface RefreshTokenOutput {
 
 /**
  * AuthService 认证服务
+ * 
+ * 注意：AuthService 可以访问 UserRepository，因为：
+ * - Auth 领域需要创建和验证用户（这是 Auth 的核心职责）
+ * - 但应该通过事件总线与其他领域通信，而不是直接调用其他领域的 Service
  */
 export class AuthService {
   constructor(
     private userRepo: UserRepository,
-    private jwtService: JWTService
+    private jwtService: JWTService,
+    private eventBus: EventBus
   ) {}
 
   /**
@@ -94,8 +105,15 @@ export class AuthService {
     );
     const { token: refreshToken } = this.jwtService.generateRefreshToken(user.id);
 
-    // Step 7: 发布用户创建事件（扩展点）
-    // eventBus.publish(ctx, UserCreatedEvent{...});
+    // Step 7: 发布用户注册事件（User 领域可以订阅此事件）
+    await this.eventBus.publish(
+      ctx,
+      new UserRegisteredEvent({
+        userId: user.id,
+        email: user.email,
+        registeredAt: user.createdAt,
+      })
+    );
 
     return {
       userId: user.id,
@@ -115,6 +133,15 @@ export class AuthService {
     // Step 2: 根据邮箱获取用户
     const user = await this.userRepo.getByEmail(ctx, input.email);
     if (!user) {
+      // 发布登录失败事件
+      await this.eventBus.publish(
+        ctx,
+        new LoginFailedEvent({
+          email: input.email,
+          reason: 'invalid_email',
+          failedAt: new Date(),
+        })
+      );
       // 统一返回错误消息，不泄露是邮箱还是密码错误
       throw createError('INVALID_CREDENTIALS', '邮箱或密码错误');
     }
@@ -122,6 +149,15 @@ export class AuthService {
     // Step 3: 验证密码
     const isValid = await user.verifyPassword(input.password);
     if (!isValid) {
+      // 发布登录失败事件
+      await this.eventBus.publish(
+        ctx,
+        new LoginFailedEvent({
+          email: input.email,
+          reason: 'invalid_password',
+          failedAt: new Date(),
+        })
+      );
       // 统一返回错误消息
       throw createError('INVALID_CREDENTIALS', '邮箱或密码错误');
     }
@@ -130,6 +166,15 @@ export class AuthService {
     try {
       user.canLogin();
     } catch (error) {
+      // 发布登录失败事件（用户被禁用）
+      await this.eventBus.publish(
+        ctx,
+        new LoginFailedEvent({
+          email: input.email,
+          reason: 'user_banned',
+          failedAt: new Date(),
+        })
+      );
       throw error; // 直接抛出 Model 层的错误
     }
 
@@ -149,8 +194,15 @@ export class AuthService {
       // logger.warn('更新登录时间失败', error);
     }
 
-    // Step 7: 发布登录成功事件（扩展点）
-    // eventBus.publish(ctx, LoginSucceededEvent{...});
+    // Step 7: 发布登录成功事件
+    await this.eventBus.publish(
+      ctx,
+      new LoginSucceededEvent({
+        userId: user.id,
+        email: user.email,
+        loginAt: new Date(),
+      })
+    );
 
     return {
       userId: user.id,
@@ -179,12 +231,8 @@ export class AuthService {
       throw createError('USER_NOT_FOUND', '用户不存在');
     }
 
-    // Step 3: 检查用户状态
-    try {
-      user.canLogin();
-    } catch (error) {
-      throw error; // 直接抛出 Model 层的错误
-    }
+    // Step 3: 检查用户状态（如果用户被禁用，会抛出错误）
+    user.canLogin();
 
     // Step 4: 生成新的 Access Token 和 Refresh Token
     const { token: accessToken, expiresAt } = this.jwtService.generateAccessToken(

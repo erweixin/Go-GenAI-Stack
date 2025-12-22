@@ -94,7 +94,12 @@ pnpm e2e:ui           # UI 模式（推荐）
 - **端口**: 8082（映射到容器的 8080）
 - **数据库**: postgres-e2e:5432
 - **Redis**: redis-e2e:6379
-- **JWT Secret**: e2e-test-secret-key-for-testing-only
+- **JWT Secret**: e2e-test-secret-key-for-testing-only-32chars
+- **日志配置**: 
+  - 输出: stdout（便于查看）
+  - 格式: pretty（开发友好）
+  - 级别: debug
+- **日志卷**: backend-nodejs-e2e-logs（可选，用于调试）
 - **健康检查**: /health 端点
 
 ---

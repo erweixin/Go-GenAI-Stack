@@ -78,11 +78,39 @@
 
 ### 下游依赖
 
-- 无（当前版本）
+- **UserQueryService**：用于验证用户是否存在（同步查询）
+  - 使用场景：创建任务时验证用户 ID 是否有效
+  - 实现：`domains/user/service/user_query_service.ts`
 
 ### 上游依赖
 
 - 无
+
+### 领域间通信
+
+**遵循"分布式友好但不分布式"原则**：
+
+- ✅ **事件发布**：Task 领域在关键操作后发布事件
+  - `TaskCreatedEvent` - 任务创建
+  - `TaskUpdatedEvent` - 任务更新
+  - `TaskCompletedEvent` - 任务完成
+  - `TaskDeletedEvent` - 任务删除
+- ✅ **查询接口**：使用 `UserQueryService` 进行同步查询（只读）
+- ❌ **禁止**：不直接调用其他领域的 Service
+
+**示例**：
+```typescript
+// ✅ 正确：使用查询接口验证用户
+const userExists = await this.userQueryService.userExists(ctx, userId);
+
+// ✅ 正确：发布事件通知其他领域
+await this.eventBus.publish(ctx, new TaskCreatedEvent({ ... }));
+
+// ❌ 错误：直接调用其他领域的 Service
+const user = await this.userService.getUserProfile(ctx, { userId }); // ❌
+```
+
+参考：[事件总线使用指南](../shared/events/README.md)
 
 ## 技术栈
 

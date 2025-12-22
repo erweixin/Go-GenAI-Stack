@@ -10,7 +10,7 @@
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { isDomainError, DomainError, createError, ErrorCodes } from '../../shared/errors/errors.js';
+import { isDomainError, createError } from '../../shared/errors/errors.js';
 
 /**
  * HTTP 错误响应格式
@@ -51,7 +51,8 @@ export function handleDomainError(reply: FastifyReply, err: unknown): void {
       error: err.code,
       message: err.message,
     };
-    return reply.code(err.statusCode).send(response);
+    reply.code(err.statusCode).send(response);
+    return;
   }
 
   // 2. 尝试解析字符串格式错误 "ERROR_CODE: message"
@@ -64,7 +65,8 @@ export function handleDomainError(reply: FastifyReply, err: unknown): void {
       error: code,
       message: message,
     };
-    return reply.code(statusCode).send(response);
+    reply.code(statusCode).send(response);
+    return;
   }
 
   // 3. 未知错误类型，返回 500
@@ -72,7 +74,7 @@ export function handleDomainError(reply: FastifyReply, err: unknown): void {
     error: 'INTERNAL_SERVER_ERROR',
     message: 'Internal server error',
   };
-  return reply.code(500).send(response);
+  reply.code(500).send(response);
 }
 
 /**
@@ -92,7 +94,7 @@ export function handleDomainError(reply: FastifyReply, err: unknown): void {
 export function getUserIDFromRequest(request: FastifyRequest): string {
   // 从认证中间件注入的 request.userId 中获取
   // 认证中间件将用户 ID 存储在 request.userId（见 infrastructure/middleware/auth.ts）
-  const userId = (request as any).userId;
+  const userId = (request as FastifyRequest & { userId?: string }).userId;
   
   if (!userId) {
     throw createError('UNAUTHORIZED', 'User not authenticated');

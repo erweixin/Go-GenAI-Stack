@@ -132,6 +132,8 @@ async function main() {
       if (redis) {
         await closeRedisConnection(redis);
       }
+      // 关闭事件总线
+      await container.eventBus.close();
       // 刷新日志缓冲区
       await flush();
       console.log('✅ Server exited');

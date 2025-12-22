@@ -247,6 +247,126 @@ backend-nodejs/
 5. **声明式用例**：在 `usecases.yaml` 中声明用例
 6. **类型安全**：使用 Kysely 构建类型安全的 SQL 查询
 
+### 🎯 分布式友好但不分布式
+
+> **核心理念**：当前是单体应用，但设计上支持未来轻松拆分为微服务，无需大规模重构。
+
+#### 设计原则
+
+1. **领域自治**：每个领域可以独立运行（虽然当前在同一个进程）
+2. **事件驱动通信**：领域间通过事件总线通信，不直接调用 Service
+3. **查询接口**：跨领域同步查询通过 Query Service（只读操作）
+4. **无状态设计**：服务本身无状态，状态存储在数据库/缓存中
+5. **清晰的领域边界**：每个领域自包含，不直接依赖其他领域
+
+#### 领域间通信规则
+
+**✅ 允许的模式**：
+
+1. **事件发布（异步，推荐）**：
+   ```typescript
+   // 发布事件，让其他领域订阅
+   await eventBus.publish(ctx, new TaskCreatedEvent({ ... }));
+   ```
+
+2. **查询接口（同步，只读）**：
+   ```typescript
+   // 使用 Query Service 进行同步查询
+   const userExists = await userQueryService.userExists(ctx, userId);
+   ```
+
+3. **Repository 访问（同一领域内）**：
+   ```typescript
+   // AuthService 可以访问 UserRepository（这是 Auth 的核心职责）
+   const user = await this.userRepo.getByEmail(ctx, email);
+   ```
+
+**❌ 禁止的模式**：
+
+1. **Service 层直接调用其他领域的 Service**：
+   ```typescript
+   // ❌ 错误：跨领域直接调用
+   export class TaskService {
+     constructor(private userService: UserService) {} // ❌
+   }
+   ```
+
+2. **跨领域事务**：
+   ```typescript
+   // ❌ 错误：跨领域事务
+   await db.transaction().execute(async (trx) => {
+     await taskRepo.create(trx, task);
+     await userRepo.update(trx, user); // ❌
+   });
+   ```
+
+#### 实现细节
+
+**事件总线**：
+- 当前使用 `InMemoryEventBus`（内存事件总线）
+- 未来可以替换为分布式事件总线（如 RabbitMQ、Kafka）
+- 领域代码无需修改
+
+**查询接口**：
+- 每个领域可以提供 Query Service 供其他领域使用
+- 只提供只读查询，不提供写操作
+- 例如：`UserQueryService` 供 Task 领域查询用户信息
+
+**数据库**：
+- 当前所有领域共享同一个数据库实例（推荐）
+- 表名清晰，Schema 中有领域注释标识
+- 未来可以拆分为独立数据库，只需修改连接配置
+
+#### 未来演进路径
+
+**当前**：单体应用，所有领域在同一个进程
+```
+┌─────────────────────────────────┐
+│   Node.js Process               │
+│  ┌─────────┐  ┌─────────┐     │
+│  │  Task    │  │  User   │     │
+│  │  Domain  │  │  Domain │     │
+│  └─────────┘  └─────────┘     │
+│       │              │          │
+│       └──────┬───────┘          │
+│              │                  │
+│         EventBus                │
+└──────────────┼──────────────────┘
+               │
+         ┌─────┴─────┐
+         │ PostgreSQL │
+         └───────────┘
+```
+
+**未来**：微服务架构，领域独立部署
+```
+┌──────────┐  ┌──────────┐
+│  Task    │  │  User   │
+│ Service  │  │ Service │
+└────┬─────┘  └────┬─────┘
+     │             │
+     └──────┬──────┘
+            │
+    ┌───────┴───────┐
+    │  Event Bus    │
+    │ (RabbitMQ/    │
+    │   Kafka)      │
+    └───────┬───────┘
+            │
+    ┌───────┴───────┐
+    │   Database    │
+    │  (PostgreSQL) │
+    └───────────────┘
+```
+
+**关键**：领域代码无需修改，只需替换事件总线实现和数据库连接配置。
+
+#### 相关文档
+
+- 📖 [分布式友好改造方案](DISTRIBUTED_READY_MIGRATION.md) - 详细的改造方案和检查清单
+- 📖 [事件总线使用指南](domains/shared/events/README.md) - 事件总线的使用方法和示例
+- 📖 [事件总线改造总结](EVENT_BUS_REFACTORING.md) - 已完成的改造总结
+
 ### 三层架构
 
 ```typescript
@@ -496,7 +616,16 @@ REDIS_PASSWORD=
 # JWT 配置（可选）
 JWT_SECRET=your-secret-key
 JWT_EXPIRES_IN=7d
+
+# 日志配置（结构化日志）
+LOGGING_ENABLED=true
+LOGGING_LEVEL=info
+LOGGING_FORMAT=pretty          # 开发环境使用 pretty，生产环境使用 json
+LOGGING_OUTPUT=stdout          # 开发环境使用 stdout，生产环境使用 file
+LOGGING_OUTPUT_PATH=./logs/app.log  # 当 LOGGING_OUTPUT=file 时必需
 ```
+
+**注意**：在 Docker 容器中运行时，建议使用卷挂载将日志文件保存到宿主机。详见 [Docker 日志配置指南](docs/DOCKER_LOGGING.md)。
 
 ### 测试
 
@@ -757,7 +886,6 @@ pnpm dev
 ### 架构文档
 - [架构概览](../docs/Core/architecture-overview.md)
 - [Vibe-Coding-Friendly 理念](../docs/Core/vibe-coding-friendly.md)
-
 ### 开发指南
 - [Go 后端 README](../backend/README.md) - 参考 Go 后端的实现
 - [数据库管理](../docs/Guides/database.md) - 共享数据库 Schema

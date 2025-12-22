@@ -22,6 +22,7 @@ import { UserRepositoryImpl } from '../../domains/user/repository/user_repo.js';
 // Service 层
 import { TaskService } from '../../domains/task/service/task_service.js';
 import { UserService } from '../../domains/user/service/user_service.js';
+import { UserQueryService } from '../../domains/user/service/user_query_service.js';
 import { JWTService } from '../../domains/auth/service/jwt_service.js';
 import { AuthService } from '../../domains/auth/service/auth_service.js';
 
@@ -33,11 +34,17 @@ import type { HandlerDependencies as AuthHandlerDependencies } from '../../domai
 // Middleware
 import { createAuthMiddleware } from '../middleware/auth.js';
 
+// Event Bus
+import { createEventBus, type EventBus } from '../../domains/shared/events/event_bus.js';
+
 /**
  * 应用依赖容器
  * 包含所有领域的 Handler Dependencies 和 Middleware
  */
 export interface AppContainer {
+  // 基础设施
+  eventBus: EventBus;
+
   // Auth 领域
   authHandlerDeps: AuthHandlerDependencies;
   authMiddleware: ReturnType<typeof createAuthMiddleware>;
@@ -63,6 +70,13 @@ export function initDependencies(
   _redis: RedisClientType | null = null
 ): AppContainer {
   // ============================================
+  // Infrastructure Layer（基础设施层）
+  // ============================================
+  
+  // 事件总线（用于领域间通信）
+  const eventBus = createEventBus();
+
+  // ============================================
   // Repository Layer（基础设施层）：数据访问
   // ============================================
   const userRepo = new UserRepositoryImpl(db);
@@ -80,14 +94,17 @@ export function initDependencies(
     issuer: config.jwt.issuer,
   });
 
-  // Auth Service（依赖 User Repository）
-  const authService = new AuthService(userRepo, jwtService);
+  // Auth Service（依赖 User Repository 和 EventBus）
+  const authService = new AuthService(userRepo, jwtService, eventBus);
 
-  // User Service
-  const userService = new UserService(userRepo);
+  // User Query Service（用于其他领域同步查询用户信息）
+  const userQueryService = new UserQueryService(userRepo);
 
-  // Task Service
-  const taskService = new TaskService(taskRepo);
+  // User Service（依赖 EventBus）
+  const userService = new UserService(userRepo, eventBus);
+
+  // Task Service（依赖 EventBus 和 UserQueryService）
+  const taskService = new TaskService(taskRepo, eventBus, userQueryService);
 
   // ============================================
   // Handler Dependencies（Handler 层）：HTTP 适配
@@ -121,6 +138,7 @@ export function initDependencies(
   // };
 
   return {
+    eventBus,
     authHandlerDeps,
     authMiddleware,
     userHandlerDeps,

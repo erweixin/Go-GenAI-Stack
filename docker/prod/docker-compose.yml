@@ -248,6 +248,93 @@ services:
     networks:
       - prod-network
 
+  # ============================================
+  # Node.js 后端服务（生产环境）
+  # ============================================
+  backend-nodejs:
+    build:
+      context: ../..
+      dockerfile: backend-nodejs/Dockerfile
+    image: go-genai-stack-backend-nodejs:${VERSION:-latest}
+    container_name: go-genai-stack-backend-nodejs-prod
+    restart: always
+    environment:
+      # 环境标识
+      NODE_ENV: ${NODE_ENV:-production}
+      
+      # 服务器配置
+      SERVER_HOST: ${SERVER_HOST:-0.0.0.0}
+      SERVER_PORT: ${SERVER_PORT:-8081}
+      
+      # 数据库配置
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${POSTGRES_USER:-genai}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?请设置 POSTGRES_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB:-go_genai_stack}
+      DATABASE_SSL_MODE: ${DATABASE_SSL_MODE:-require}
+      DATABASE_MAX_CONNECTIONS: ${DATABASE_MAX_CONNECTIONS:-25}
+      
+      # Redis 配置
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?请设置 REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB:-0}
+      
+      # JWT 配置
+      JWT_SECRET: ${JWT_SECRET:?请设置 JWT_SECRET}
+      JWT_ACCESS_TOKEN_EXPIRY: ${JWT_ACCESS_TOKEN_EXPIRY:-1h}
+      JWT_REFRESH_TOKEN_EXPIRY: ${JWT_REFRESH_TOKEN_EXPIRY:-7d}
+      JWT_ISSUER: ${JWT_ISSUER:-go-genai-stack}
+      
+      # 日志配置（生产环境使用 JSON 格式 + 文件输出）
+      LOGGING_ENABLED: "true"
+      LOGGING_LEVEL: ${LOGGING_LEVEL:-info}
+      LOGGING_FORMAT: ${LOGGING_FORMAT:-json}
+      LOGGING_OUTPUT: ${LOGGING_OUTPUT:-file}
+      LOGGING_OUTPUT_PATH: ${LOGGING_OUTPUT_PATH:-/app/logs/app.log}
+      LOGGING_MAX_SIZE: ${LOGGING_MAX_SIZE:-100}
+      LOGGING_MAX_BACKUPS: ${LOGGING_MAX_BACKUPS:-7}
+      LOGGING_MAX_AGE: ${LOGGING_MAX_AGE:-30}
+      LOGGING_COMPRESS: ${LOGGING_COMPRESS:-true}
+    ports:
+      - "${NODEJS_PORT:-8081}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {r.on('error', (e) => {process.stderr.write('Health check response error: ' + e.message + '\\n');process.exit(1)});r.on('data', () => {});r.on('end', () => {if (r.statusCode !== 200) {process.stderr.write('Health check failed: status code ' + r.statusCode + '\\n');}process.exit(r.statusCode === 200 ? 0 : 1)})}).on('error', (e) => {process.stderr.write('Health check request error: ' + e.message + '\\n');process.exit(1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # 日志目录挂载（持久化到宿主机）
+      - backend-nodejs-prod-logs:/app/logs
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - prod-network
+
 # ============================================
 # 数据卷（生产环境）
 # ============================================
@@ -261,6 +348,9 @@ volumes:
   backend-prod-logs:
     driver: local
     name: go-genai-stack-backend-prod-logs
+  backend-nodejs-prod-logs:
+    driver: local
+    name: go-genai-stack-backend-nodejs-prod-logs
 
 # ============================================
 # 网络（生产环境）

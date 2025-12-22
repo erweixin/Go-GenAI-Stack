@@ -97,7 +97,8 @@ APP_MONITORING_SAMPLE_RATE=0.1          # 追踪采样率
 
 ```bash
 VERSION=v1.0.0                          # 版本标识
-APP_PORT=8080                           # 后端 API 端口
+APP_PORT=8080                           # Go 后端 API 端口
+NODEJS_PORT=8081                        # Node.js 后端 API 端口
 ```
 
 **⚙️ 高级配置** (可选):
@@ -163,9 +164,12 @@ docker compose ps
 ```
 
 **访问服务**:
-- 🌐 **Backend API**: http://localhost:8080
+- 🌐 **Backend API (Go)**: http://localhost:8080
   - Health Check: http://localhost:8080/health
   - Metrics: http://localhost:8080/metrics
+- 🌐 **Backend API (Node.js)**: http://localhost:8081
+  - Health Check: http://localhost:8081/health
+  - Metrics: http://localhost:8081/metrics
 
 **监控服务**:
 
@@ -203,6 +207,11 @@ cd ../monitoring
 │  │   :8080  │     │  (内部)  │     │  (内部)  │   │
 │  └──────────┘     └──────────┘     └──────────┘   │
 │                                                     │
+│  ┌──────────────┐                                 │
+│  │ Backend-Node │────▶│ Postgres │     │  Redis   │   │
+│  │     :8081    │     │  (内部)  │     │  (内部)  │   │
+│  └──────────────┘     └──────────┘     └──────────┘   │
+│                                                     │
 │  💡 监控服务已迁移到 docker/monitoring（独立部署）   │
 │     - Sentry (前端错误追踪)                         │
 │     - Jaeger (分布式追踪)                           │
@@ -214,7 +223,7 @@ cd ../monitoring
 
 ## 🔧 服务配置详解
 
-### 后端服务 (Backend)
+### 后端服务 (Backend - Go)
 
 **端口**: 8080  
 **副本数**: 1 (可扩展)  
@@ -235,6 +244,43 @@ APP_MONITORING_TRACING_ENABLED: true
 - 间隔: 30s
 - 超时: 10s
 - 重试: 3 次
+
+**日志持久化**:
+- 卷挂载: `backend-prod-logs:/app/logs`
+- 日志路径: `/app/logs/app.log`
+
+### 后端服务 (Backend-Nodejs)
+
+**端口**: 8081  
+**副本数**: 1 (可扩展)  
+**资源限制**:
+- CPU: 0.5-2 cores
+- Memory: 512MB-2GB
+
+**环境变量**:
+```yaml
+NODE_ENV: production
+LOGGING_ENABLED: "true"
+LOGGING_LEVEL: info
+LOGGING_FORMAT: json
+LOGGING_OUTPUT: file
+LOGGING_OUTPUT_PATH: /app/logs/app.log
+LOGGING_MAX_SIZE: 100
+LOGGING_MAX_BACKUPS: 7
+LOGGING_MAX_AGE: 30
+LOGGING_COMPRESS: "true"
+```
+
+**健康检查**:
+- 路径: `/health`
+- 间隔: 30s
+- 超时: 10s
+- 重试: 3 次
+
+**日志持久化**:
+- 卷挂载: `backend-nodejs-prod-logs:/app/logs`
+- 日志路径: `/app/logs/app.log`
+- 查看日志: `docker compose logs -f backend-nodejs` 或访问卷挂载目录
 
 ### PostgreSQL 数据库
 
@@ -295,7 +341,8 @@ docker compose logs -f
 
 **查看特定服务日志**:
 ```bash
-docker compose logs -f backend
+docker compose logs -f backend          # Go 后端
+docker compose logs -f backend-nodejs   # Node.js 后端
 docker compose logs -f postgres
 docker compose logs -f redis
 ```
@@ -303,6 +350,18 @@ docker compose logs -f redis
 **查看最近 100 行日志**:
 ```bash
 docker compose logs --tail=100 backend
+docker compose logs --tail=100 backend-nodejs
+```
+
+**查看持久化日志文件** (当使用文件输出时):
+```bash
+# 查看 Go 后端日志
+docker volume inspect go-genai-stack-backend-prod-logs
+# 或直接访问挂载目录（如果使用 bind mount）
+
+# 查看 Node.js 后端日志
+docker volume inspect go-genai-stack-backend-nodejs-prod-logs
+# 或直接访问挂载目录（如果使用 bind mount）
 ```
 
 ### 扩展服务

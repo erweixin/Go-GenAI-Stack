@@ -56,6 +56,11 @@ COPY --from=builder --chown=node:node /build/node_modules ./node_modules
 COPY --from=builder --chown=node:node /build/dist ./dist
 COPY --from=builder --chown=node:node /build/package.json ./
 
+# 创建日志目录（用于文件输出）
+# 注意：在生产环境中，建议使用卷挂载将日志保存到宿主机
+# 例如：docker run -v /host/logs:/app/logs ...
+RUN mkdir -p /app/logs && chown -R node:node /app/logs
+
 # 切换到非 root 用户
 USER node
 

@@ -12,6 +12,7 @@ import { UserService } from '../service/user_service.js';
 import type { HandlerDependencies } from '../handlers/dependencies.js';
 import { User } from '../model/user.js';
 import type { JWTService } from '../../auth/service/jwt_service.js';
+import { createEventBus, type EventBus } from '../../shared/events/event_bus.js';
 import bcrypt from 'bcryptjs';
 
 // ========== 测试常量 ==========
@@ -37,12 +38,19 @@ export interface TestHelper {
 /**
  * 创建测试辅助工具
  */
-export function createTestHelper(db: Kysely<Database>, jwtService?: JWTService): TestHelper {
+export function createTestHelper(
+  db: Kysely<Database>,
+  jwtService?: JWTService,
+  eventBus?: EventBus
+): TestHelper {
   // 1. 创建 Repository
   const userRepo = new UserRepositoryImpl(db);
 
-  // 2. 创建 Service
-  const userService = new UserService(userRepo);
+  // 2. 创建 EventBus（如果未提供，创建一个简单的 mock）
+  const mockEventBus: EventBus = eventBus || createEventBus();
+
+  // 3. 创建 Service
+  const userService = new UserService(userRepo, mockEventBus);
 
   // 3. 创建 Handler Dependencies
   const handlerDeps: HandlerDependencies = {
