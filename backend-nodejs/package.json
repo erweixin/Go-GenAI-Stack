@@ -15,6 +15,7 @@
     "test:task": "vitest run domains/task",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "check:boundaries": "tsx scripts/check-domain-boundaries.ts",
     "format": "prettier --write \"**/*.{ts,json,md}\"",
     "typecheck": "tsc --noEmit"
   },

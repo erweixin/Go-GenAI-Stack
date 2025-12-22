@@ -7,6 +7,7 @@
  */
 
 import type { Event, EventHandler } from './types.js';
+import { getGlobalLogger } from '../../../infrastructure/monitoring/logger/logger.js';
 
 /**
  * 事件总线接口
@@ -52,16 +53,38 @@ export class InMemoryEventBus implements EventBus {
   private handlers = new Map<string, Array<EventHandler>>();
   
   /**
-   * 记录日志（简化版，避免循环依赖）
-   * 在开发环境使用 console，生产环境可以集成结构化日志
+   * 记录日志
+   * 优先使用全局结构化日志，如果未初始化则降级到 console
    */
   private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, fields?: Record<string, unknown>): void {
-    // 开发环境使用 console
-    if (process.env.NODE_ENV !== 'production') {
+    const globalLogger = getGlobalLogger();
+    
+    if (globalLogger) {
+      // 使用结构化日志，添加上下文字段
+      const logFields = {
+        component: 'EventBus',
+        ...fields,
+      };
+      
+      switch (level) {
+        case 'debug':
+          globalLogger.debug(`[EventBus] ${message}`, logFields);
+          break;
+        case 'info':
+          globalLogger.info(`[EventBus] ${message}`, logFields);
+          break;
+        case 'warn':
+          globalLogger.warn(`[EventBus] ${message}`, logFields);
+          break;
+        case 'error':
+          globalLogger.error(`[EventBus] ${message}`, logFields);
+          break;
+      }
+    } else {
+      // 降级到 console（logger 未初始化时）
       const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
       logFn(`[EventBus] ${message}`, fields || {});
     }
-    // 生产环境：可以在这里集成结构化日志（未来扩展）
   }
 
   /**
