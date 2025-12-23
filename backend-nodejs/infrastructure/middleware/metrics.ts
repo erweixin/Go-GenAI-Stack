@@ -6,6 +6,14 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { httpRequestCounter, httpRequestDuration } from '../monitoring/metrics/metrics.js';
 
+// 扩展 FastifyRequest 类型，添加 metrics 相关属性
+declare module 'fastify' {
+  interface FastifyRequest {
+    metricsStartTime?: number;
+    routerPath?: string;
+  }
+}
+
 /**
  * Metrics 中间件
  * 记录每个请求的指标
@@ -16,7 +24,7 @@ export async function metricsMiddleware(
   _reply: FastifyReply
 ): Promise<void> {
   // 在请求对象上存储开始时间
-  (request as any).metricsStartTime = Date.now();
+  request.metricsStartTime = Date.now();
 }
 
 /**
@@ -27,7 +35,7 @@ export async function metricsResponseHook(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<void> {
-  const startTime = (request as any).metricsStartTime;
+  const startTime = request.metricsStartTime;
   if (!startTime) {
     return; // 如果没有开始时间，跳过
   }
@@ -35,7 +43,7 @@ export async function metricsResponseHook(
   const duration = (Date.now() - startTime) / 1000; // 转换为秒
   const method = request.method;
   // 获取路由路径（如果没有 routerPath，使用 URL 路径）
-  const route = (request as any).routerPath || request.url.split('?')[0]; // 移除查询参数
+  const route = request.routerPath || request.url.split('?')[0]; // 移除查询参数
   const statusCode = reply.statusCode;
 
   // 记录请求计数

@@ -7,6 +7,13 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { RedisClientType } from 'redis';
 import { createError } from '../../shared/errors/errors.js';
 
+// 扩展 FastifyRequest 类型，添加 routerPath 属性（如果尚未定义）
+declare module 'fastify' {
+  interface FastifyRequest {
+    routerPath?: string;
+  }
+}
+
 /**
  * 限流配置选项
  */
@@ -78,7 +85,7 @@ export function createRateLimitMiddleware(
       options.keyGenerator ||
       (req => {
         // 默认：IP + 路径
-        const route = (req as any).routerPath || req.url.split('?')[0];
+        const route = req.routerPath || req.url.split('?')[0];
         return `ratelimit:${req.ip}:${route}`;
       });
 

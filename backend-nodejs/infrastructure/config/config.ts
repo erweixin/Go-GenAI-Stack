@@ -59,7 +59,12 @@ const ConfigSchema = z.object({
     password: z.string().min(1, 'Database password is required'),
     database: z.string().min(1, 'Database name is required'),
     sslMode: z.enum(['disable', 'require', 'verify-ca', 'verify-full']).default('disable'),
-    maxConnections: z.coerce.number().int().positive().default(25),
+    maxConnections: z.coerce
+      .number()
+      .int()
+      .positive()
+      .max(100, 'Database max connections cannot exceed 100')
+      .default(25),
     idleTimeout: z.coerce.number().int().nonnegative().default(10000),
     connectionTimeout: z.coerce.number().int().nonnegative().default(2000),
   }),
@@ -73,9 +78,18 @@ const ConfigSchema = z.object({
     secret: z
       .string()
       .min(1, 'JWT secret is required')
-      .refine(val => val.length >= 32 || process.env.NODE_ENV === 'test', {
-        message: 'JWT secret must be at least 32 characters (except in test mode)',
-      }),
+      .refine(
+        val => {
+          // 测试环境可以使用固定值，但长度仍需满足最小要求
+          if (process.env.NODE_ENV === 'test') {
+            return val.length >= 16; // 测试环境降低要求到 16 字符
+          }
+          return val.length >= 32; // 生产环境要求至少 32 字符
+        },
+        {
+          message: 'JWT secret must be at least 32 characters (16 in test mode)',
+        }
+      ),
     accessTokenExpiry: z
       .preprocess(val => {
         if (typeof val === 'string') {

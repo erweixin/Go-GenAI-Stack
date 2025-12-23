@@ -17,10 +17,16 @@ import type { Database } from '../persistence/postgres/database.js';
 import type { RedisClientType } from 'redis';
 import { checkHealth } from '../monitoring/health/health.js';
 import type { AuthMiddleware } from '../middleware/types.js';
-import { isDomainError } from '../../shared/errors/errors.js';
 import { tracingMiddleware } from '../middleware/tracing.js';
 import { metricsMiddleware, metricsResponseHook } from '../middleware/metrics.js';
 import { register } from '../monitoring/metrics/metrics.js';
+import { handleDomainError } from '../handler_utils/helpers.js';
+import { getGlobalLogger } from '../monitoring/logger/logger.js';
+
+// 导入各领域的 Handler Dependencies 类型
+import type { HandlerDependencies as TaskHandlerDependencies } from '../../domains/task/handlers/dependencies.js';
+import type { HandlerDependencies as UserHandlerDependencies } from '../../domains/user/handlers/dependencies.js';
+import type { HandlerDependencies as AuthHandlerDependencies } from '../../domains/auth/handlers/dependencies.js';
 
 /**
  * 创建 Fastify 服务器
@@ -100,46 +106,26 @@ export async function registerMiddleware(fastify: FastifyInstance): Promise<void
   });
 
   // Error handling (统一错误处理)
-  fastify.setErrorHandler((error: Error, request: FastifyRequest, reply: FastifyReply) => {
-    request.log.error(
-      {
-        err: error,
-        url: request.url,
-        method: request.method,
-      },
-      'Request error'
-    );
-
-    // 处理领域错误
-    if (isDomainError(error)) {
-      return reply.code(error.statusCode).send({
-        error: {
-          code: error.code,
-          message: error.message,
-        },
-      });
+  // 使用 handler_utils/helpers.ts 的统一错误处理函数，确保响应格式一致
+  fastify.setErrorHandler((error: Error, _request: FastifyRequest, reply: FastifyReply) => {
+    // 使用统一的错误处理函数
+    const logger = getGlobalLogger();
+    // logger 是可选参数，使用条件调用避免 ESLint 误报
+    if (logger) {
+      handleDomainError(reply, error, logger);
+    } else {
+      handleDomainError(reply, error);
     }
-
-    // 处理其他错误（包含 statusCode 的 HTTP 错误）
-    const httpError = error as Error & { statusCode?: number };
-    const statusCode = httpError.statusCode || 500;
-    const message = httpError.message || 'Internal Server Error';
-
-    return reply.code(statusCode).send({
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: statusCode === 500 ? 'Internal server error' : message,
-      },
-    });
   });
 
   // Not found handler
   fastify.setNotFoundHandler((request, reply) => {
+    const requestId = request.id;
     reply.code(404).send({
       error: {
+        code: 'NOT_FOUND',
         message: 'Route not found',
-        statusCode: 404,
-        path: request.url,
+        requestId,
       },
     });
   });
@@ -189,42 +175,45 @@ export function registerRoutes(
 }
 
 /**
+ * 领域 Handler Dependencies 类型定义
+ * 类型安全地定义所有领域的 Handler Dependencies
+ */
+export interface DomainHandlerDeps {
+  task?: TaskHandlerDependencies;
+  user?: UserHandlerDependencies;
+  auth?: AuthHandlerDependencies;
+}
+
+/**
  * 注册领域路由
- * 接收 HandlerDependencies 并注册所有领域路由
+ * 接收类型安全的 HandlerDependencies 并注册所有领域路由
+ *
+ * @param fastify Fastify 实例
+ * @param handlerDeps 领域 Handler Dependencies（类型安全）
+ * @param authMiddleware 认证中间件
+ * @param redis Redis 客户端（可选）
  */
 export async function registerDomainRoutes(
   fastify: FastifyInstance,
-  handlerDeps: Record<string, unknown>,
+  handlerDeps: DomainHandlerDeps,
   authMiddleware: AuthMiddleware,
   redis: RedisClientType | null = null
 ): Promise<void> {
   // 动态导入并注册 Task 路由
   if (handlerDeps.task) {
     const taskRouter = await import('../../domains/task/http/router.js');
-    taskRouter.registerTaskRoutes(
-      fastify,
-      handlerDeps.task as Parameters<typeof taskRouter.registerTaskRoutes>[1],
-      authMiddleware as Parameters<typeof taskRouter.registerTaskRoutes>[2]
-    );
+    taskRouter.registerTaskRoutes(fastify, handlerDeps.task, authMiddleware);
   }
 
   // 动态导入并注册 User 路由
   if (handlerDeps.user) {
     const userRouter = await import('../../domains/user/http/router.js');
-    userRouter.registerUserRoutes(
-      fastify,
-      handlerDeps.user as Parameters<typeof userRouter.registerUserRoutes>[1],
-      authMiddleware as Parameters<typeof userRouter.registerUserRoutes>[2]
-    );
+    userRouter.registerUserRoutes(fastify, handlerDeps.user, authMiddleware);
   }
 
   // 动态导入并注册 Auth 路由（不需要认证中间件）
   if (handlerDeps.auth) {
     const authRouter = await import('../../domains/auth/http/router.js');
-    authRouter.registerAuthRoutes(
-      fastify,
-      handlerDeps.auth as Parameters<typeof authRouter.registerAuthRoutes>[1],
-      redis
-    );
+    authRouter.registerAuthRoutes(fastify, handlerDeps.auth, redis);
   }
 }

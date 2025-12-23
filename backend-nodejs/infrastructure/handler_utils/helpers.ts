@@ -11,16 +11,19 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { isDomainError, createError } from '../../shared/errors/errors.js';
+import { getHTTPStatusCode } from '../../shared/errors/error_code_mapper.js';
 import type { Logger } from '../../infrastructure/monitoring/logger/logger.js';
 
 /**
  * HTTP 错误响应格式
+ * 统一格式：{ error: { code, message, requestId? } }
  */
 export interface ErrorResponse {
-  error: string; // 错误码
-  message: string; // 错误消息
-  details?: string; // 详细信息（可选）
-  requestId?: string; // 请求 ID（用于追踪）
+  error: {
+    code: string; // 错误码
+    message: string; // 错误消息
+    requestId?: string; // 请求 ID（用于追踪）
+  };
 }
 
 /**
@@ -55,23 +58,29 @@ export function handleDomainError(reply: FastifyReply, err: unknown, logger?: Lo
   if (isDomainError(err)) {
     // 记录错误日志
     if (logger) {
-      logger.error('Domain error occurred', {
+      const logFields: Record<string, unknown> = {
         code: err.code,
         message: err.message,
         statusCode: err.statusCode,
-        metadata: err.metadata,
         requestId,
         path: reply.request.url,
         method: reply.request.method,
         // 只在非 4xx 错误时记录堆栈（减少日志噪音）
         stack: err.statusCode >= 500 ? err.stack : undefined,
-      });
+      };
+      // 如果存在 metadata，添加到日志字段中
+      if ('metadata' in err && err.metadata) {
+        logFields.metadata = err.metadata;
+      }
+      logger.error('Domain error occurred', logFields);
     }
 
     const response: ErrorResponse = {
-      error: err.code,
-      message: err.message,
-      requestId,
+      error: {
+        code: err.code,
+        message: err.message,
+        requestId,
+      },
     };
     reply.code(err.statusCode).send(response);
     return;
@@ -97,9 +106,11 @@ export function handleDomainError(reply: FastifyReply, err: unknown, logger?: Lo
     }
 
     const response: ErrorResponse = {
-      error: code,
-      message: message,
-      requestId,
+      error: {
+        code,
+        message,
+        requestId,
+      },
     };
     reply.code(statusCode).send(response);
     return;
@@ -116,9 +127,11 @@ export function handleDomainError(reply: FastifyReply, err: unknown, logger?: Lo
   }
 
   const response: ErrorResponse = {
-    error: 'INTERNAL_SERVER_ERROR',
-    message: 'Internal server error',
-    requestId,
+    error: {
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Internal server error',
+      requestId,
+    },
   };
   reply.code(500).send(response);
 }
@@ -274,88 +287,6 @@ function extractErrorFromString(errMsg: string): { code: string; message: string
     code: 'UNKNOWN_ERROR',
     message: errMsg,
   };
-}
-
-/**
- * 根据错误码确定 HTTP 状态码
- *
- * 这个映射基于常见的错误码命名规范
- */
-function getHTTPStatusCode(code: string): number {
-  // 根据错误码前缀或关键词判断
-  const upperCode = code.toUpperCase();
-
-  // 400 Bad Request
-  if (
-    upperCode.includes('INVALID_') ||
-    upperCode.includes('EMPTY') ||
-    upperCode.includes('TOO_LONG') ||
-    upperCode.includes('TOO_MANY') ||
-    upperCode.includes('DUPLICATE') ||
-    upperCode.includes('ALREADY_') ||
-    upperCode === 'VALIDATION_ERROR' ||
-    upperCode === 'WEAK_PASSWORD'
-  ) {
-    return 400;
-  }
-
-  // 401 Unauthorized
-  if (
-    upperCode.includes('UNAUTHORIZED') ||
-    upperCode.includes('INVALID_CREDENTIALS') ||
-    upperCode.includes('INVALID_TOKEN') ||
-    upperCode.includes('EXPIRED_')
-  ) {
-    return 401;
-  }
-
-  // 403 Forbidden
-  if (
-    upperCode.includes('FORBIDDEN') ||
-    upperCode.includes('ACCESS') ||
-    upperCode === 'USER_BANNED'
-  ) {
-    return 403;
-  }
-
-  // 404 Not Found
-  if (upperCode.endsWith('_NOT_FOUND') || upperCode === 'NOT_FOUND') {
-    return 404;
-  }
-
-  // 409 Conflict
-  if (upperCode.endsWith('_EXISTS') || upperCode === 'CONFLICT') {
-    return 409;
-  }
-
-  // 429 Too Many Requests
-  if (upperCode.includes('RATE_LIMIT') || upperCode.includes('TOO_FREQUENT')) {
-    return 429;
-  }
-
-  // 500 Internal Server Error
-  if (
-    upperCode.includes('_FAILED') ||
-    upperCode === 'INTERNAL_ERROR' ||
-    upperCode === 'INTERNAL_SERVER_ERROR' ||
-    upperCode === 'DATABASE_ERROR' ||
-    upperCode === 'SERVICE_ERROR'
-  ) {
-    return 500;
-  }
-
-  // 502 Bad Gateway
-  if (upperCode.includes('EXTERNAL_')) {
-    return 502;
-  }
-
-  // 503 Service Unavailable
-  if (upperCode.includes('UNAVAILABLE')) {
-    return 503;
-  }
-
-  // 默认 500
-  return 500;
 }
 
 /**

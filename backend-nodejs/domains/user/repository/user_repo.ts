@@ -10,6 +10,15 @@ import type { UserRepository } from './interface.js';
 import { createError } from '../../../shared/errors/errors.js';
 import type { RequestContext } from '../../../shared/types/context.js';
 
+/**
+ * PostgreSQL 错误类型
+ */
+interface PostgresError extends Error {
+  code?: string;
+  constraint?: string;
+  message: string;
+}
+
 export class UserRepositoryImpl implements UserRepository {
   constructor(private db: Kysely<Database>) {}
 
@@ -31,21 +40,25 @@ export class UserRepositoryImpl implements UserRepository {
           last_login_at: user.lastLoginAt,
         })
         .execute();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 检查是否是唯一性约束冲突（PostgreSQL）
-      if (error.code === '23505') {
+      const pgError = error as PostgresError;
+      if (pgError.code === '23505') {
         // unique_violation
-        if (error.constraint === 'users_email_key' || error.constraint === 'idx_users_email') {
+        if (pgError.constraint === 'users_email_key' || pgError.constraint === 'idx_users_email') {
           throw createError('EMAIL_ALREADY_EXISTS', '邮箱已被占用');
         }
         if (
-          error.constraint === 'users_username_key' ||
-          error.constraint === 'idx_users_username'
+          pgError.constraint === 'users_username_key' ||
+          pgError.constraint === 'idx_users_username'
         ) {
           throw createError('VALIDATION_ERROR', '用户名已被占用');
         }
       }
-      throw createError('INTERNAL_SERVER_ERROR', `创建用户失败: ${error.message}`);
+      throw createError(
+        'INTERNAL_SERVER_ERROR',
+        `创建用户失败: ${pgError.message || String(error)}`
+      );
     }
   }
 
@@ -113,25 +126,29 @@ export class UserRepositoryImpl implements UserRepository {
       if (result.length === 0) {
         throw createError('USER_NOT_FOUND', '用户不存在');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 如果是 DomainError，直接抛出
-      if (error.name === 'DomainError') {
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'DomainError') {
         throw error;
       }
 
       // 检查是否是唯一性约束冲突
-      if (error.code === '23505') {
-        if (error.constraint === 'users_email_key' || error.constraint === 'idx_users_email') {
+      const pgError = error as PostgresError;
+      if (pgError.code === '23505') {
+        if (pgError.constraint === 'users_email_key' || pgError.constraint === 'idx_users_email') {
           throw createError('EMAIL_ALREADY_EXISTS', '邮箱已被占用');
         }
         if (
-          error.constraint === 'users_username_key' ||
-          error.constraint === 'idx_users_username'
+          pgError.constraint === 'users_username_key' ||
+          pgError.constraint === 'idx_users_username'
         ) {
           throw createError('VALIDATION_ERROR', '用户名已被占用');
         }
       }
-      throw createError('INTERNAL_SERVER_ERROR', `更新用户失败: ${error.message}`);
+      throw createError(
+        'INTERNAL_SERVER_ERROR',
+        `更新用户失败: ${pgError.message || String(error)}`
+      );
     }
   }
 

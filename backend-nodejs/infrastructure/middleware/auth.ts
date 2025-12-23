@@ -30,8 +30,10 @@ export function createAuthMiddleware(jwtService: JWTService) {
 
     if (!authHeader) {
       reply.code(401).send({
-        error: 'UNAUTHORIZED',
-        message: '缺少 Authorization 请求头',
+        error: {
+          code: 'UNAUTHORIZED',
+          message: '缺少 Authorization 请求头',
+        },
       });
       return;
     }
@@ -39,8 +41,10 @@ export function createAuthMiddleware(jwtService: JWTService) {
     // 2. 解析 Bearer Token
     if (!authHeader.startsWith('Bearer ')) {
       reply.code(401).send({
-        error: 'UNAUTHORIZED',
-        message: 'Authorization 格式无效（应为 Bearer <token>）',
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authorization 格式无效（应为 Bearer <token>）',
+        },
       });
       return;
     }
@@ -56,8 +60,10 @@ export function createAuthMiddleware(jwtService: JWTService) {
       request.email = claims.email;
     } catch (error) {
       reply.code(401).send({
-        error: 'INVALID_TOKEN',
-        message: error instanceof Error ? error.message : 'Token 无效或已过期',
+        error: {
+          code: 'INVALID_TOKEN',
+          message: error instanceof Error ? error.message : 'Token 无效或已过期',
+        },
       });
       return;
     }
