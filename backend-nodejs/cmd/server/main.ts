@@ -24,6 +24,7 @@ import {
   registerDomainRoutes,
 } from '../../infrastructure/bootstrap/server.js';
 import { initDependencies } from '../../infrastructure/bootstrap/dependencies.js';
+import { startQueueWorkers } from '../../infrastructure/queue/worker_bootstrap.js';
 import type { RedisClientType } from 'redis';
 
 async function main() {
@@ -100,10 +101,17 @@ async function main() {
 
   // 7. 初始化依赖注入容器
   console.log('🏗️  Initializing dependency injection container...');
-  const container = initDependencies(config, db, redis);
+  const container = await initDependencies(config, db, redis);
   console.log('✅ Dependencies initialized');
 
-  // 8. 注册领域路由
+  // 8. 启动队列 Worker（如果启用）
+  if (container.workerManager && config.queue.enabled && container.queueProcessors) {
+    console.log('⚙️  Starting queue workers...');
+    startQueueWorkers(container.workerManager, container.queueProcessors, config);
+    console.log('✅ Queue workers started');
+  }
+
+  // 9. 注册领域路由
   console.log('📚 Registering domain routes...');
   await registerDomainRoutes(
     fastify,
@@ -116,7 +124,7 @@ async function main() {
     redis
   );
 
-  // 9. 启动服务器
+  // 10. 启动服务器
   const address = `http://${config.server.host}:${config.server.port}`;
   try {
     await fastify.listen({
@@ -134,7 +142,7 @@ async function main() {
     process.exit(1);
   }
 
-  // 10. 优雅关闭
+  // 11. 优雅关闭
   const shutdown = async (signal: string) => {
     console.log(`\n🛑 Received ${signal}, shutting down gracefully...`);
     try {
@@ -142,6 +150,13 @@ async function main() {
       await db.destroy();
       if (redis) {
         await closeRedisConnection(redis);
+      }
+      // 关闭队列
+      if (container.queueClient) {
+        await container.queueClient.close();
+      }
+      if (container.workerManager) {
+        await container.workerManager.stopAll();
       }
       // 关闭事件总线
       await container.eventBus.close();

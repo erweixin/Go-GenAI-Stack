@@ -14,6 +14,9 @@ import type { Kysely } from 'kysely';
 import type { RedisClientType } from 'redis';
 import type { Database } from '../persistence/postgres/database.js';
 import type { Config } from '../config/config.js';
+import type { QueueClient, WorkerManager } from '../queue/index.js';
+import type { QueueProcessorsResult } from '../queue/bootstrap.js';
+import { bootstrapQueueProcessors } from '../queue/bootstrap.js';
 
 // Repository 实现
 import { TaskRepositoryImpl } from '../../domains/task/repository/task_repo.js';
@@ -37,6 +40,10 @@ import { createAuthMiddleware } from '../middleware/auth.js';
 // Event Bus
 import { createEventBus, type EventBus } from '../../domains/shared/events/event_bus.js';
 
+// Queue
+import { createQueueClient } from '../queue/client.js';
+import { createWorkerManager } from '../queue/worker.js';
+
 /**
  * 应用依赖容器
  * 包含所有领域的 Handler Dependencies 和 Middleware
@@ -44,6 +51,9 @@ import { createEventBus, type EventBus } from '../../domains/shared/events/event
 export interface AppContainer {
   // 基础设施
   eventBus: EventBus;
+  queueClient: QueueClient | null;
+  workerManager: WorkerManager | null;
+  queueProcessors: QueueProcessorsResult | null; // 队列处理器引导结果
 
   // Auth 领域
   authHandlerDeps: AuthHandlerDependencies;
@@ -64,17 +74,39 @@ export interface AppContainer {
  * @param _redis Redis 连接（可选，保留用于未来扩展）
  * @returns 应用依赖容器
  */
-export function initDependencies(
+export async function initDependencies(
   config: Config,
   db: Kysely<Database>,
   _redis: RedisClientType | null = null
-): AppContainer {
+): Promise<AppContainer> {
   // ============================================
   // Infrastructure Layer（基础设施层）
   // ============================================
 
   // 事件总线（用于领域间通信）
   const eventBus = createEventBus();
+
+  // 队列客户端和 Worker 管理器（如果启用）
+  let queueClient: QueueClient | null = null;
+  let workerManager: WorkerManager | null = null;
+  let queueProcessors: QueueProcessorsResult | null = null;
+
+  if (config.queue.enabled && _redis) {
+    const queueRedisConfig = {
+      host: config.redis.host,
+      port: config.redis.port,
+      password: config.redis.password || undefined,
+      db: config.queue.redisDb,
+    };
+
+    queueClient = createQueueClient(queueRedisConfig);
+    workerManager = createWorkerManager(queueRedisConfig);
+
+    // 引导并注册所有队列处理器（领域自注册模式）
+    queueProcessors = await bootstrapQueueProcessors({
+      includeExamples: config.server.env === 'development',
+    });
+  }
 
   // ============================================
   // Repository Layer（基础设施层）：数据访问
@@ -139,6 +171,9 @@ export function initDependencies(
 
   return {
     eventBus,
+    queueClient,
+    workerManager,
+    queueProcessors,
     authHandlerDeps,
     authMiddleware,
     userHandlerDeps,

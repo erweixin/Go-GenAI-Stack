@@ -74,6 +74,15 @@ const ConfigSchema = z.object({
     password: z.string().default(''),
     db: z.coerce.number().int().nonnegative().default(0),
   }),
+  queue: z.object({
+    enabled: z.coerce.boolean().default(true),
+    redisDb: z.coerce.number().int().nonnegative().default(1), // 队列使用 DB 1，与缓存分离
+    worker: z.object({
+      concurrency: z.coerce.number().int().positive().default(10),
+      maxRetries: z.coerce.number().int().nonnegative().default(3),
+      retryDelay: z.coerce.number().int().nonnegative().default(5000), // 毫秒
+    }),
+  }),
   jwt: z.object({
     secret: z
       .string()
@@ -156,6 +165,15 @@ export function loadConfig(): Config {
         port: process.env.REDIS_PORT,
         password: process.env.REDIS_PASSWORD,
         db: process.env.REDIS_DB,
+      },
+      queue: {
+        enabled: process.env.QUEUE_ENABLED,
+        redisDb: process.env.QUEUE_REDIS_DB,
+        worker: {
+          concurrency: process.env.QUEUE_WORKER_CONCURRENCY,
+          maxRetries: process.env.QUEUE_WORKER_MAX_RETRIES,
+          retryDelay: process.env.QUEUE_WORKER_RETRY_DELAY,
+        },
       },
       jwt: {
         secret: process.env.JWT_SECRET,
