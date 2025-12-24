@@ -1,7 +1,35 @@
-# Agent Demo Domain 技术文档（LangChain.js + ReAct）
+# Agent Demo Domain 技术文档
+
+## 0. 技术选型 ⭐ 重要
+
+**推荐方案：Vercel AI SDK + 自建 ReAct 循环**
+
+详细对比分析请参考：[技术选型对比文档](./TECH_STACK_COMPARISON.md)
+
+**选型理由**：
+- ✅ 轻量级，符合项目"透明性"理念
+- ✅ 类型安全，符合 TypeScript 技术栈
+- ✅ 流式输出支持优秀（符合 SSE 需求）
+- ✅ 工具调用支持完善
+- ✅ 多 Provider 统一接口（OpenAI、Anthropic）
+- ✅ 自建 ReAct 循环，完全控制执行流程，易于集成 DDD 架构
+
+**核心依赖**：
+```json
+{
+  "ai": "^3.0.0",  // Vercel AI SDK 核心包
+  "@ai-sdk/openai": "^1.0.0",
+  "@ai-sdk/anthropic": "^1.0.0",
+  "zod": "^3.22.0"  // 工具 schema 定义
+}
+```
+
+**备选方案**：
+- 如果开发时间紧张：使用 **LangChain.js**（开箱即用的 ReAct Agent）
+- 如果追求极致性能：使用 **原生 SDK**（OpenAI/Anthropic 官方 SDK）
 
 ## 1. 领域目标与范围
-- 提供可演示的 Agent 能力，基于 LangChain.js。
+- 提供可演示的 Agent 能力，基于 Vercel AI SDK + 自建 ReAct 循环。
 - 支持两种执行模式：
   - `simple`：纯 LLM 生成回复。
   - `react`：ReAct（Thought/Action/Observation/Final）+ 工具调用。
@@ -221,14 +249,65 @@
   - 如果所有 tool_call 都失败：标记执行失败，记录错误信息
 
 ## 6. 工具（Tools）设计
-- 抽象 `RegisteredTool`：
-  - name, description, schema (Zod)，execute(ctx, args)。
-  - `toOpenAITool()`/`toAnthropicTool()` 产出兼容 schema。
-- 运行期工具集合：ToolRegistry（按 Agent/请求过滤可用工具）。
-- 示例内置工具：
-  - `get_time`：返回当前时间。
-  - `search_docs`：限定目录的只读检索（需做路径白名单和长度限制）。
-- 安全：工具调用由 worker 执行，HTTP 线程不阻塞；对 args 做 Zod 校验和长度限制。
+
+### 6.1 工具抽象
+
+**RegisteredTool 接口**：
+```typescript
+interface RegisteredTool {
+  name: string;
+  description: string;
+  schema: z.ZodSchema;  // 使用 Zod 定义参数 schema
+  execute(ctx: unknown, args: unknown): Promise<string>;
+  
+  // 转换为 Vercel AI SDK 的 tool 格式
+  toAISDKTool(): ReturnType<typeof tool>;
+}
+```
+
+**实现示例**：
+```typescript
+import { tool } from 'ai';
+import { z } from 'zod';
+
+class GetTimeTool implements RegisteredTool {
+  name = 'get_time';
+  description = 'Get the current time in ISO 8601 format';
+  schema = z.object({});
+  
+  async execute(ctx: unknown, args: unknown): Promise<string> {
+    return new Date().toISOString();
+  }
+  
+  toAISDKTool() {
+    return tool({
+      description: this.description,
+      parameters: this.schema,
+      execute: async () => {
+        const result = await this.execute(null, {});
+        return { result };
+      },
+    });
+  }
+}
+```
+
+### 6.2 工具注册与管理
+
+- **ToolRegistry**：运行期工具集合，按 Agent/请求过滤可用工具
+- **工具白名单**：只有注册的工具才能被调用
+- **工具参数校验**：使用 Zod schema 严格校验
+
+### 6.3 示例内置工具
+
+- `get_time`：返回当前时间（ISO 8601 格式）
+- `search_docs`：限定目录的只读检索（需做路径白名单和长度限制）
+
+### 6.4 安全设计
+
+- **执行隔离**：工具调用由 worker 执行，HTTP 线程不阻塞
+- **参数校验**：对 args 做 Zod 校验和长度限制
+- **资源访问限制**：文件访问只允许白名单目录，网络访问只允许白名单域名
 
 ## 7. 配置建议（env）
 
@@ -829,8 +908,10 @@ ReAct 模式的核心是**由 LLM 自己决定是否继续**，而不是强制�
 
 ```typescript
 // 在 AgentService 或 ReactExecutor 中限制
-import { ChatOpenAI } from '@langchain/openai';
-import { ToolMessage } from '@langchain/core/messages';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { streamText, tool } from 'ai';
+import { CoreMessage } from 'ai';
 
 class AgentService {
   async runAgent(ctx: unknown, input: RunAgentInput): Promise<RunAgentOutput> {
@@ -841,20 +922,22 @@ class AgentService {
                      config.llm.maxTokens || 
                      4000; // 默认值
     
-    // 2. 创建 LLM 客户端时设置限制
-    const llm = new ChatOpenAI({
-      modelName: agent.model,
+    // 2. 创建 LLM 客户端（根据 provider 选择）
+    const llmClient = agent.provider === 'openai'
+      ? createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
+      : createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    
+    const model = llmClient(agent.model, {
       temperature: agent.temperature,
       maxTokens: maxTokens, // ✅ 限制单次调用的最大 tokens
-      maxRetries: 2,
     });
     
     // 3. 初始化 messages（包含 system prompt 和 user input）
-    const messages = [];
+    const messages: CoreMessage[] = [];
     if (agent.systemPrompt) {
-      messages.push(new SystemMessage(agent.systemPrompt));
+      messages.push({ role: 'system', content: agent.systemPrompt });
     }
-    messages.push(new HumanMessage(input.input));
+    messages.push({ role: 'user', content: input.input });
     
     // 4. 累计 token 使用（跨多次调用）
     let totalTokens = 0;
@@ -866,35 +949,53 @@ class AgentService {
     while (stepCount < maxSteps) {
       stepCount++;
       
-      const response = await llm.invoke(messages);
+      // 5. 调用 LLM（使用 streamText，但可以同步获取结果）
+      const result = await streamText({
+        model,
+        messages,
+        tools: this.getToolsForAgent(agent), // 获取 Agent 可用的工具
+      });
       
-      // 5. 检查累计 tokens
-      const stepTokens = response.response_metadata?.tokenUsage?.totalTokens || 0;
+      // 6. 获取完整响应（用于检查 tool_call）
+      const response = await result.response;
+      
+      // 7. 检查累计 tokens
+      const stepTokens = response.usage?.totalTokens || 0;
       totalTokens += stepTokens;
       if (totalTokens > maxTotalTokens) {
         throw new Error('MAX_TOKENS_EXCEEDED: 超过最大 token 限制');
       }
       
-      // 6. 记录 token 使用（用于监控和计费）
+      // 8. 记录 token 使用（用于监控和计费）
       await this.recordTokenUsage(executionId, {
         step_no: stepCount,
-        prompt_tokens: response.response_metadata?.tokenUsage?.promptTokens || 0,
-        completion_tokens: response.response_metadata?.tokenUsage?.completionTokens || 0,
+        prompt_tokens: response.usage?.promptTokens || 0,
+        completion_tokens: response.usage?.completionTokens || 0,
         total_tokens: stepTokens,
       });
       
-      // 7. ✅ 关键：检查 LLM 是否返回 tool_call
-      if (response.tool_calls && response.tool_calls.length > 0) {
+      // 9. ✅ 关键：检查 LLM 是否返回 tool_call
+      const toolCalls = response.toolCalls || [];
+      if (toolCalls.length > 0) {
         // 有 tool_call，执行工具后继续循环
-        for (const toolCall of response.tool_calls) {
+        for (const toolCall of toolCalls) {
           const toolResult = await this.executeTool(toolCall);
-          messages.push(response); // 添加 LLM 的响应
-          messages.push(new ToolMessage({ content: toolResult, tool_call_id: toolCall.id }));
+          // 添加 LLM 的响应和工具结果到 messages
+          messages.push({
+            role: 'assistant',
+            content: response.text,
+            toolCalls: [toolCall],
+          });
+          messages.push({
+            role: 'tool',
+            content: toolResult,
+            toolCallId: toolCall.toolCallId,
+          });
         }
         // ✅ 继续循环，让 LLM 继续推理
       } else {
         // ✅ 无 tool_call，LLM 已给出最终答案，立即返回
-        return { output: response.content, status: 'completed' };
+        return { output: response.text, status: 'completed' };
       }
     }
     
